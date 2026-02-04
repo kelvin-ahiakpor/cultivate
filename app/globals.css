@@ -1,26 +1,40 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #F9F3EF;
   --foreground: #171717;
+
+  /* Farmitecture Brand Colors */
+  --cultivate-green-dark: #536d3d;
+  --cultivate-green-light: #85b878;
+  --cultivate-green-alt: #01605E;
+  --cultivate-teal: #608e96;
+  --cultivate-beige: #e8c8ab;
+  --cultivate-cream: #F9F3EF;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-sans: var(--font-rubik);
+  --font-serif: var(--font-playfair);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Brand color utilities */
+  --color-cultivate-green-dark: var(--cultivate-green-dark);
+  --color-cultivate-green-light: var(--cultivate-green-light);
+  --color-cultivate-green-alt: var(--cultivate-green-alt);
+  --color-cultivate-teal: var(--cultivate-teal);
+  --color-cultivate-beige: var(--cultivate-beige);
+  --color-cultivate-cream: var(--cultivate-cream);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Simple SVG color filter - changes black SVG to green */
+.svg-green {
+  filter: brightness(0) saturate(100%) invert(68%) sepia(19%) saturate(744%) hue-rotate(58deg) brightness(93%) contrast(89%);
+}
+

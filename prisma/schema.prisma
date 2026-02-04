@@ -1,0 +1,292 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Organizations using the platform (Farmitecture, other ag companies, etc.)
+model Organization {
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique // farmitecture, agritech-co, etc.
+  brandName         String?  // "Farmitecture AI Assistant" - for whitelabeling
+  logoUrl           String?
+  vectorDbNamespace String   @unique // For isolating vector embeddings per org
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  users          User[]
+  agents         Agent[]
+  knowledgeBases KnowledgeBase[]
+  quota          OrganizationQuota?
+  apiUsage       ApiUsage[]
+
+  @@map("organizations")
+}
+
+// User roles: agronomist, farmer, admin
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  emailVerified  DateTime?
+  name           String
+  phone          String?
+  password       String   // Hashed password for credentials auth
+  role           UserRole @default(FARMER)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Multi-tenancy
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Relations
+  agents         Agent[]
+  conversations  Conversation[]
+  messages       Message[]
+  knowledgeBases KnowledgeBase[]
+  flaggedQueries FlaggedQuery[]
+  feedback       Feedback[]
+  accounts       Account[]
+  sessions       Session[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  AGRONOMIST
+  FARMER
+  ADMIN
+}
+
+// AI Agents created by agronomists
+model Agent {
+  id                  String   @id @default(cuid())
+  name                String
+  systemPrompt        String   @db.Text
+  responseStyle       String?  // friendly, formal, concise, detailed
+  confidenceThreshold Float    @default(0.7) // 0-1, route to human if below
+  version             Int      @default(1) // For tracking agent config changes
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Multi-tenancy
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Relations
+  agronomistId String
+  agronomist   User   @relation(fields: [agronomistId], references: [id], onDelete: Cascade)
+
+  conversations  Conversation[]
+  knowledgeBases KnowledgeBase[]
+  flaggedQueries FlaggedQuery[]
+
+  @@map("agents")
+}
+
+// Farmer-Agent conversation sessions
+model Conversation {
+  id        String   @id @default(cuid())
+  title     String?  // Auto-generated from first message
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  farmerId String
+  farmer   User   @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+
+  agentId String
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  messages Message[]
+
+  @@map("conversations")
+}
+
+// Individual messages in conversations
+model Message {
+  id              String      @id @default(cuid())
+  content         String      @db.Text
+  role            MessageRole // user or assistant
+  confidenceScore Float?      // 0-1, only for assistant messages
+  sourcesCited    String[]    // References to knowledge base chunks
+  createdAt       DateTime    @default(now())
+
+  // Relations
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  senderId String
+  sender   User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  feedback     Feedback?
+  flaggedQuery FlaggedQuery?
+  apiUsage     ApiUsage[]
+
+  @@map("messages")
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+// Agronomist-uploaded knowledge documents
+model KnowledgeBase {
+  id          String   @id @default(cuid())
+  title       String
+  fileName    String
+  fileUrl     String   // Cloud storage URL (S3, Supabase Storage)
+  fileType    String   // pdf, docx, txt, csv
+  chunkCount  Int      @default(0) // Number of chunks created
+  version     Int      @default(1) // Track updates to knowledge base
+  vectorDbId  String?  // Reference to vector DB collection ID
+  isEncrypted Boolean  @default(false) // Flag for sensitive proprietary data
+  uploadedAt  DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Multi-tenancy - uses org's vectorDbNamespace for isolation
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Relations
+  agronomistId String
+  agronomist   User   @relation(fields: [agronomistId], references: [id], onDelete: Cascade)
+
+  agentId String
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@map("knowledge_bases")
+}
+
+// Low-confidence queries needing agronomist review
+model FlaggedQuery {
+  id                 String             @id @default(cuid())
+  status             FlaggedQueryStatus @default(PENDING)
+  agronomistResponse String?            @db.Text
+  reviewedAt         DateTime?
+  createdAt          DateTime           @default(now())
+
+  // Relations
+  messageId String  @unique
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  agentId String
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  agronomistId String
+  agronomist   User   @relation(fields: [agronomistId], references: [id], onDelete: Cascade)
+
+  @@map("flagged_queries")
+}
+
+enum FlaggedQueryStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+}
+
+// Farmer feedback on AI responses
+model Feedback {
+  id        String   @id @default(cuid())
+  rating    Int      // 1-5 stars
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  // Relations
+  messageId String  @unique
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  farmerId String
+  farmer   User   @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+
+  @@map("feedback")
+}
+
+// Track API usage for cost control and analytics
+model ApiUsage {
+  id           String   @id @default(cuid())
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  totalCost    Float    @default(0) // Cost in USD
+  endpoint     String   // "chat", "embedding", etc.
+  model        String   // "claude-sonnet-4.5", etc.
+  createdAt    DateTime @default(now())
+
+  // Relations
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  messageId String?
+  message   Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt]) // For querying org usage over time
+  @@map("api_usage")
+}
+
+// Organization usage limits and quotas
+model OrganizationQuota {
+  id                String   @id @default(cuid())
+  monthlyTokenLimit Int?     // Null = unlimited (for paid plans)
+  monthlyBudgetUSD  Float?   // Null = unlimited
+  currentMonthUsage Int      @default(0)
+  currentMonthCost  Float    @default(0)
+  resetDate         DateTime // When to reset counters
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("organization_quotas")
+}
+
+// NextAuth.js Models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
