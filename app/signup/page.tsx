@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { Sprout } from "lucide-react";
 
 interface Organization {
   id: string;
@@ -125,16 +126,17 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            🌱 Cultivate
-          </h1>
-          <p className="text-gray-600">Create your account</p>
+    <div className="min-h-screen bg-gradient-to-br from-[#F9F3EF] to-green-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl p-10 w-full max-w-md">
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-6">
+            <Sprout className="w-8 h-8 text-[#536d3d]" />
+            <span className="text-xl font-semibold text-gray-900">Cultivate</span>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create account</h1>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
               {error}
@@ -142,12 +144,6 @@ export default function SignupPage() {
           )}
 
           <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Full Name
-            </label>
             <input
               id="name"
               name="name"
@@ -155,18 +151,12 @@ export default function SignupPage() {
               value={formData.name}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="John Doe"
+              className="w-full pb-2 border-b-2 border-gray-300 focus:border-[#536d3d] focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
+              placeholder="Full Name"
             />
           </div>
 
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Email
-            </label>
             <input
               id="email"
               name="email"
@@ -174,36 +164,24 @@ export default function SignupPage() {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="you@example.com"
+              className="w-full pb-2 border-b-2 border-gray-300 focus:border-[#536d3d] focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
+              placeholder="Email"
             />
           </div>
 
           <div>
-            <label
-              htmlFor="phone"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Phone (Optional)
-            </label>
             <input
               id="phone"
               name="phone"
               type="tel"
               value={formData.phone}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="+233 XX XXX XXXX"
+              className="w-full pb-2 border-b-2 border-gray-300 focus:border-[#536d3d] focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
+              placeholder="Phone (Optional)"
             />
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Password
-            </label>
             <input
               id="password"
               name="password"
@@ -211,18 +189,12 @@ export default function SignupPage() {
               value={formData.password}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="••••••••"
+              className="w-full pb-2 border-b-2 border-gray-300 focus:border-[#536d3d] focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
+              placeholder="Password"
             />
           </div>
 
           <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Confirm Password
-            </label>
             <input
               id="confirmPassword"
               name="confirmPassword"
@@ -230,24 +202,18 @@ export default function SignupPage() {
               value={formData.confirmPassword}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="••••••••"
+              className="w-full pb-2 border-b-2 border-gray-300 focus:border-[#536d3d] focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
+              placeholder="Confirm Password"
             />
           </div>
 
           <div>
-            <label
-              htmlFor="role"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Role
-            </label>
             <select
               id="role"
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full pb-2 border-b-2 border-gray-300 focus:border-[#536d3d] focus:outline-none transition-colors text-gray-900"
             >
               <option value="FARMER">Farmer</option>
               <option value="AGRONOMIST">Agronomist</option>
@@ -255,19 +221,13 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label
-              htmlFor="organizationId"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Organization
-            </label>
             <select
               id="organizationId"
               name="organizationId"
               value={formData.organizationId}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full pb-2 border-b-2 border-gray-300 focus:border-[#536d3d] focus:outline-none transition-colors text-gray-900"
             >
               {organizations.length === 0 && (
                 <option value="">Loading organizations...</option>
@@ -280,24 +240,26 @@ export default function SignupPage() {
             </select>
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? "Creating account..." : "Sign Up"}
-          </button>
-        </form>
+          <div className="text-sm text-gray-600 pt-2">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="text-[#536d3d] hover:text-[#8b7355] hover:underline font-medium transition-colors"
+            >
+              Sign in!
+            </Link>
+          </div>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="text-green-600 hover:text-green-700 font-medium"
-          >
-            Sign in
-          </Link>
-        </p>
+          <div className="flex justify-end pt-2">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="bg-[#536d3d] text-white py-1.5 px-8 rounded font-medium hover:bg-[#3d5229] focus:outline-none focus:ring-2 focus:ring-[#536d3d] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isLoading ? "Creating account..." : "Create account"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
