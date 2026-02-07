@@ -172,6 +172,7 @@ model FlaggedQuery {
   id                 String             @id @default(cuid())
   status             FlaggedQueryStatus @default(PENDING)
   agronomistResponse String?            @db.Text
+  verificationNotes  String?            @db.Text
   reviewedAt         DateTime?
   createdAt          DateTime           @default(now())
 
@@ -190,8 +191,8 @@ model FlaggedQuery {
 
 enum FlaggedQueryStatus {
   PENDING
-  REVIEWED
-  RESOLVED
+  VERIFIED
+  CORRECTED
 }
 
 // Farmer feedback on AI responses
