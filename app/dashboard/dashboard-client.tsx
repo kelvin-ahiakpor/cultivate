@@ -6,6 +6,7 @@ import {
   LayoutDashboard, Bot, BookOpen, Flag, BarChart3,
   Plus, ChevronDown, Settings, HelpCircle, LogOut,
   PanelLeft, MoreHorizontal, Upload, Eye,
+  CheckCircle, Pencil, ArrowRight, MessageCircle, X,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import AgentsView from "./views/agents-view";
@@ -24,6 +25,11 @@ export default function DashboardClient({ user }: DashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [activeNav, setActiveNav] = useState("overview");
+  const [activityPanelOpen, setActivityPanelOpen] = useState(false);
+
+  const handleCloseActivityPanel = () => {
+    setActivityPanelOpen(false);
+  };
 
   const getInitials = (name: string) => {
     return name[0]?.toUpperCase() || "U";
@@ -66,7 +72,7 @@ export default function DashboardClient({ user }: DashboardProps) {
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 overflow-y-auto px-2 pt-3">
+        <div className="flex-1 px-2 pt-3">
           <div className="space-y-0.5">
             {navItems.map((item) => (
               <button
@@ -176,10 +182,18 @@ export default function DashboardClient({ user }: DashboardProps) {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-y-auto">
-        <div className="max-w-5xl w-full mx-auto px-8 py-8">
+      <div className="flex-1 flex flex-col overflow-y-hidden overflow-x-clip">
+        <div
+          className={`max-w-5xl w-full mx-auto px-8 pt-8 pb-3 flex-1 min-h-0 ${
+            ["knowledge", "agents", "flagged", "overview"].includes(activeNav)
+              ? "overflow-y-hidden overflow-x-clip"
+              : "overflow-y-auto"
+          }`}
+        >
           {activeNav === "overview" && (
-            <>
+            <div className="flex flex-col h-full overflow-y-hidden overflow-x-clip">
+              {/* PART 1: Fixed section - Greeting, Stats, Quick Actions */}
+              <div className="flex-shrink-0">
               {/* Greeting */}
               <div className="mb-8">
                 <h1 className="text-3xl font-serif text-[#C2C0B6] mb-1">
@@ -199,7 +213,7 @@ export default function DashboardClient({ user }: DashboardProps) {
                       <Bot className="w-5 h-5 text-[#85b878]" />
                     </div>
                   </div>
-                  <p className="text-3xl font-semibold text-white">0</p>
+                  <p className="text-3xl font-semibold text-white">5</p>
                 </button>
 
                 <button onClick={() => setActiveNav("knowledge")} className="bg-[#2B2B2B] rounded-xl p-5 text-left hover:border-[#608e96] border border-transparent transition-colors">
@@ -209,7 +223,7 @@ export default function DashboardClient({ user }: DashboardProps) {
                       <BookOpen className="w-5 h-5 text-[#608e96]" />
                     </div>
                   </div>
-                  <p className="text-3xl font-semibold text-white">0</p>
+                  <p className="text-3xl font-semibold text-white">18</p>
                 </button>
 
                 <button onClick={() => setActiveNav("flagged")} className="bg-[#2B2B2B] rounded-xl p-5 text-left hover:border-[#e8c8ab] border border-transparent transition-colors">
@@ -219,7 +233,7 @@ export default function DashboardClient({ user }: DashboardProps) {
                       <Flag className="w-5 h-5 text-[#e8c8ab]" />
                     </div>
                   </div>
-                  <p className="text-3xl font-semibold text-white">0</p>
+                  <p className="text-3xl font-semibold text-white">4</p>
                 </button>
               </div>
 
@@ -277,14 +291,120 @@ export default function DashboardClient({ user }: DashboardProps) {
                 </div>
               </div>
 
-              {/* Recent Activity */}
-              <div>
-                <h2 className="text-sm text-[#9C9A92] mb-3">Recent Activity</h2>
-                <div className="bg-[#2B2B2B] rounded-xl p-6 text-center">
-                  <p className="text-sm text-[#6B6B6B]">No activity yet. Create your first agent to get started.</p>
+              {/* Recent Activity Header */}
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm text-[#9C9A92]">Recent Activity</h2>
+                <span className="text-xs text-[#6B6B6B]">Last 7 days</span>
+              </div>
+              </div>
+
+              {/* PART 2: Scrollable Recent Activity List */}
+              <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar scrollbar-outset pb-6">
+              <div className="mr-3">
+                {/* Flagged query reviewed */}
+                <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B]">
+                    <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <CheckCircle className="w-4 h-4 text-[#85b878]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#C2C0B6]">
+                        You <span className="text-[#85b878]">verified</span> a response about maize aphid identification
+                      </p>
+                      <p className="text-xs text-[#6B6B6B] mt-0.5">Pest Management &middot; 12 hours ago</p>
+                    </div>
+                  </div>
+
+                  {/* Correction sent */}
+                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B]">
+                    <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Pencil className="w-4 h-4 text-[#608e96]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#C2C0B6]">
+                        You <span className="text-[#608e96]">corrected</span> a response about okra planting schedule
+                      </p>
+                      <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 2 days ago</p>
+                    </div>
+                  </div>
+
+                  {/* New flagged query */}
+                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B]">
+                    <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Flag className="w-4 h-4 text-[#e8c8ab]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#C2C0B6]">
+                        New <span className="text-[#e8c8ab]">flagged query</span> from Kwame Asante about cassava disease
+                      </p>
+                      <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 2 hours ago &middot; 45% confidence</p>
+                    </div>
+                  </div>
+
+                  {/* Agent created */}
+                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B]">
+                    <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Bot className="w-4 h-4 text-[#85b878]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#C2C0B6]">
+                        <span className="text-[#85b878]">Cocoa Specialist</span> agent was created
+                      </p>
+                      <p className="text-xs text-[#6B6B6B] mt-0.5">4 knowledge bases attached &middot; 1 day ago</p>
+                    </div>
+                  </div>
+
+                  {/* Farmer conversation */}
+                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B]">
+                    <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <MessageCircle className="w-4 h-4 text-[#608e96]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#C2C0B6]">
+                        Ama Mensah started a <span className="text-[#608e96]">new conversation</span> about tomato fertilizer
+                      </p>
+                      <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 5 hours ago</p>
+                    </div>
+                  </div>
+
+                  {/* New flagged query */}
+                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B]">
+                    <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Flag className="w-4 h-4 text-[#e8c8ab]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#C2C0B6]">
+                        New <span className="text-[#e8c8ab]">flagged query</span> from Abena Darkwa about cocoa pod disease
+                      </p>
+                      <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 6 hours ago &middot; 41% confidence</p>
+                    </div>
+                  </div>
+
+                  {/* Knowledge base uploaded */}
+                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B]">
+                    <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <BookOpen className="w-4 h-4 text-[#608e96]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#C2C0B6]">
+                        <span className="text-[#608e96]">Cocoa Farming Guide 2026.pdf</span> uploaded to knowledge base
+                      </p>
+                      <p className="text-xs text-[#6B6B6B] mt-0.5">Cocoa Specialist &middot; 3 days ago &middot; 42 chunks</p>
+                    </div>
+                  </div>
+
+                  {/* View all footer */}
+                  <div className="px-5 py-3">
+                    <button
+                      onClick={() => setActivityPanelOpen(true)}
+                      className="flex items-center gap-1 text-xs text-[#9C9A92] hover:text-white transition-colors"
+                    >
+                      View all activity
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </>
+            </div>
           )}
 
           {activeNav === "agents" && <AgentsView />}
@@ -305,6 +425,136 @@ export default function DashboardClient({ user }: DashboardProps) {
           )}
         </div>
       </div>
+
+      {/* Activity Panel - Slide-out */}
+      {activityPanelOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 z-40"
+            onClick={handleCloseActivityPanel}
+          />
+          <div className="fixed top-0 right-0 h-full w-[500px] bg-[#1C1C1C] border-l border-[#2B2B2B] z-50 flex flex-col shadow-2xl">
+            {/* Panel Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#2B2B2B]">
+              <div>
+                <h2 className="text-sm font-medium text-white">Recent Activity</h2>
+                <p className="text-xs text-[#9C9A92] mt-0.5">Last 30 days</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseActivityPanel}
+                className="p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4 text-[#9C9A92]" />
+              </button>
+            </div>
+
+            {/* Scrollable Activity List */}
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {/* Flagged query reviewed */}
+              <div className="flex items-start gap-3 py-3.5 border-b border-[#3B3B3B]">
+                <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CheckCircle className="w-4 h-4 text-[#85b878]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[#C2C0B6]">
+                    You <span className="text-[#85b878]">verified</span> a response about maize aphid identification
+                  </p>
+                  <p className="text-xs text-[#6B6B6B] mt-0.5">Pest Management &middot; 12 hours ago</p>
+                </div>
+              </div>
+
+              {/* Correction sent */}
+              <div className="flex items-start gap-3 py-3.5 border-b border-[#3B3B3B]">
+                <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Pencil className="w-4 h-4 text-[#608e96]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[#C2C0B6]">
+                    You <span className="text-[#608e96]">corrected</span> a response about okra planting schedule
+                  </p>
+                  <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 2 days ago</p>
+                </div>
+              </div>
+
+              {/* New flagged query */}
+              <div className="flex items-start gap-3 py-3.5 border-b border-[#3B3B3B]">
+                <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Flag className="w-4 h-4 text-[#e8c8ab]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[#C2C0B6]">
+                    New <span className="text-[#e8c8ab]">flagged query</span> from Kwame Asante about cassava disease
+                  </p>
+                  <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 2 hours ago &middot; 45% confidence</p>
+                </div>
+              </div>
+
+              {/* Agent created */}
+              <div className="flex items-start gap-3 py-3.5 border-b border-[#3B3B3B]">
+                <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Bot className="w-4 h-4 text-[#85b878]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[#C2C0B6]">
+                    <span className="text-[#85b878]">Cocoa Specialist</span> agent was created
+                  </p>
+                  <p className="text-xs text-[#6B6B6B] mt-0.5">4 knowledge bases attached &middot; 1 day ago</p>
+                </div>
+              </div>
+
+              {/* Farmer conversation */}
+              <div className="flex items-start gap-3 py-3.5 border-b border-[#3B3B3B]">
+                <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <MessageCircle className="w-4 h-4 text-[#608e96]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[#C2C0B6]">
+                    Ama Mensah started a <span className="text-[#608e96]">new conversation</span> about tomato fertilizer
+                  </p>
+                  <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 5 hours ago</p>
+                </div>
+              </div>
+
+              {/* More activities... */}
+              <div className="flex items-start gap-3 py-3.5 border-b border-[#3B3B3B]">
+                <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Flag className="w-4 h-4 text-[#e8c8ab]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[#C2C0B6]">
+                    New <span className="text-[#e8c8ab]">flagged query</span> from Abena Darkwa about cocoa pod disease
+                  </p>
+                  <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 6 hours ago &middot; 41% confidence</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 py-3.5 border-b border-[#3B3B3B]">
+                <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <BookOpen className="w-4 h-4 text-[#608e96]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[#C2C0B6]">
+                    <span className="text-[#608e96]">Cocoa Farming Guide 2026.pdf</span> uploaded to knowledge base
+                  </p>
+                  <p className="text-xs text-[#6B6B6B] mt-0.5">Cocoa Specialist &middot; 3 days ago &middot; 42 chunks</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Panel Footer */}
+            <div className="px-5 py-3 border-t border-[#2B2B2B]">
+              <button
+                type="button"
+                onClick={handleCloseActivityPanel}
+                className="w-full px-4 py-2 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#C2C0B6] transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

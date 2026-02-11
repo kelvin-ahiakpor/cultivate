@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Flag, Search, CheckCircle, ChevronDown, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft } from "lucide-react";
+import { Flag, Search, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical } from "lucide-react";
 import { SproutIcon } from "@/components/send-icons";
 
 type FlagStatus = "all" | "PENDING" | "VERIFIED" | "CORRECTED";
@@ -392,6 +392,102 @@ const initialFlagged: FlaggedQuery[] = [
     reviewedAt: "2 days ago",
     conversationId: "conv-4",
   },
+  {
+    id: "5",
+    farmerName: "Kofi Adjei",
+    farmerMessage: "How much water does my rice paddy need per day during the vegetative stage?",
+    agentResponse: "Rice paddies generally need standing water of about 5-10cm during the vegetative stage. However, specific water requirements depend on soil type and weather conditions.",
+    agentName: "General Farm Advisor",
+    confidenceScore: 0.48,
+    status: "PENDING",
+    createdAt: "4 hours ago",
+    conversationId: "conv-1",
+  },
+  {
+    id: "6",
+    farmerName: "Abena Darkwa",
+    farmerMessage: "My cocoa pods have brown patches and some are turning black. Is this black pod disease?",
+    agentResponse: "Brown and black patches on cocoa pods could indicate Phytophthora pod rot (black pod disease). I would recommend consulting an agronomist for proper diagnosis.",
+    agentName: "General Farm Advisor",
+    confidenceScore: 0.41,
+    status: "PENDING",
+    createdAt: "6 hours ago",
+    conversationId: "conv-2",
+  },
+  {
+    id: "7",
+    farmerName: "Kweku Mensah",
+    farmerMessage: "How do I select the best plantain suckers for replanting?",
+    agentResponse: "Choose sword suckers (narrow leaves, pointed tips) rather than water suckers. Sword suckers are more vigorous and produce better yields.",
+    agentName: "General Farm Advisor",
+    confidenceScore: 0.64,
+    status: "VERIFIED",
+    createdAt: "2 days ago",
+    reviewedAt: "1 day ago",
+    verificationNotes: "Correct advice. Sword suckers are indeed preferred over water suckers for plantain propagation in Ghana.",
+    conversationId: "conv-3",
+  },
+  {
+    id: "8",
+    farmerName: "Akua Boateng",
+    farmerMessage: "Small white insects are eating my garden eggs. What organic spray can I use?",
+    agentResponse: "White insects on garden eggs are likely whiteflies. You can try using a soap solution spray, but I recommend getting professional advice for organic pest control options.",
+    agronomistResponse: "These are whiteflies. Mix 2 tablespoons of liquid soap with 4 litres of water and spray undersides of leaves early morning. Neem oil (5ml/L) is also very effective. Spray every 5 days for 3 weeks.",
+    agentName: "Pest Management",
+    confidenceScore: 0.55,
+    status: "CORRECTED",
+    createdAt: "4 days ago",
+    reviewedAt: "3 days ago",
+    conversationId: "conv-4",
+  },
+  {
+    id: "9",
+    farmerName: "Nana Osei",
+    farmerMessage: "What is the recommended spacing for groundnut planting in the Northern Region?",
+    agentResponse: "Groundnut spacing varies by variety, but a common recommendation is 40-50cm between rows. I'm not fully confident about region-specific spacing for Northern Ghana.",
+    agentName: "General Farm Advisor",
+    confidenceScore: 0.50,
+    status: "PENDING",
+    createdAt: "1 day ago",
+    conversationId: "conv-1",
+  },
+  {
+    id: "10",
+    farmerName: "Esi Appiah",
+    farmerMessage: "My pepper leaves are curling and have tiny green insects underneath. What should I do?",
+    agentResponse: "Leaf curling with small green insects underneath suggests aphid infestation. Neem-based sprays can help, and removing heavily infested leaves may slow the spread.",
+    agentName: "Pest Management",
+    confidenceScore: 0.68,
+    status: "VERIFIED",
+    createdAt: "5 days ago",
+    reviewedAt: "4 days ago",
+    verificationNotes: "Agent correctly identified aphids. The advice about neem spray and leaf removal is sound for small-scale pepper farming.",
+    conversationId: "conv-2",
+  },
+  {
+    id: "11",
+    farmerName: "Yaw Frimpong",
+    farmerMessage: "My coconut palm leaves are turning yellow from the bottom. Is this lethal yellowing disease?",
+    agentResponse: "Yellowing of lower coconut palm fronds could be caused by several factors including nutrient deficiency or disease. Without seeing the palm, I cannot confirm lethal yellowing.",
+    agronomistResponse: "Lower frond yellowing in coconut palms in Ghana is often magnesium deficiency rather than lethal yellowing. Apply Epsom salt (magnesium sulfate) at 500g per palm around the drip line. If premature nut drop accompanies the yellowing, then lethal yellowing should be investigated.",
+    agentName: "General Farm Advisor",
+    confidenceScore: 0.38,
+    status: "CORRECTED",
+    createdAt: "1 week ago",
+    reviewedAt: "5 days ago",
+    conversationId: "conv-3",
+  },
+  {
+    id: "12",
+    farmerName: "Adwoa Sarpong",
+    farmerMessage: "I see small holes in my sweet potato vines and the tubers have tunnels inside. What pest is this?",
+    agentResponse: "Damage to sweet potato vines and tubers with tunneling is likely caused by sweet potato weevils. These are a major pest of sweet potatoes in West Africa.",
+    agentName: "Pest Management",
+    confidenceScore: 0.60,
+    status: "PENDING",
+    createdAt: "8 hours ago",
+    conversationId: "conv-4",
+  },
 ];
 
 const DEFAULT_PANEL_WIDTH = 576; // max-w-xl equivalent
@@ -400,6 +496,8 @@ const MIN_PANEL_WIDTH = 400;
 export default function FlaggedView({ sidebarOpen = true }: { sidebarOpen?: boolean }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<FlagStatus>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [responseText, setResponseText] = useState("");
   const [queries, setQueries] = useState<FlaggedQuery[]>(initialFlagged);
@@ -476,6 +574,22 @@ export default function FlaggedView({ sidebarOpen = true }: { sidebarOpen?: bool
     const matchesStatus = statusFilter === "all" || q.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredQueries.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedQueries = filteredQueries.slice(startIndex, endIndex);
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusChange = (status: FlagStatus) => {
+    setStatusFilter(status);
+    setCurrentPage(1);
+  };
 
   const pendingCount = queries.filter(q => q.status === "PENDING").length;
 
@@ -576,6 +690,20 @@ export default function FlaggedView({ sidebarOpen = true }: { sidebarOpen?: bool
   const handleOpenChatPanel = (query: FlaggedQuery) => {
     setChatPanelQuery(query);
     setChatPanelOpen(true);
+    setIsClosing(false);
+  };
+
+  const handleCloseChatPanel = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setChatPanelOpen(false);
+      setIsClosing(false);
+      setPanelWidth(DEFAULT_PANEL_WIDTH);
+    }, 300);
+  };
+
+  const handleDoubleClickResize = () => {
+    setPanelWidth(DEFAULT_PANEL_WIDTH);
   };
 
   // Scroll to flagged message when panel opens
@@ -590,7 +718,9 @@ export default function FlaggedView({ sidebarOpen = true }: { sidebarOpen?: bool
   }, [chatPanelOpen]);
 
   return (
-    <div>
+    <div className="flex flex-col h-full overflow-y-hidden overflow-x-clip">
+      {/* Part 1: Fixed header + search/filter */}
+      <div className="flex-shrink-0">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-serif text-[#C2C0B6]">Flagged Queries</h1>
@@ -601,13 +731,13 @@ export default function FlaggedView({ sidebarOpen = true }: { sidebarOpen?: bool
 
       {/* Search + Filter */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="relative flex-1">
+        <div className="relative flex-1 max-w-[68.5%]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B]" />
           <input
             type="text"
             placeholder="Search queries..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
           />
         </div>
@@ -615,7 +745,7 @@ export default function FlaggedView({ sidebarOpen = true }: { sidebarOpen?: bool
           {(["all", "PENDING", "VERIFIED", "CORRECTED"] as FlagStatus[]).map((status) => (
             <button
               key={status}
-              onClick={() => setStatusFilter(status)}
+              onClick={() => handleStatusChange(status)}
               className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
                 statusFilter === status
                   ? 'bg-[#3B3B3B] text-white'
@@ -627,10 +757,13 @@ export default function FlaggedView({ sidebarOpen = true }: { sidebarOpen?: bool
           ))}
         </div>
       </div>
+      </div>{/* end flex-shrink-0 */}
 
+      {/* Part 2: Scrollable card list */}
+      <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar scrollbar-outset pb-6">
       {/* Flagged Query Cards */}
-      <div className="space-y-3">
-        {filteredQueries.map((query) => (
+      <div className="space-y-3 mr-3">
+        {paginatedQueries.map((query) => (
           <div
             key={query.id}
             className="bg-[#2B2B2B] rounded-xl border border-[#3B3B3B] overflow-hidden"
@@ -811,6 +944,39 @@ export default function FlaggedView({ sidebarOpen = true }: { sidebarOpen?: bool
         ))}
       </div>
 
+      {/* Pagination */}
+      {filteredQueries.length > 0 && totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4 mt-2">
+          <div className="text-sm text-[#9C9A92]">
+            Showing {startIndex + 1}-{Math.min(endIndex, filteredQueries.length)} of {filteredQueries.length}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#3B3B3B] disabled:hover:text-[#C2C0B6]"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              Previous
+            </button>
+
+            <div className="flex items-center gap-1 px-3">
+              <span className="text-sm text-white">Page {currentPage}</span>
+              <span className="text-sm text-[#6B6B6B]">of {totalPages}</span>
+            </div>
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#3B3B3B] disabled:hover:text-[#C2C0B6]"
+            >
+              Next
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {filteredQueries.length === 0 && (
         <div className="bg-[#2B2B2B] rounded-xl p-8 text-center">
           <Flag className="w-10 h-10 text-[#6B6B6B] mx-auto mb-3" />
@@ -819,6 +985,8 @@ export default function FlaggedView({ sidebarOpen = true }: { sidebarOpen?: bool
           </p>
         </div>
       )}
+
+      </div>{/* end scrollable */}
 
       {/* Verification Modal */}
       {showVerifyModal && (
@@ -957,14 +1125,28 @@ export default function FlaggedView({ sidebarOpen = true }: { sidebarOpen?: bool
           <>
             <div
               className="fixed inset-0 bg-black/40 z-40"
-              onClick={() => setChatPanelOpen(false)}
+              onClick={handleCloseChatPanel}
             />
-            <div className="fixed top-0 right-0 h-full w-full max-w-xl bg-[#1C1C1C] border-l border-[#2B2B2B] z-50 flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
+            <div 
+              className={`fixed top-0 right-0 h-full bg-[#1C1C1C] border-l border-[#2B2B2B] z-50 flex flex-col shadow-2xl transition-transform duration-300 ${
+                isClosing ? 'translate-x-full' : 'translate-x-0'
+              }`}
+              style={{ width: `${panelWidth}px` }}
+            >
+              {/* Drag handle - centered on left edge */}
+              <div
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 bg-[#1C1C1C] rounded-full p-1.5 cursor-col-resize z-10 border border-[#2B2B2B] hover:border-white shadow-lg group"
+                onMouseDown={handleResizeStart}
+                onDoubleClick={handleDoubleClickResize}
+                title="Drag to resize, double-click to reset"
+              >
+                <GripVertical className="w-3.5 h-3.5 text-[#e8c8ab] group-hover:text-white transition-colors" />
+              </div>
               {/* Panel Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-[#2B2B2B]">
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => setChatPanelOpen(false)}
+                    onClick={handleCloseChatPanel}
                     className="p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors"
                   >
                     <ArrowLeft className="w-4 h-4 text-[#C2C0B6]" />
@@ -983,7 +1165,7 @@ export default function FlaggedView({ sidebarOpen = true }: { sidebarOpen?: bool
                     {chatPanelQuery.status.charAt(0) + chatPanelQuery.status.slice(1).toLowerCase()}
                   </span>
                   <button
-                    onClick={() => setChatPanelOpen(false)}
+                    onClick={handleCloseChatPanel}
                     className="p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors"
                   >
                     <X className="w-4 h-4 text-[#9C9A92]" />
@@ -1090,7 +1272,7 @@ export default function FlaggedView({ sidebarOpen = true }: { sidebarOpen?: bool
                   <span className="text-xs text-[#6B6B6B]">{conversation.messages.length} messages</span>
                 </div>
                 <button
-                  onClick={() => setChatPanelOpen(false)}
+                  onClick={handleCloseChatPanel}
                   className="px-3 py-1.5 text-xs text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#C2C0B6] transition-colors"
                 >
                   Close

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown } from "lucide-react";
+import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 // Mock data - will be replaced with real API data
 const mockAgents = [
@@ -35,49 +35,106 @@ const mockAgents = [
     knowledgeBases: 1,
     updatedAt: "1 week ago",
   },
+  {
+    id: "4",
+    name: "Cocoa Specialist",
+    systemPrompt: "You are an expert in cocoa farming in Ghana, covering nursery management, fermentation, drying...",
+    confidenceThreshold: 0.7,
+    isActive: true,
+    conversations: 18,
+    knowledgeBases: 4,
+    updatedAt: "1 day ago",
+  },
+  {
+    id: "5",
+    name: "Soil & Fertilizer Guide",
+    systemPrompt: "You specialize in soil health, nutrient management, and fertilizer recommendations for Ghanaian soils...",
+    confidenceThreshold: 0.65,
+    isActive: true,
+    conversations: 31,
+    knowledgeBases: 5,
+    updatedAt: "3 days ago",
+  },
+  {
+    id: "6",
+    name: "Irrigation Advisor",
+    systemPrompt: "You provide guidance on irrigation methods, water management, and dry season farming strategies...",
+    confidenceThreshold: 0.72,
+    isActive: true,
+    conversations: 9,
+    knowledgeBases: 2,
+    updatedAt: "4 days ago",
+  },
+  {
+    id: "7",
+    name: "Livestock & Poultry",
+    systemPrompt: "You advise on small-scale livestock and poultry farming, covering breeds, feeding, housing, and disease prevention...",
+    confidenceThreshold: 0.78,
+    isActive: false,
+    conversations: 5,
+    knowledgeBases: 1,
+    updatedAt: "2 weeks ago",
+  },
 ];
 
 export default function AgentsView() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 7;
 
   const filteredAgents = mockAgents.filter(agent =>
     agent.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Pagination
+  const totalPages = Math.ceil(filteredAgents.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedAgents = filteredAgents.slice(startIndex, endIndex);
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-serif text-[#C2C0B6]">Agents</h1>
-          <p className="text-sm text-[#9C9A92] mt-1">{mockAgents.length} agents configured</p>
+    <div className="flex flex-col h-full overflow-y-hidden overflow-x-clip">
+      {/* Part 1: Fixed header + search */}
+      <div className="flex-shrink-0">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-serif text-[#C2C0B6]">Agents</h1>
+            <p className="text-sm text-[#9C9A92] mt-1">{mockAgents.length} agents configured</p>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[#85b878] text-white rounded-lg hover:bg-[#536d3d] transition-colors text-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Create Agent
+          </button>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-[#85b878] text-white rounded-lg hover:bg-[#536d3d] transition-colors text-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Create Agent
-        </button>
+
+        {/* Search */}
+        <div className="relative mb-6 w-[98.5%]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B]" />
+          <input
+            type="text"
+            placeholder="Search agents..."
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+          />
+        </div>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B]" />
-        <input
-          type="text"
-          placeholder="Search agents..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
-        />
-      </div>
-
-      {/* Agent Cards */}
-      <div className="space-y-3">
-        {filteredAgents.map((agent) => (
+      {/* Part 2: Scrollable card list */}
+      <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar scrollbar-outset">
+        <div className="space-y-3 mr-3">
+        {paginatedAgents.map((agent) => (
           <div
             key={agent.id}
             className="bg-[#2B2B2B] rounded-xl p-5 border border-[#3B3B3B] hover:border-[#85b878]/30 transition-colors"
@@ -141,6 +198,39 @@ export default function AgentsView() {
         ))}
       </div>
 
+      {/* Pagination */}
+      {filteredAgents.length > 0 && totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4 mt-2">
+          <div className="text-sm text-[#9C9A92]">
+            Showing {startIndex + 1}-{Math.min(endIndex, filteredAgents.length)} of {filteredAgents.length}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#3B3B3B] disabled:hover:text-[#C2C0B6]"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              Previous
+            </button>
+
+            <div className="flex items-center gap-1 px-3">
+              <span className="text-sm text-white">Page {currentPage}</span>
+              <span className="text-sm text-[#6B6B6B]">of {totalPages}</span>
+            </div>
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#3B3B3B] disabled:hover:text-[#C2C0B6]"
+            >
+              Next
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {filteredAgents.length === 0 && (
         <div className="bg-[#2B2B2B] rounded-xl p-8 text-center">
           <Bot className="w-10 h-10 text-[#6B6B6B] mx-auto mb-3" />
@@ -149,6 +239,8 @@ export default function AgentsView() {
           </p>
         </div>
       )}
+
+      </div>{/* end scrollable */}
 
       {/* Create Agent Modal */}
       {showCreateModal && (

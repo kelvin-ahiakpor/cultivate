@@ -161,3 +161,38 @@
   }
 }
 
+/* Thin scrollbar for targeted scrollable areas */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #3B3B3B transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: #3B3B3B;
+  border-radius: 2px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #4B4B4B;
+}
+
+/* Option 1: add a right-side inset so the scrollbar sits away from the edge */
+.scrollbar-inset {
+  padding-right: 0px;
+  scrollbar-gutter: stable;
+}
+
+/* Option 2: nudge scrollbar outward (right) without shrinking content */
+.scrollbar-outset {
+  margin-right: -0px;
+  padding-right: 0px;
+  scrollbar-gutter: stable;
+}
