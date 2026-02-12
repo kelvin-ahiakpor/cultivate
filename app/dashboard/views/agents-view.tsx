@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown, ChevronLeft, ChevronRight, X, AlertTriangle } from "lucide-react";
 
 // Mock data - will be replaced with real API data
 const mockAgents = [
@@ -83,6 +83,53 @@ export default function AgentsView() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
+  
+  // Edit, Deactivate, Delete modals
+  const [editModalAgent, setEditModalAgent] = useState<typeof mockAgents[0] | null>(null);
+  const [deactivateModalAgent, setDeactivateModalAgent] = useState<typeof mockAgents[0] | null>(null);
+  const [deleteModalAgent, setDeleteModalAgent] = useState<typeof mockAgents[0] | null>(null);
+  const [deleteNameConfirm, setDeleteNameConfirm] = useState("");
+  const [deleteReason, setDeleteReason] = useState("");
+  
+  // Slider values
+  const [createThreshold, setCreateThreshold] = useState(0.7);
+  const [editThreshold, setEditThreshold] = useState(0.7);
+
+  const handleEditAgent = (agent: typeof mockAgents[0]) => {
+    setEditModalAgent(agent);
+    setEditThreshold(agent.confidenceThreshold);
+    setOpenMenuId(null);
+  };
+
+  const handleToggleActivation = (agent: typeof mockAgents[0]) => {
+    if (agent.isActive) {
+      // Deactivating - show confirmation modal
+      setDeactivateModalAgent(agent);
+    } else {
+      // Activating - do it directly (no confirmation needed)
+      console.log('Activating agent:', agent.id);
+    }
+    setOpenMenuId(null);
+  };
+
+  const handleDeactivateConfirm = () => {
+    console.log('Deactivating agent:', deactivateModalAgent?.id);
+    setDeactivateModalAgent(null);
+  };
+
+  const handleDeleteAgent = (agent: typeof mockAgents[0]) => {
+    setDeleteModalAgent(agent);
+    setDeleteNameConfirm("");
+    setDeleteReason("");
+    setOpenMenuId(null);
+  };
+
+  const handleDeleteConfirm = () => {
+    console.log('Deleting agent:', deleteModalAgent?.id, 'Reason:', deleteReason);
+    setDeleteModalAgent(null);
+    setDeleteNameConfirm("");
+    setDeleteReason("");
+  };
 
   const filteredAgents = mockAgents.filter(agent =>
     agent.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -111,7 +158,7 @@ export default function AgentsView() {
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#85b878] text-white rounded-lg hover:bg-[#536d3d] transition-colors text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm"
           >
             <Plus className="w-4 h-4" />
             Create Agent
@@ -176,16 +223,25 @@ export default function AgentsView() {
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
                     <div className="absolute right-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-[#2B2B2B] py-1 z-50 min-w-[160px]">
-                      <button className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors">
+                      <button 
+                        onClick={() => handleEditAgent(agent)}
+                        className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors"
+                      >
                         <Pencil className="w-3.5 h-3.5" />
                         Edit
                       </button>
-                      <button className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors">
+                      <button 
+                        onClick={() => handleToggleActivation(agent)}
+                        className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors"
+                      >
                         <Power className="w-3.5 h-3.5" />
                         {agent.isActive ? "Deactivate" : "Activate"}
                       </button>
                       <div className="border-t border-[#2B2B2B] my-1" />
-                      <button className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-[#141413] hover:text-red-300 flex items-center gap-2 transition-colors">
+                      <button 
+                        onClick={() => handleDeleteAgent(agent)}
+                        className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-[#141413] hover:text-red-300 flex items-center gap-2 transition-colors"
+                      >
                         <Trash2 className="w-3.5 h-3.5" />
                         Delete
                       </button>
@@ -286,10 +342,14 @@ export default function AgentsView() {
                       min="0"
                       max="1"
                       step="0.05"
-                      defaultValue="0.7"
-                      className="flex-1 accent-[#85b878]"
+                      value={createThreshold}
+                      onChange={(e) => setCreateThreshold(parseFloat(e.target.value))}
+                      className="flex-1 accent-[#5a7048] hover:brightness-110 transition-all"
+                      style={{
+                        background: `linear-gradient(to right, #5a7048 0%, #5a7048 ${createThreshold * 100}%, #3B3B3B ${createThreshold * 100}%, #3B3B3B 100%)`
+                      }}
                     />
-                    <span className="text-sm text-white w-10 text-right">0.70</span>
+                    <span className="text-sm text-white w-10 text-right">{createThreshold.toFixed(2)}</span>
                   </div>
                   <p className="text-xs text-[#6B6B6B] mt-1">Queries below this confidence will be flagged for review</p>
                 </div>
@@ -302,8 +362,224 @@ export default function AgentsView() {
                 >
                   Cancel
                 </button>
-                <button className="px-4 py-2 bg-[#85b878] text-white rounded-lg hover:bg-[#536d3d] transition-colors text-sm">
+                <button className="px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm">
                   Create Agent
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Edit Agent Modal */}
+      {editModalAgent && (
+        <>
+          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setEditModalAgent(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-[#1C1C1C] rounded-xl border border-[#2B2B2B] w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto thin-scrollbar">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-medium text-white">Edit Agent</h2>
+                <button
+                  type="button"
+                  onClick={() => setEditModalAgent(null)}
+                  className="p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4 text-[#9C9A92]" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-[#9C9A92] mb-1.5">Agent Name</label>
+                  <input
+                    type="text"
+                    defaultValue={editModalAgent.name}
+                    placeholder="e.g. Maize Expert"
+                    className="w-full px-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-[#9C9A92] mb-1.5">System Prompt</label>
+                  <textarea
+                    rows={5}
+                    defaultValue={editModalAgent.systemPrompt}
+                    placeholder="Describe the agent's role, expertise, and how it should respond..."
+                    className="w-full px-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-[#9C9A92] mb-1.5">Confidence Threshold</label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={editThreshold}
+                      onChange={(e) => setEditThreshold(parseFloat(e.target.value))}
+                      className="flex-1 accent-[#5a7048] hover:brightness-110 transition-all"
+                      style={{
+                        background: `linear-gradient(to right, #5a7048 0%, #5a7048 ${editThreshold * 100}%, #3B3B3B ${editThreshold * 100}%, #3B3B3B 100%)`
+                      }}
+                    />
+                    <span className="text-sm text-white w-10 text-right">{editThreshold.toFixed(2)}</span>
+                  </div>
+                  <p className="text-xs text-[#6B6B6B] mt-1">Queries below this confidence will be flagged for review</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-[#9C9A92] mb-1.5">Knowledge Bases</label>
+                  <div className="bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg p-3">
+                    <p className="text-xs text-[#6B6B6B] mb-2">{editModalAgent.knowledgeBases} knowledge bases assigned</p>
+                    <button className="text-xs text-[#85b878] hover:text-[#9dcf84] transition-colors">
+                      Manage knowledge bases →
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg p-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[#9C9A92]">Status</span>
+                    <span className={editModalAgent.isActive ? "text-[#85b878]" : "text-[#6B6B6B]"}>
+                      {editModalAgent.isActive ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mt-2">
+                    <span className="text-[#9C9A92]">Conversations</span>
+                    <span className="text-white">{editModalAgent.conversations}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setEditModalAgent(null)}
+                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button className="px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm">
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Deactivate Agent Modal */}
+      {deactivateModalAgent && (
+        <>
+          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setDeactivateModalAgent(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-[#1C1C1C] rounded-xl border border-[#2B2B2B] w-full max-w-md p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Power className="w-5 h-5 text-orange-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-medium text-white">Deactivate Agent</h2>
+                  <p className="text-sm text-[#9C9A92] mt-1">
+                    Are you sure you want to deactivate <span className="text-white font-medium">{deactivateModalAgent.name}</span>?
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg p-3 mb-5">
+                <p className="text-xs text-[#C2C0B6] leading-relaxed">
+                  This agent will no longer respond to farmer queries. {deactivateModalAgent.conversations} conversation histories will be preserved, but farmers won't be able to select this agent for new chats.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setDeactivateModalAgent(null)}
+                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleDeactivateConfirm}
+                  className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm"
+                >
+                  Deactivate
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Delete Agent Modal - Strict Confirmation */}
+      {deleteModalAgent && (
+        <>
+          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setDeleteModalAgent(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-[#1C1C1C] rounded-xl border border-[#2B2B2B] w-full max-w-lg p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-red-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-medium text-white">Delete Agent</h2>
+                  <p className="text-sm text-[#9C9A92] mt-1">
+                    This is a permanent action that cannot be undone.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-5">
+                <p className="text-xs text-red-300 leading-relaxed">
+                  Deleting <span className="font-medium">{deleteModalAgent.name}</span> will permanently remove:
+                </p>
+                <ul className="text-xs text-red-300 mt-2 ml-4 space-y-1">
+                  <li>• All {deleteModalAgent.conversations} conversation histories</li>
+                  <li>• Agent configuration and system prompt</li>
+                  <li>• Links to {deleteModalAgent.knowledgeBases} knowledge bases</li>
+                </ul>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-[#9C9A92] mb-1.5">Reason for deletion (required)</label>
+                  <textarea
+                    rows={3}
+                    value={deleteReason}
+                    onChange={(e) => setDeleteReason(e.target.value)}
+                    placeholder="Why are you deleting this agent?"
+                    className="w-full px-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-red-400 resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-[#9C9A92] mb-1.5">
+                    Type <span className="text-white font-mono">{deleteModalAgent.name}</span> to confirm
+                  </label>
+                  <input
+                    type="text"
+                    value={deleteNameConfirm}
+                    onChange={(e) => setDeleteNameConfirm(e.target.value)}
+                    placeholder="Enter agent name exactly"
+                    className="w-full px-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-red-400"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setDeleteModalAgent(null)}
+                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleDeleteConfirm}
+                  disabled={deleteNameConfirm !== deleteModalAgent.name || !deleteReason.trim()}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-500"
+                >
+                  Delete Permanently
                 </button>
               </div>
             </div>
