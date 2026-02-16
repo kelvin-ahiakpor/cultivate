@@ -12,6 +12,7 @@ import { signOut } from "next-auth/react";
 import AgentsView from "./views/agents-view";
 import KnowledgeView from "./views/knowledge-view";
 import FlaggedView from "./views/flagged-view";
+import ChatsView from "./views/chats-view";
 
 interface DashboardProps {
   user: {
@@ -37,6 +38,7 @@ export default function DashboardClient({ user }: DashboardProps) {
 
   const navItems = [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
+    { id: "chats", label: "Chats", icon: MessageCircle },
     { id: "agents", label: "Agents", icon: Bot },
     { id: "knowledge", label: "Knowledge Base", icon: BookOpen },
     { id: "flagged", label: "Flagged Queries", icon: Flag },
@@ -185,7 +187,7 @@ export default function DashboardClient({ user }: DashboardProps) {
       <div className="flex-1 flex flex-col overflow-y-hidden overflow-x-clip">
         <div
           className={`max-w-5xl w-full mx-auto px-8 pt-8 pb-3 flex-1 min-h-0 ${
-            ["knowledge", "agents", "flagged", "overview"].includes(activeNav)
+            ["knowledge", "agents", "flagged", "overview", "chats"].includes(activeNav)
               ? "overflow-y-hidden overflow-x-clip"
               : "overflow-y-auto"
           }`}
@@ -407,6 +409,7 @@ export default function DashboardClient({ user }: DashboardProps) {
             </div>
           )}
 
+          {activeNav === "chats" && <ChatsView />}
           {activeNav === "agents" && <AgentsView />}
           {activeNav === "knowledge" && <KnowledgeView />}
           {activeNav === "flagged" && <FlaggedView sidebarOpen={sidebarOpen} />}
