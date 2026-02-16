@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageCircle, Search, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
+import { MessageCircle, Search, ChevronLeft, ChevronRight, Plus, ChevronDown, Share, Pencil, Trash2, Unlink } from "lucide-react";
+import { CabbageIcon } from "@/components/send-icons";
 
 interface ChatMessage {
   id: string;
@@ -83,6 +84,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened }:
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [openedChat, setOpenedChat] = useState<Chat | null>(null);
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const itemsPerPage = 30;
 
   // Open/close chat from sidebar click
@@ -118,40 +120,119 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened }:
   if (openedChat) {
     return (
       <div className="flex flex-col h-full overflow-hidden">
-        {/* Conversation Header */}
-        <div className="flex-shrink-0 bg-[#1E1E1E] border-b border-[#2B2B2B] px-6 py-4">
-          <div className="flex items-center gap-3">
+        {/* Conversation Header — system name (hover → white) + chat title pill (hover → dark bg, chevron like ellipsis) */}
+        <div className="flex-shrink-0 bg-[#1E1E1E] border-b border-[#2B2B2B] pt-3 pb-3 pl-4 pr-3 flex items-center gap-1">
+          {openedChat.systemName && (
+            <>
+              <span className="text-sm text-[#C2C0B6] hover:text-white truncate cursor-pointer transition-colors">{openedChat.systemName}</span>
+              <span className="text-sm text-[#6B6B6B] flex-shrink-0">/</span>
+            </>
+          )}
+          {/* Chat title + chevron — independent hover zones:
+              Wrapper: #141413 on hover (sibling bg). Each child overrides with #0a0a0a (near-black) when directly hovered. */}
+          <div className={`inline-flex items-stretch rounded-lg overflow-hidden cursor-pointer relative ${
+            headerMenuOpen ? 'bg-[#141413]' : 'hover:bg-[#141413]'
+          }`}>
+            <span className="text-sm text-[#C2C0B6] truncate py-1 pl-2 pr-1 hover:bg-[#0a0a0a] transition-colors">{openedChat.title}</span>
             <button
-              onClick={() => { setOpenedChat(null); onChatSelect?.(null); }}
-              className="p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors"
+              onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(!headerMenuOpen); }}
+              className={`${headerMenuOpen ? 'bg-[#0a0a0a]' : 'hover:bg-[#0a0a0a]'} transition-all px-1.5 self-stretch flex items-center`}
             >
-              <ArrowLeft className="w-5 h-5 text-[#C2C0B6]" />
+              <ChevronDown className="w-3.5 h-3.5 text-[#9C9A92] hover:text-white transition-colors" />
             </button>
-            <div>
-              <h2 className="text-sm text-white">{openedChat.title}</h2>
-              <p className="text-xs text-[#9C9A92]">{openedChat.agentName}</p>
-            </div>
+
+            {/* Dropdown: Share, Rename, [Remove from system], Delete */}
+            {headerMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setHeaderMenuOpen(false)} />
+                <div className="absolute left-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-[#2B2B2B] py-1 z-50 min-w-[200px] whitespace-nowrap">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
+                    className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2.5 transition-colors"
+                  >
+                    <Share className="w-3.5 h-3.5" />
+                    Share
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
+                    className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2.5 transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Rename
+                  </button>
+                  {openedChat.systemName && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
+                      className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2.5 transition-colors"
+                    >
+                      <Unlink className="w-3.5 h-3.5" />
+                      Remove from system
+                    </button>
+                  )}
+                  <div className="border-t border-[#2B2B2B] my-1 mx-3" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
+                    className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-[#141413] hover:text-red-300 flex items-center gap-2.5 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Messages */}
+        {/* Scrollable area — messages + input in one container (Claude-style integrated layout) */}
         <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar scrollbar-outset">
-          <div className="max-w-3xl mx-auto px-6 py-6 space-y-6">
-            {mockConversationMessages.map((message) => (
-              <div key={message.id}>
-                {message.role === "USER" ? (
-                  <div className="flex justify-end">
-                    <div className="max-w-[75%] bg-[#2B2B2B] rounded-2xl px-4 py-3">
-                      <p className="text-sm text-white whitespace-pre-wrap">{message.content}</p>
+          <div className="max-w-3xl mx-auto flex flex-col min-h-full">
+            {/* Messages — slightly narrower than input bar */}
+            <div className="flex-1 px-12 py-6 space-y-6">
+              {mockConversationMessages.map((message) => (
+                <div key={message.id}>
+                  {message.role === "USER" ? (
+                    <div className="flex justify-end">
+                      <div className="max-w-[75%] bg-[#2B2B2B] rounded-2xl px-4 py-3">
+                        <p className="text-sm text-white whitespace-pre-wrap">{message.content}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-[#C2C0B6] leading-relaxed whitespace-pre-wrap">
+                      {message.content}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Reply Input — sticky to bottom, wider than messages */}
+            <div className="sticky bottom-0 bg-[#1E1E1E]">
+              <div className="mx-3.5 mb-1">
+                <div className="bg-[#2B2B2B] rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
+                  <textarea
+                    placeholder="Reply..."
+                    rows={1}
+                    className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-[#6B6B6B] bg-transparent text-sm"
+                  />
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="flex items-center gap-2">
+                      <button className="p-1.5 hover:bg-[#3B3B3B] rounded transition-colors">
+                        <Plus className="w-5 h-5 text-[#C2C0B6]" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-[#9C9A92]">{openedChat.agentName}</span>
+                      <button className="p-2 bg-[#85b878] text-white rounded-xl hover:bg-[#536d3d] transition-colors">
+                        <CabbageIcon />
+                      </button>
                     </div>
                   </div>
-                ) : (
-                  <div className="text-sm text-[#C2C0B6] leading-relaxed whitespace-pre-wrap">
-                    {message.content}
-                  </div>
-                )}
+                </div>
               </div>
-            ))}
+              <p className="text-xs text-[#6B6B6B] text-center pb-2 pt-0.5">
+                AI can make mistakes. Please verify important information.
+              </p>
+            </div>
           </div>
         </div>
       </div>

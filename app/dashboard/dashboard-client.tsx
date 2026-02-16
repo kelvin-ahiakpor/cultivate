@@ -122,7 +122,7 @@ export default function DashboardClient({ user }: DashboardProps) {
         </div>
 
         {/* User Profile */}
-        <div className={`border-t border-[#2B2B2B] p-2.5 relative hover:bg-black hover:border-black transition-colors ${!sidebarOpen ? 'flex justify-center' : ''}`}>
+        <div className={`border-t border-[#2B2B2B] p-2 relative hover:bg-black hover:border-black transition-colors ${!sidebarOpen ? 'flex justify-center' : ''}`}>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
             className={`group relative flex items-center rounded-lg p-1.5 ${sidebarOpen ? 'w-full justify-between' : 'justify-center'}`}

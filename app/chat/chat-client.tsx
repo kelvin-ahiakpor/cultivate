@@ -60,7 +60,7 @@ export default function ChatPageClient({ user }: ChatPageProps) {
         className={`${sidebarOpen ? 'w-72' : 'w-14'} bg-[#1C1C1C] border-r border-[#2B2B2B] flex flex-col transition-all duration-300 ease-in-out`}
       >
         {/* Logo */}
-        <div className={`px-3 pt-4 pb-3 flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
+        <div className={`p-2 min-h-[53px] flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
           {sidebarOpen && (
             <Link href="/" className="flex items-center gap-2 no-underline hover:no-underline">
               <span className="text-xl font-serif font-semibold text-white">Cultivate</span>
@@ -235,14 +235,14 @@ export default function ChatPageClient({ user }: ChatPageProps) {
         </div>
 
         {/* User Profile */}
-        <div className={`border-t border-[#2B2B2B] p-2.5 relative hover:bg-black hover:border-black transition-colors ${!sidebarOpen ? 'flex justify-center' : ''}`}>
+        <div className={`border-t border-[#2B2B2B] px-2 py-1.5 relative hover:bg-black hover:border-black transition-colors ${!sidebarOpen ? 'flex justify-center' : ''}`}>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className={`group relative flex items-center rounded-lg p-1.5 ${sidebarOpen ? 'w-full justify-between' : 'justify-center'}`}
+            className={`group relative flex items-center rounded-lg p-1 ${sidebarOpen ? 'w-full justify-between' : 'justify-center'}`}
           >
             <div className={`flex items-center ${sidebarOpen ? 'gap-2' : ''}`}>
-              <div className="w-10 h-10 bg-[#85b878] rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white text-base font-medium">{getInitials(user.name)}</span>
+              <div className="w-9 h-9 bg-[#85b878] rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-white text-sm font-medium">{getInitials(user.name)}</span>
               </div>
               {sidebarOpen && (
                 <div className="flex-1 min-w-0 text-left">
@@ -300,8 +300,12 @@ export default function ChatPageClient({ user }: ChatPageProps) {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Conditional rendering based on active view */}
+        {/* Conversation view: full-width (header spans edge-to-edge like Claude)
+            Chat list view: padded with max-w-5xl container */}
         {activeView === "chats" && (
-          <div className="max-w-5xl w-full mx-auto px-8 py-8 flex-1 min-h-0 overflow-hidden">
+          <div className={`flex-1 min-h-0 overflow-hidden ${
+            selectedChatId ? '' : 'max-w-5xl w-full mx-auto px-8 py-8'
+          }`}>
             <ChatsView initialChatId={selectedChatId} onChatOpened={handleChatOpened} onChatSelect={(chatId) => setSelectedChatId(chatId)} />
           </div>
         )}
