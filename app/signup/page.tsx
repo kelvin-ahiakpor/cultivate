@@ -127,7 +127,7 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F9F3EF] to-green-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl p-10 w-full max-w-md">
+      <div className="bg-white rounded-lg shadow-xl p-6 sm:p-10 w-full max-w-md">
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-6">
             <Sprout className="w-8 h-8 text-[#536d3d]" />
@@ -254,7 +254,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="bg-[#536d3d] text-white py-1.5 px-8 rounded font-medium hover:bg-[#3d5229] focus:outline-none focus:ring-2 focus:ring-[#536d3d] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="bg-[#536d3d] text-white py-2.5 px-8 min-h-[44px] rounded font-medium hover:bg-[#3d5229] focus:outline-none focus:ring-2 focus:ring-[#536d3d] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? "Creating account..." : "Create account"}
             </button>

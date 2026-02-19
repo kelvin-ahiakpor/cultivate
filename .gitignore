@@ -55,3 +55,5 @@ ui-references/
 /public/sw.js
 /public/sw.js.map
 
+# Book on building ai agents
+*.pdf

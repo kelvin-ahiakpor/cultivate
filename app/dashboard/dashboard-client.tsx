@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard, Bot, BookOpen, Flag, BarChart3,
@@ -23,8 +23,13 @@ interface DashboardProps {
 }
 
 export default function DashboardClient({ user }: DashboardProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+
+  // Open sidebar by default on desktop, keep closed on mobile
+  useEffect(() => {
+    setSidebarOpen(window.innerWidth >= 1024);
+  }, []);
   const [activeNav, setActiveNav] = useState("overview");
   const [activityPanelOpen, setActivityPanelOpen] = useState(false);
 
@@ -54,9 +59,23 @@ export default function DashboardClient({ user }: DashboardProps) {
 
   return (
     <div className="flex h-screen bg-[#1E1E1E]">
+      {/* Mobile sidebar backdrop */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+      {/* Mobile: button to open sidebar when it's closed */}
+      {!sidebarOpen && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="fixed top-3 left-3 z-50 lg:hidden w-9 h-9 flex items-center justify-center bg-[#2B2B2B] hover:bg-[#3B3B3B] rounded-lg transition-colors"
+          aria-label="Open menu"
+        >
+          <PanelLeft className="w-4 h-4 text-[#C2C0B6] rotate-180" />
+        </button>
+      )}
       {/* Sidebar */}
       <div
-        className={`${sidebarOpen ? 'w-72' : 'w-14'} bg-[#1C1C1C] border-r border-[#2B2B2B] flex flex-col transition-all duration-300 ease-in-out`}
+        className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#1C1C1C] border-r border-[#2B2B2B] flex flex-col transition-all duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 ${sidebarOpen ? 'lg:w-72' : 'lg:w-14'}`}
       >
         {/* Logo */}
         <div className={`px-3 pt-4 pb-3 flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
@@ -186,7 +205,7 @@ export default function DashboardClient({ user }: DashboardProps) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-y-hidden overflow-x-clip">
         <div
-          className={`max-w-5xl w-full mx-auto px-8 pt-8 pb-3 flex-1 min-h-0 ${
+          className={`max-w-5xl w-full mx-auto px-4 sm:px-8 pt-8 pb-3 flex-1 min-h-0 ${
             ["knowledge", "agents", "flagged", "overview", "chats"].includes(activeNav)
               ? "overflow-y-hidden overflow-x-clip"
               : "overflow-y-auto"
