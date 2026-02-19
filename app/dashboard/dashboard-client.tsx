@@ -62,7 +62,7 @@ export default function DashboardClient({ user }: DashboardProps) {
         <div className={`px-3 pt-4 pb-3 flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
           {sidebarOpen && (
             <Link href="/" className="flex items-center gap-2 no-underline hover:no-underline">
-              <span className="text-xl font-serif font-semibold text-white">Cultivate</span>
+              <span className="pl-2 text-xl font-serif font-semibold text-white">Cultivate</span>
             </Link>
           )}
           <button

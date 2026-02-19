@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Pencil, Trash2, Share, Unlink } from "lucide-react";
+import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Pencil, Trash2, Share, Unlink, Download } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon } from "@/components/send-icons";
 import ChatsView, { mockChats } from "./views/chats-view";
@@ -25,6 +25,27 @@ export default function ChatPageClient({ user }: ChatPageProps) {
   const [activeView, setActiveView] = useState<"chat" | "chats" | "systems">("chat");
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [chatMenuId, setChatMenuId] = useState<string | null>(null);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      setDeferredPrompt(null);
+    }
+    setShowInstallModal(false);
+  };
 
   const getInitials = (name: string) => {
     return name[0]?.toUpperCase() || "U";
@@ -63,7 +84,7 @@ export default function ChatPageClient({ user }: ChatPageProps) {
         <div className={`p-2 min-h-[53px] flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
           {sidebarOpen && (
             <Link href="/" className="flex items-center gap-2 no-underline hover:no-underline">
-              <span className="text-xl font-serif font-semibold text-white">Cultivate</span>
+              <span className="pl-2 text-xl font-serif font-semibold text-white">Cultivate</span>
             </Link>
           )}
           <button
@@ -235,14 +256,15 @@ export default function ChatPageClient({ user }: ChatPageProps) {
         </div>
 
         {/* User Profile */}
-        <div className={`border-t border-[#2B2B2B] px-2 py-1.5 relative hover:bg-black hover:border-black transition-colors ${!sidebarOpen ? 'flex justify-center' : ''}`}>
-          <button
+        <div className={`border-t border-[#2B2B2B] p-2 relative hover:bg-black hover:border-black transition-colors ${!sidebarOpen ? 'flex justify-center' : ''}`}>
+          {/* div instead of button so the nested Download button is valid HTML */}
+          <div
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className={`group relative flex items-center rounded-lg p-1 ${sidebarOpen ? 'w-full justify-between' : 'justify-center'}`}
+            className={`group relative flex items-center rounded-lg p-1.5 cursor-pointer ${sidebarOpen ? 'w-full justify-between' : 'justify-center'}`}
           >
             <div className={`flex items-center ${sidebarOpen ? 'gap-2' : ''}`}>
-              <div className="w-9 h-9 bg-[#85b878] rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white text-sm font-medium">{getInitials(user.name)}</span>
+              <div className="w-10 h-10 bg-[#85b878] rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-white text-base font-medium">{getInitials(user.name)}</span>
               </div>
               {sidebarOpen && (
                 <div className="flex-1 min-w-0 text-left">
@@ -256,7 +278,16 @@ export default function ChatPageClient({ user }: ChatPageProps) {
               )}
             </div>
             {sidebarOpen && (
-              <ChevronDown className={`w-4 h-4 text-[#C2C0B6] transition-transform ${showUserMenu ? "rotate-180" : ""}`} />
+              <div className="flex items-center gap-0.5">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowInstallModal(true); }}
+                  className="p-1.5 border border-[#3B3B3B] hover:border-[#5a7048] rounded-md transition-colors text-[#9C9A92] hover:text-[#C2C0B6]"
+                  title="Install app"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+                <ChevronDown className={`w-4 h-4 text-[#C2C0B6] transition-transform ${showUserMenu ? "rotate-180" : ""}`} />
+              </div>
             )}
             {/* Tooltip when collapsed */}
             {!sidebarOpen && (
@@ -264,9 +295,9 @@ export default function ChatPageClient({ user }: ChatPageProps) {
                 {user.name?.split(" ")[0]}
               </div>
             )}
-          </button>
+          </div>
 
-          {/* User Menu Modal */}
+          {/* User Menu Dropdown */}
           {showUserMenu && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
@@ -289,6 +320,41 @@ export default function ChatPageClient({ user }: ChatPageProps) {
                   >
                     <LogOut className="w-4 h-4" />
                     Sign out
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* PWA Install Modal */}
+          {showInstallModal && (
+            <>
+              <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowInstallModal(false)} />
+              <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl p-6 w-80 shadow-xl">
+                <div className="mb-4">
+                  <div className="w-10 h-10 bg-[#5a7048] rounded-full flex items-center justify-center mb-3">
+                    <Download className="w-5 h-5 text-white" />
+                  </div>
+                  <h2 className="text-white font-semibold text-base mb-1.5">Install Cultivate</h2>
+                  <p className="text-[#9C9A92] text-sm leading-relaxed">
+                    Add Cultivate to your home screen for quick access and offline support.
+                  </p>
+                  <p className="text-[#6B6B6B] text-xs mt-2 leading-relaxed">
+                    On iOS: tap the Share button in Safari, then &ldquo;Add to Home Screen&rdquo;.
+                  </p>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setShowInstallModal(false)}
+                    className="px-4 py-2 text-sm text-[#9C9A92] hover:text-white transition-colors rounded-lg"
+                  >
+                    Not now
+                  </button>
+                  <button
+                    onClick={handleInstall}
+                    className="px-4 py-2 bg-[#5a7048] hover:bg-[#4a5d38] text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    Install
                   </button>
                 </div>
               </div>
