@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
+import { deleteFile } from "@/lib/supabase-storage";
+import { deleteEmbeddings } from "@/lib/vector-db";
 
 // GET /api/knowledge-bases/:id — Get document details
 export async function GET(
@@ -38,7 +40,7 @@ export async function GET(
   }
 }
 
-// DELETE /api/knowledge-bases/:id — Delete document + file + (future: vector embeddings)
+// DELETE /api/knowledge-bases/:id — Delete document + file from storage + vector embeddings
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -61,7 +63,13 @@ export async function DELETE(
       return apiError("Forbidden", 403);
     }
 
-    // Phase 3 will add: delete from Supabase Storage + delete vector embeddings
+    // 1. Delete vector embeddings from pgvector (before Prisma cascade removes chunk rows)
+    await deleteEmbeddings(id);
+
+    // 2. Delete file from Supabase Storage (non-blocking — won't fail the request)
+    await deleteFile(doc.organizationId, id, doc.fileName);
+
+    // 3. Delete DB record (cascades to DocumentChunk rows via Prisma)
     await prisma.knowledgeBase.delete({ where: { id } });
 
     return apiSuccess({ message: "Document deleted" });

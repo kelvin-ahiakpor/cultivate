@@ -1,3 +1,16 @@
+/**
+ * Claude AI integration for Cultivate.
+ *
+ * This module wraps the Anthropic SDK and provides:
+ * - chat()        — non-streaming, returns full response (useful for testing/simple cases)
+ * - chatStream()  — streaming via async iterator (used in production for live token delivery)
+ * - generateTitle() — cheap Haiku call to auto-name conversations
+ *
+ * The system prompt is assembled from 3 layers:
+ * 1. Agent's systemPrompt (set by the agronomist, e.g. "You are a maize farming expert...")
+ * 2. Agent's responseStyle (optional, e.g. "concise" or "detailed with examples")
+ * 3. Knowledge context from RAG (Phase 3 — relevant document chunks)
+ */
 import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic({
@@ -9,7 +22,7 @@ export interface ChatInput {
   responseStyle: string | null;
   conversationHistory: { role: "user" | "assistant"; content: string }[];
   userMessage: string;
-  knowledgeContext?: string; // RAG chunks — Phase 3
+  knowledgeContext?: string; // RAG chunks injected here in Phase 3
 }
 
 export interface ChatResult {
@@ -19,7 +32,12 @@ export interface ChatResult {
 }
 
 /**
- * Build the system prompt from agent config.
+ * Build the full system prompt by layering agent config + knowledge context.
+ *
+ * Example output:
+ *   "You are a maize farming expert for Ghana...
+ *    Response style: concise. Adjust your tone and format accordingly.
+ *    <knowledge_context>...relevant chunks...</knowledge_context>"
  */
 function buildSystemPrompt(systemPrompt: string, responseStyle: string | null, knowledgeContext?: string): string {
   let prompt = systemPrompt;
@@ -36,7 +54,9 @@ function buildSystemPrompt(systemPrompt: string, responseStyle: string | null, k
 }
 
 /**
- * Non-streaming chat call. Returns the full response.
+ * Non-streaming chat call. Waits for the full response before returning.
+ * Simpler but worse UX (farmer sees a blank screen while waiting).
+ * Used for: testing, background tasks, or when streaming isn't needed.
  */
 export async function chat(input: ChatInput): Promise<ChatResult> {
   const systemPrompt = buildSystemPrompt(input.systemPrompt, input.responseStyle, input.knowledgeContext);
@@ -67,8 +87,15 @@ export async function chat(input: ChatInput): Promise<ChatResult> {
 }
 
 /**
- * Streaming chat call. Yields text chunks as they arrive.
- * Returns final token counts after stream completes.
+ * Streaming chat call — used in production for live token delivery.
+ *
+ * Returns an async iterator that yields text chunks as Claude generates them,
+ * plus a getUsage() promise that resolves with token counts after the stream ends.
+ *
+ * Example usage:
+ *   const { stream, getUsage } = await chatStream(input);
+ *   for await (const chunk of stream) { sendToClient(chunk); }
+ *   const { inputTokens, outputTokens } = await getUsage();
  */
 export async function chatStream(input: ChatInput): Promise<{
   stream: AsyncIterable<string>;
@@ -97,6 +124,9 @@ export async function chatStream(input: ChatInput): Promise<{
     ],
   });
 
+  // Async generator that yields each text chunk as Claude produces it.
+  // The Anthropic SDK emits many event types (content_block_start, ping, etc.)
+  // but we only care about text_delta events — those carry the actual response text.
   const stream = (async function* () {
     for await (const event of messageStream) {
       if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
@@ -104,7 +134,8 @@ export async function chatStream(input: ChatInput): Promise<{
       }
     }
 
-    // After stream completes, get final usage
+    // Token counts are only available after the full stream completes.
+    // We resolve the usage promise here so the caller can await it.
     const finalMessage = await messageStream.finalMessage();
     inputTokens = finalMessage.usage.input_tokens;
     outputTokens = finalMessage.usage.output_tokens;
@@ -118,8 +149,9 @@ export async function chatStream(input: ChatInput): Promise<{
 }
 
 /**
- * Generate a short title for a conversation based on the first message.
- * Uses Haiku for cost efficiency.
+ * Generate a short title for a conversation based on the farmer's first message.
+ * Uses Haiku (cheapest Claude model) — costs ~$0.001 per title.
+ * Falls back to "New conversation" if the call fails for any reason.
  */
 export async function generateTitle(userMessage: string): Promise<string> {
   try {

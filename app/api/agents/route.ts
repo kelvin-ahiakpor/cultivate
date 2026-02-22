@@ -1,3 +1,12 @@
+/**
+ * Agents API — CRUD for AI agents.
+ *
+ * Every agent belongs to an organization and was created by an agronomist.
+ * Agents have: name, systemPrompt, responseStyle, confidenceThreshold, isActive.
+ *
+ * All queries are scoped by organizationId from the session — never trust client input.
+ * Only AGRONOMIST and ADMIN roles can access these endpoints.
+ */
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";

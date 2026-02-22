@@ -164,6 +164,8 @@ model KnowledgeBase {
   agentId String
   agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
+  chunks DocumentChunk[]
+
   @@map("knowledge_bases")
 }
 
@@ -250,6 +252,25 @@ model OrganizationQuota {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("organization_quotas")
+}
+
+// Document chunks for RAG — vector embeddings stored via pgvector extension.
+// The actual `embedding` column (vector(512)) is managed via raw SQL migration
+// because Prisma doesn't natively support the vector type.
+model DocumentChunk {
+  id              String   @id @default(cuid())
+  content         String   @db.Text   // The actual text of this chunk
+  chunkIndex      Int                 // Order within the document (0, 1, 2, ...)
+  tokenCount      Int      @default(0) // Approximate token count for this chunk
+  // embedding    vector(512)         -- managed via raw SQL, not in Prisma
+  createdAt       DateTime @default(now())
+
+  // Relations
+  knowledgeBaseId String
+  knowledgeBase   KnowledgeBase @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+
+  @@index([knowledgeBaseId])
+  @@map("document_chunks")
 }
 
 // NextAuth.js Models

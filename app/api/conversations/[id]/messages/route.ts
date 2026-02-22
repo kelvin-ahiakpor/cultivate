@@ -1,9 +1,36 @@
+/**
+ * Messages API — the core chat endpoint.
+ *
+ * GET  — List messages in a conversation (cursor-based pagination for infinite scroll)
+ * POST — Send a farmer message + get a streaming Claude AI response
+ *
+ * The POST endpoint is the heart of Cultivate. Here's what happens:
+ *
+ *   Farmer types "My maize leaves are turning yellow"
+ *     → Save user message to DB
+ *     → Load last 20 messages as conversation context
+ *     → Load agent config (systemPrompt, responseStyle, threshold)
+ *     → Retrieve relevant knowledge chunks via RAG (Voyage embedding → pgvector search)
+ *     → Stream Claude's response token-by-token via SSE (with knowledge context injected)
+ *     → Save assistant message to DB (with source references)
+ *     → Track token usage + cost in ApiUsage table
+ *     → Score confidence (if enabled) → flag if below agent's threshold
+ *     → Auto-generate conversation title from first message (uses cheap Haiku model)
+ *
+ * The response is a Server-Sent Events stream with these event types:
+ *   { type: "user_message" }  — confirms the user's message was saved
+ *   { type: "text" }          — each token from Claude as it generates
+ *   { type: "title" }         — auto-generated conversation title (first message only)
+ *   { type: "done" }          — stream complete, includes final message + usage stats
+ *   { type: "error" }         — something went wrong mid-stream
+ */
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
 import { chatStream, generateTitle } from "@/lib/claude";
 import { scoreConfidence, shouldFlag } from "@/lib/confidence";
 import { calculateCost } from "@/lib/cost";
+import { retrieveContext } from "@/lib/rag";
 
 // GET /api/conversations/:id/messages — List messages (cursor-based pagination)
 export async function GET(
@@ -140,13 +167,18 @@ export async function POST(
     // 3. Check if this is the first message (for auto-title)
     const isFirstMessage = conversationHistory.length === 0;
 
-    // 4. Stream Claude response via SSE
+    // 4. Retrieve relevant knowledge context via RAG
+    //    Embeds the farmer's question, searches pgvector for similar chunks,
+    //    and formats them as context for Claude's system prompt.
+    const rag = await retrieveContext(trimmedContent, conversation.agent.id);
+
+    // 5. Stream Claude response via SSE
     const { stream, getUsage } = await chatStream({
       systemPrompt: conversation.agent.systemPrompt,
       responseStyle: conversation.agent.responseStyle,
       conversationHistory,
       userMessage: trimmedContent,
-      // knowledgeContext: Phase 3 will add RAG chunks here
+      knowledgeContext: rag.hasContext ? rag.context : undefined,
     });
 
     let fullResponse = "";
@@ -168,29 +200,30 @@ export async function POST(
             );
           }
 
-          // 5. Get token usage
+          // 6. Get token usage
           const usage = await getUsage();
 
-          // 6. Score confidence (returns null if disabled)
+          // 7. Score confidence (returns null if disabled)
           const confidenceScore = scoreConfidence({
             response: fullResponse,
-            hasKnowledgeContext: false, // Phase 3
-            knowledgeChunksUsed: 0,    // Phase 3
+            hasKnowledgeContext: rag.hasContext,
+            knowledgeChunksUsed: rag.chunks.length,
             conversationHistoryLength: conversationHistory.length,
           });
 
-          // 7. Save assistant message
+          // 8. Save assistant message (with source references from RAG)
           const assistantMessage = await prisma.message.create({
             data: {
               content: fullResponse,
               role: "ASSISTANT",
               confidenceScore,
+              sourcesCited: rag.chunks.map((c) => c.knowledgeBaseId),
               conversationId: id,
               senderId: user.id, // Sender is the user who triggered the response
             },
           });
 
-          // 8. Track API usage
+          // 9. Track API usage
           await prisma.apiUsage.create({
             data: {
               inputTokens: usage.inputTokens,
@@ -203,7 +236,7 @@ export async function POST(
             },
           });
 
-          // 9. Flag if confidence is below threshold
+          // 10. Flag if confidence is below threshold
           if (shouldFlag(confidenceScore, conversation.agent.confidenceThreshold)) {
             await prisma.flaggedQuery.create({
               data: {
@@ -214,13 +247,13 @@ export async function POST(
             });
           }
 
-          // 10. Update conversation timestamp
+          // 11. Update conversation timestamp
           await prisma.conversation.update({
             where: { id },
             data: { updatedAt: new Date() },
           });
 
-          // 11. Auto-generate title if first message
+          // 12. Auto-generate title if first message
           if (isFirstMessage) {
             const title = await generateTitle(trimmedContent);
             await prisma.conversation.update({
