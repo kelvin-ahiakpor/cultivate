@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown, ChevronLeft, ChevronRight, X, AlertTriangle } from "lucide-react";
+import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown, ChevronLeft, ChevronRight, X, AlertTriangle, PanelLeft } from "lucide-react";
+import GlassCircleButton from "@/components/glass-circle-button";
 
 // Mock data - will be replaced with real API data
 const mockAgents = [
@@ -77,7 +78,7 @@ const mockAgents = [
   },
 ];
 
-export default function AgentsView() {
+export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpen: boolean; setSidebarOpen: (v: boolean) => void }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -149,9 +150,32 @@ export default function AgentsView() {
   return (
     <div className="flex flex-col h-full overflow-y-hidden overflow-x-clip">
       {/* Part 1: Fixed header + search */}
-      <div className="flex-shrink-0">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+      <div className="flex-shrink-0 bg-[#1E1E1E] pt-8 lg:pt-0">
+        {/* Mobile header — glass button absolute left, title centered, icon action absolute right */}
+        <div className="relative flex items-center justify-center mb-6 lg:hidden">
+          {!sidebarOpen && (
+            <div className="absolute left-0">
+              <GlassCircleButton onClick={() => setSidebarOpen(true)} aria-label="Open menu">
+                <PanelLeft className="w-5 h-5 text-white rotate-180" />
+              </GlassCircleButton>
+            </div>
+          )}
+          <div className="text-center">
+            <h1 className="text-2xl font-serif text-[#C2C0B6]">Agents</h1>
+            <p className="text-sm text-[#9C9A92] mt-1">{mockAgents.length} agents configured</p>
+          </div>
+          <div className="absolute right-0">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="w-11 h-11 bg-[#5a7048] hover:bg-[#4a5d38] rounded-full flex items-center justify-center transition-colors"
+              aria-label="Create Agent"
+            >
+              <Plus className="w-5 h-5 text-white" />
+            </button>
+          </div>
+        </div>
+        {/* Desktop header */}
+        <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-serif text-[#C2C0B6]">Agents</h1>
             <p className="text-sm text-[#9C9A92] mt-1">{mockAgents.length} agents configured</p>

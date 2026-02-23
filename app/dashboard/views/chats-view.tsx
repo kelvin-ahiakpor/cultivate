@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { MessageCircle, Search, PanelLeft } from "lucide-react";
+import GlassCircleButton from "@/components/glass-circle-button";
 
 // Mock data - farmer conversations
 const mockChats = [
@@ -42,7 +43,7 @@ const mockChats = [
   { id: "35", title: "Mushroom cultivation on cocoa farms", farmerName: "Francis Kumi", agentName: "Cocoa Specialist", lastMessage: "3 weeks ago", messageCount: 6 },
 ];
 
-export default function ChatsView() {
+export default function ChatsView({ sidebarOpen, setSidebarOpen }: { sidebarOpen: boolean; setSidebarOpen: (v: boolean) => void }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
@@ -67,9 +68,23 @@ export default function ChatsView() {
   return (
     <div className="flex flex-col h-full overflow-y-hidden overflow-x-clip">
       {/* PART 1: Fixed Section */}
-      <div className="flex-shrink-0 bg-[#1E1E1E] z-10 pb-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+      <div className="flex-shrink-0 bg-[#1E1E1E] z-10 pb-4 pt-8 lg:pt-0">
+        {/* Mobile header — glass button absolute left, title centered */}
+        <div className="relative flex items-center justify-center mb-6 lg:hidden">
+          {!sidebarOpen && (
+            <div className="absolute left-0">
+              <GlassCircleButton onClick={() => setSidebarOpen(true)} aria-label="Open menu">
+                <PanelLeft className="w-5 h-5 text-white rotate-180" />
+              </GlassCircleButton>
+            </div>
+          )}
+          <div className="text-center">
+            <h1 className="text-2xl font-serif text-[#C2C0B6]">Chats</h1>
+            <p className="text-sm text-[#9C9A92] mt-1">{mockChats.length} farmer conversations</p>
+          </div>
+        </div>
+        {/* Desktop header */}
+        <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-serif text-[#C2C0B6]">Chats</h1>
             <p className="text-sm text-[#9C9A92] mt-1">{mockChats.length} farmer conversations</p>
@@ -88,10 +103,10 @@ export default function ChatsView() {
           />
         </div>
 
-        {/* Count */}
-        <div className="px-1">
+        {/* Showing range */}
+        <div className="mb-1 px-1">
           <p className="text-sm text-[#9C9A92]">
-            {filteredChats.length} {filteredChats.length === 1 ? 'conversation' : 'conversations'}
+            Showing {filteredChats.length === 0 ? 0 : startIndex + 1}–{Math.min(endIndex, filteredChats.length)} of {filteredChats.length} {filteredChats.length === 1 ? 'chat' : 'chats'}
             {searchQuery && (
               <span className="text-[#6B6B6B]"> &middot; filtered from {mockChats.length} total</span>
             )}
@@ -127,36 +142,26 @@ export default function ChatsView() {
           </div>
         )}
 
-        {/* Pagination Controls */}
+        {/* Pagination */}
         {filteredChats.length > 0 && totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 pt-4 pb-0 border-t border-[#3B3B3B] mt-2">
-            <div className="text-sm text-[#9C9A92]">
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredChats.length)} of {filteredChats.length}
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#3B3B3B] disabled:hover:text-[#C2C0B6]"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-                Previous
-              </button>
-
-              <div className="flex items-center gap-1 px-3">
-                <span className="text-sm text-white">Page {currentPage}</span>
-                <span className="text-sm text-[#6B6B6B]">of {totalPages}</span>
-              </div>
-
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#3B3B3B] disabled:hover:text-[#C2C0B6]"
-              >
-                Next
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+          <div className="flex items-center justify-center gap-2 px-5 pt-4 pb-0 border-t border-[#3B3B3B] mt-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Prev
+            </button>
+            <span className="px-3 py-1.5 text-sm text-[#6B6B6B]">
+              {startIndex + 1}–{Math.min(endIndex, filteredChats.length)}
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
           </div>
         )}
       </div>

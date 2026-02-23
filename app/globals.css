@@ -2,6 +2,16 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+/* standalone: variant — fires ONLY when the app is launched as an installed PWA (home screen).
+   Use it for larger fonts, bigger icons, more spacing that suit the native-app feel.
+   When opened in a browser (even mobile), these classes are inactive — original sizes apply.
+   Usage: text-sm standalone:text-lg lg:text-sm
+   Note: block syntax with @slot required for media-query variants in Tailwind v4 */
+@custom-variant standalone {
+  @media (display-mode: standalone) {
+    @slot;
+  }
+}
 
 :root {
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, ChevronLeft, ChevronRight, X, ExternalLink, ChevronDown } from "lucide-react";
+import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, ChevronLeft, ChevronRight, X, ExternalLink, ChevronDown, PanelLeft } from "lucide-react";
+import GlassCircleButton from "@/components/glass-circle-button";
 
 // Mock data - expanded for pagination
 const mockDocuments = [
@@ -61,7 +62,7 @@ const mockDocuments = [
 
 const agents = ["All Agents", "General Farm Advisor", "Pest Management", "Maize Expert"];
 
-export default function KnowledgeView() {
+export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebarOpen: boolean; setSidebarOpen: (v: boolean) => void }) {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -158,13 +159,36 @@ export default function KnowledgeView() {
   return (
     <div className="flex flex-col h-full overflow-y-hidden overflow-x-clip">
       {/* PART 1: Fixed Section - stays at top */}
-      <div className="flex-shrink-0 bg-[#1E1E1E] z-10 pb-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+      <div className="flex-shrink-0 bg-[#1E1E1E] z-10 pb-4 pt-8 lg:pt-0">
+        {/* Mobile header — glass button absolute left, title centered, icon action absolute right */}
+        <div className="relative flex items-center justify-center mb-6 lg:hidden">
+          {!sidebarOpen && (
+            <div className="absolute left-0">
+              <GlassCircleButton onClick={() => setSidebarOpen(true)} aria-label="Open menu">
+                <PanelLeft className="w-5 h-5 text-white rotate-180" />
+              </GlassCircleButton>
+            </div>
+          )}
+          <div className="text-center">
+            <h1 className="text-2xl font-serif text-[#C2C0B6]">Knowledge Base</h1>
+            <p className="text-sm text-[#9C9A92] mt-1">{mockDocuments.length} documents uploaded</p>
+          </div>
+          <div className="absolute right-0">
+            <button
+              onClick={handleOpenUploadModal}
+              className="w-11 h-11 bg-[#5a7048] hover:bg-[#4a5d38] rounded-full flex items-center justify-center transition-colors"
+              aria-label="Upload Document"
+            >
+              <Upload className="w-5 h-5 text-white" />
+            </button>
+          </div>
+        </div>
+        {/* Desktop header */}
+        <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-serif text-[#C2C0B6]">Knowledge Base</h1>
             <p className="text-sm text-[#9C9A92] mt-1">{mockDocuments.length} documents uploaded</p>
-          </div>  
+          </div>
           <button
             onClick={handleOpenUploadModal}
             className="flex items-center gap-2 px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm"

@@ -55,9 +55,7 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
+            <p className="text-red-600 text-sm">{error}</p>
           )}
 
           <div>
@@ -98,7 +96,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={isLoading}
-              className="bg-[#536d3d] text-white py-2.5 px-8 min-h-[44px] rounded font-medium hover:bg-[#3d5229] focus:outline-none focus:ring-2 focus:ring-[#536d3d] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="bg-[#536d3d] text-white py-2 px-6 rounded-none font-medium hover:bg-[#3d5229] focus:outline-none focus:ring-2 focus:ring-[#536d3d] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
             >
               {isLoading ? "Signing in..." : "Sign in"}
             </button>

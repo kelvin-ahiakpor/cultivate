@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Flag, Search, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical } from "lucide-react";
+import { Flag, Search, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft } from "lucide-react";
+import GlassCircleButton from "@/components/glass-circle-button";
 import { SproutIcon } from "@/components/send-icons";
 
 type FlagStatus = "all" | "PENDING" | "VERIFIED" | "CORRECTED";
@@ -493,7 +494,7 @@ const initialFlagged: FlaggedQuery[] = [
 const DEFAULT_PANEL_WIDTH = 576; // max-w-xl equivalent
 const MIN_PANEL_WIDTH = 400;
 
-export default function FlaggedView({ sidebarOpen = true }: { sidebarOpen?: boolean }) {
+export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { sidebarOpen?: boolean; setSidebarOpen?: (v: boolean) => void }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<FlagStatus>("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -720,13 +721,25 @@ export default function FlaggedView({ sidebarOpen = true }: { sidebarOpen?: bool
   return (
     <div className="flex flex-col h-full overflow-y-hidden overflow-x-clip">
       {/* Part 1: Fixed header + search/filter */}
-      <div className="flex-shrink-0">
-      {/* Header */}
-      <div className="mb-6">
+      <div className="flex-shrink-0 bg-[#1E1E1E] pt-8 lg:pt-0">
+      {/* Mobile header — glass button absolute left, title centered */}
+      <div className="relative flex items-center justify-center mb-6 lg:hidden">
+        {!sidebarOpen && setSidebarOpen && (
+          <div className="absolute left-0">
+            <GlassCircleButton onClick={() => setSidebarOpen(true)} aria-label="Open menu">
+              <PanelLeft className="w-5 h-5 text-white rotate-180" />
+            </GlassCircleButton>
+          </div>
+        )}
+        <div className="text-center">
+          <h1 className="text-2xl font-serif text-[#C2C0B6]">Flagged Queries</h1>
+          <p className="text-sm text-[#9C9A92] mt-1">{pendingCount} pending review</p>
+        </div>
+      </div>
+      {/* Desktop header */}
+      <div className="hidden lg:block mb-6">
         <h1 className="text-2xl font-serif text-[#C2C0B6]">Flagged Queries</h1>
-        <p className="text-sm text-[#9C9A92] mt-1">
-          {pendingCount} pending review
-        </p>
+        <p className="text-sm text-[#9C9A92] mt-1">{pendingCount} pending review</p>
       </div>
 
       {/* Search + Filter */}

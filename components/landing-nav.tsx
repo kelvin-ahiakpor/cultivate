@@ -14,7 +14,7 @@ export function LandingNav({ session }: LandingNavProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <nav className="px-4 lg:px-12 py-4 lg:py-6 relative">
+    <nav className="px-4 lg:px-12 pt-12 pb-4 lg:pt-6 lg:pb-6 relative">
       <div className="flex justify-between items-center">
         {/* Logo */}
         <div className="flex items-center gap-2">

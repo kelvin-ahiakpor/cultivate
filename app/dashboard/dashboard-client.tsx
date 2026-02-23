@@ -6,13 +6,14 @@ import {
   LayoutDashboard, Bot, BookOpen, Flag, BarChart3,
   Plus, ChevronDown, Settings, HelpCircle, LogOut,
   PanelLeft, MoreHorizontal, Upload, Eye,
-  CheckCircle, Pencil, ArrowRight, MessageCircle, X,
+  CheckCircle, Pencil, ArrowRight, MessageCircle, X, Download,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import AgentsView from "./views/agents-view";
 import KnowledgeView from "./views/knowledge-view";
 import FlaggedView from "./views/flagged-view";
 import ChatsView from "./views/chats-view";
+import GlassCircleButton from "@/components/glass-circle-button";
 
 interface DashboardProps {
   user: {
@@ -25,11 +26,33 @@ interface DashboardProps {
 export default function DashboardClient({ user }: DashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   // Open sidebar by default on desktop, keep closed on mobile
   useEffect(() => {
     setSidebarOpen(window.innerWidth >= 1024);
   }, []);
+
+  // Capture the browser's PWA install prompt for the Install button
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      setDeferredPrompt(null);
+    }
+    setShowInstallModal(false);
+  };
   const [activeNav, setActiveNav] = useState("overview");
   const [activityPanelOpen, setActivityPanelOpen] = useState(false);
 
@@ -59,29 +82,21 @@ export default function DashboardClient({ user }: DashboardProps) {
 
   return (
     <div className="flex h-screen bg-[#1E1E1E]">
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-      {/* Mobile: button to open sidebar when it's closed */}
-      {!sidebarOpen && (
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="fixed top-3 left-3 z-50 lg:hidden w-9 h-9 flex items-center justify-center bg-[#2B2B2B] hover:bg-[#3B3B3B] rounded-lg transition-colors"
-          aria-label="Open menu"
-        >
-          <PanelLeft className="w-4 h-4 text-[#C2C0B6] rotate-180" />
-        </button>
-      )}
-      {/* Sidebar */}
+      {/* Mobile sidebar backdrop — always rendered for smooth opacity fade transition */}
       <div
-        className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#1C1C1C] border-r border-[#2B2B2B] flex flex-col transition-all duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 ${sidebarOpen ? 'lg:w-72' : 'lg:w-14'}`}
+        className={`fixed inset-0 z-30 bg-black/50 lg:hidden transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
+      {/* Sidebar — slide-over paper effect matches chat sidebar */}
+      <div
+        className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#1C1C1C] border-r border-[#2B2B2B] flex flex-col transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${sidebarOpen ? 'translate-x-0 shadow-[4px_0_24px_rgba(0,0,0,0.4)]' : '-translate-x-full shadow-none'} lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:shadow-none ${sidebarOpen ? 'lg:w-72' : 'lg:w-14'}`}
       >
-        {/* Logo */}
-        <div className={`px-3 pt-4 pb-3 flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
+        {/* Logo — pt-16 on mobile aligns with conversation header / nav button safe area */}
+        <div className={`p-2 pt-16 lg:pt-4 min-h-[53px] flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
           {sidebarOpen && (
             <Link href="/" className="flex items-center gap-2 no-underline hover:no-underline">
-              <span className="pl-2 text-xl font-serif font-semibold text-white">Cultivate</span>
+              <span className="pl-2 text-xl standalone:text-2xl lg:text-xl font-serif font-semibold text-white">Cultivate</span>
             </Link>
           )}
           <button
@@ -98,8 +113,8 @@ export default function DashboardClient({ user }: DashboardProps) {
             {navItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => setActiveNav(item.id)}
-                className={`group relative w-full flex items-center gap-3 px-2 py-2 rounded-lg transition-colors ${
+                onClick={() => { setActiveNav(item.id); if (window.innerWidth < 1024) setSidebarOpen(false); }}
+                className={`group relative w-full flex items-center gap-3 pl-3 pr-2 py-2 rounded-lg transition-colors ${
                   !sidebarOpen ? 'justify-center' : ''
                 } ${
                   activeNav === item.id
@@ -107,8 +122,8 @@ export default function DashboardClient({ user }: DashboardProps) {
                     : 'text-[#C2C0B6] hover:bg-[#141413] hover:text-white'
                 }`}
               >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                {sidebarOpen && <span className="text-sm">{item.label}</span>}
+                <item.icon className="w-5 h-5 standalone:w-6 standalone:h-6 lg:w-5 lg:h-5 flex-shrink-0" />
+                {sidebarOpen && <span className="text-sm standalone:text-lg lg:text-sm">{item.label}</span>}
                 {!sidebarOpen && (
                   <div className="absolute left-full ml-2 px-2 py-1 bg-[#2B2B2B] text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                     {item.label}
@@ -121,13 +136,15 @@ export default function DashboardClient({ user }: DashboardProps) {
           {/* Recent Agents Section */}
           {sidebarOpen && (
             <div className="mt-4">
-              <div className="text-[11px] text-[#9C9A92] px-2 mb-1.5">
+              {/* Recent Agents label — text-sm mobile (14px), text-[11px] desktop */}
+              <div className="text-[11px] standalone:text-sm lg:text-[11px] text-[#9C9A92] px-2 mb-1.5">
                 Recent Agents
               </div>
-              <div className="space-y-0.5">
+              {/* space-y-2 on mobile for breathing room, tight on desktop */}
+              <div className="space-y-0.5 standalone:space-y-2 lg:space-y-0.5">
                 {recentAgents.map((agent) => (
                   <div key={agent} className="group flex items-stretch rounded-lg hover:bg-[#141413] has-[button:hover]:bg-transparent transition-colors cursor-pointer">
-                    <span className="flex-1 truncate text-sm text-[#C2C0B6] group-hover:text-white flex items-center pl-2 py-2">
+                    <span className="flex-1 truncate text-sm standalone:text-lg lg:text-sm text-[#C2C0B6] group-hover:text-white flex items-center pl-2 py-2">
                       {agent}
                     </span>
                     <button className="opacity-0 group-hover:opacity-100 transition-opacity px-2.5 py-2 hover:bg-[#141413] rounded-lg flex items-center">
@@ -140,13 +157,17 @@ export default function DashboardClient({ user }: DashboardProps) {
           )}
         </div>
 
-        {/* User Profile */}
+        {/* User Profile — outer div, not button, to avoid nested <button> hydration error
+            Click zones: avatar+name area opens menu; install button opens install modal */}
         <div className={`border-t border-[#2B2B2B] p-2 relative hover:bg-black hover:border-black transition-colors ${!sidebarOpen ? 'flex justify-center' : ''}`}>
-          <button
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            className={`group relative flex items-center rounded-lg p-1.5 ${sidebarOpen ? 'w-full justify-between' : 'justify-center'}`}
+          <div
+            className={`group relative flex items-center rounded-lg p-1.5 cursor-pointer ${sidebarOpen ? 'w-full justify-between' : 'justify-center'}`}
           >
-            <div className={`flex items-center ${sidebarOpen ? 'gap-2' : ''}`}>
+            {/* Avatar + name — clicking this opens the user menu */}
+            <div
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className={`flex items-center flex-1 min-w-0 ${sidebarOpen ? 'gap-2' : ''}`}
+            >
               <div className="w-10 h-10 bg-[#85b878] rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-base font-medium">{getInitials(user.name)}</span>
               </div>
@@ -162,14 +183,26 @@ export default function DashboardClient({ user }: DashboardProps) {
               )}
             </div>
             {sidebarOpen && (
-              <ChevronDown className={`w-4 h-4 text-[#C2C0B6] transition-transform ${showUserMenu ? "rotate-180" : ""}`} />
+              <div className="flex items-center gap-0.5">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowInstallModal(true); }}
+                  className="p-1.5 border border-[#3B3B3B] hover:border-[#5a7048] rounded-md transition-colors text-[#9C9A92] hover:text-[#C2C0B6]"
+                  title="Install app"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+                <ChevronDown
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className={`w-4 h-4 text-[#C2C0B6] transition-transform cursor-pointer ${showUserMenu ? "rotate-180" : ""}`}
+                />
+              </div>
             )}
             {!sidebarOpen && (
               <div className="absolute left-full ml-2 px-2 py-1 bg-[#2B2B2B] text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                 {user.name?.split(" ")[0]}
               </div>
             )}
-          </button>
+          </div>
 
           {/* User Menu Modal */}
           {showUserMenu && (
@@ -189,7 +222,7 @@ export default function DashboardClient({ user }: DashboardProps) {
                 </button>
                 <div className="border-t border-[#2B2B2B] mt-1 pt-1">
                   <button
-                    onClick={() => signOut()}
+                    onClick={() => signOut({ callbackUrl: `${window.location.origin}/` })}
                     className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors rounded"
                   >
                     <LogOut className="w-4 h-4" />
@@ -212,19 +245,50 @@ export default function DashboardClient({ user }: DashboardProps) {
           }`}
         >
           {activeNav === "overview" && (
-            <div className="flex flex-col h-full overflow-y-hidden overflow-x-clip">
-              {/* PART 1: Fixed section - Greeting, Stats, Quick Actions */}
-              <div className="flex-shrink-0">
-              {/* Greeting */}
-              <div className="mb-8">
-                <h1 className="text-3xl font-serif text-[#C2C0B6] mb-1">
-                  Welcome, {user.name?.split(" ")[0]}
-                </h1>
-                <p className="text-sm text-[#9C9A92]">
-                  Manage your AI agents and knowledge bases
-                </p>
+            <div className="flex flex-col h-full overflow-hidden">
+              {/* PART 1: Fixed greeting
+                  Follows SCROLLING-LAYOUT.md + farmer chat pattern:
+                  Parent has overflow-hidden so this flex-shrink-0 div never moves.
+                  Mobile: GlassCircleButton inline with welcome text + pt-8 safe area.
+                  Desktop: static heading, no button (sidebar always visible). */}
+              <div className="relative flex-shrink-0 bg-[#1E1E1E] pt-8 pb-6 lg:pt-0 lg:pb-0 lg:bg-transparent">
+                <div className="flex items-center gap-3 lg:hidden">
+                  {!sidebarOpen && (
+                    <GlassCircleButton
+                      onClick={() => setSidebarOpen(true)}
+                      aria-label="Open menu"
+                      className="flex-shrink-0"
+                    >
+                      <PanelLeft className="w-5 h-5 text-white rotate-180" />
+                    </GlassCircleButton>
+                  )}
+                  <div>
+                    <h1 className="text-3xl font-serif text-[#C2C0B6] mb-0.5">
+                      Welcome, {user.name?.split(" ")[0]}
+                    </h1>
+                    <p className="text-sm text-[#9C9A92]">Manage your AI agents and knowledge bases</p>
+                  </div>
+                </div>
+                <div className="hidden lg:block mb-8">
+                  <h1 className="text-3xl font-serif text-[#C2C0B6] mb-1">
+                    Welcome, {user.name?.split(" ")[0]}
+                  </h1>
+                  <p className="text-sm text-[#9C9A92]">
+                    Manage your AI agents and knowledge bases
+                  </p>
+                </div>
+
               </div>
 
+              {/* PART 2: Scrollable content area — farmer chat pattern
+                  flex-1 min-h-0 relative: establishes scroll zone below the fixed greeting
+                  Inner div: mobile = single overflow-y-auto for everything
+                             desktop = overflow-hidden, splits into flex-shrink-0 stats + flex-1 activity */}
+              <div className="flex-1 min-h-0 relative flex flex-col lg:overflow-hidden">
+                <div className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden flex flex-col thin-scrollbar scrollbar-outset">
+
+              {/* Stats + Quick Actions + Activity Header — flex-shrink-0 on desktop, scrolls on mobile */}
+              <div className="lg:flex-shrink-0">
               {/* Stat Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 <button onClick={() => setActiveNav("agents")} className="bg-[#2B2B2B] rounded-xl p-5 text-left hover:border-[#85b878] border border-transparent transition-colors">
@@ -320,7 +384,7 @@ export default function DashboardClient({ user }: DashboardProps) {
               </div>
 
               {/* PART 2: Scrollable Recent Activity List */}
-              <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar scrollbar-outset pb-6">
+              <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto pb-6">
               <div className="mr-3">
                 {/* Flagged query reviewed */}
                 <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B]">
@@ -425,17 +489,34 @@ export default function DashboardClient({ user }: DashboardProps) {
                   </div>
                 </div>
               </div>
+                </div>{/* closes scroll container: overflow-y-auto lg:overflow-hidden */}
+                </div>{/* closes scroll zone: flex-1 min-h-0 relative */}
             </div>
           )}
 
-          {activeNav === "chats" && <ChatsView />}
-          {activeNav === "agents" && <AgentsView />}
-          {activeNav === "knowledge" && <KnowledgeView />}
-          {activeNav === "flagged" && <FlaggedView sidebarOpen={sidebarOpen} />}
+          {activeNav === "chats" && <ChatsView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />}
+          {activeNav === "agents" && <AgentsView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />}
+          {activeNav === "knowledge" && <KnowledgeView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />}
+          {activeNav === "flagged" && <FlaggedView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />}
 
           {activeNav === "analytics" && (
             <div>
-              <div className="mb-6">
+              {/* Mobile header — glass button absolute left, title centered */}
+              <div className="relative flex items-center justify-center mb-6 pt-8 lg:hidden">
+                {!sidebarOpen && (
+                  <div className="absolute left-0">
+                    <GlassCircleButton onClick={() => setSidebarOpen(true)} aria-label="Open menu">
+                      <PanelLeft className="w-5 h-5 text-white rotate-180" />
+                    </GlassCircleButton>
+                  </div>
+                )}
+                <div className="text-center">
+                  <h1 className="text-2xl font-serif text-[#C2C0B6]">Analytics</h1>
+                  <p className="text-sm text-[#9C9A92] mt-1">Usage stats and insights</p>
+                </div>
+              </div>
+              {/* Desktop header */}
+              <div className="hidden lg:block mb-6">
                 <h1 className="text-2xl font-serif text-[#C2C0B6]">Analytics</h1>
                 <p className="text-sm text-[#9C9A92] mt-1">Usage stats and insights</p>
               </div>
@@ -572,6 +653,41 @@ export default function DashboardClient({ user }: DashboardProps) {
                 className="w-full px-4 py-2 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#C2C0B6] transition-colors"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* PWA Install Modal — outside sidebar to avoid transform containing block issues with fixed positioning */}
+      {showInstallModal && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowInstallModal(false)} />
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl p-6 w-80 shadow-xl">
+            <div className="mb-4">
+              <div className="w-10 h-10 bg-[#5a7048] rounded-full flex items-center justify-center mb-3">
+                <Download className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="text-white font-semibold text-base mb-1.5">Install Cultivate</h2>
+              <p className="text-[#9C9A92] text-sm leading-relaxed">
+                Add Cultivate to your home screen for quick access and offline support.
+              </p>
+              <p className="text-[#6B6B6B] text-xs mt-2 leading-relaxed">
+                On iOS: tap the Share button in Safari, then &ldquo;Add to Home Screen&rdquo;.
+              </p>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setShowInstallModal(false)}
+                className="px-4 py-2 text-sm text-[#9C9A92] hover:text-white transition-colors rounded-lg"
+              >
+                Not now
+              </button>
+              <button
+                onClick={handleInstall}
+                className="px-4 py-2 bg-[#5a7048] hover:bg-[#4a5d38] text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Install
               </button>
             </div>
           </div>
