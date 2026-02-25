@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Flag, Search, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft } from "lucide-react";
+import { Flag, Search, CheckCircle, ChevronDown, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { SproutIcon } from "@/components/send-icons";
 
@@ -908,7 +908,7 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#9C9A92] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#C2C0B6] transition-colors"
                     >
                       <ExternalLink className="w-3 h-3" />
-                      View Full Chat
+                      View Chat
                     </button>
                   </div>
                 )}
@@ -930,7 +930,7 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#9C9A92] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#C2C0B6] transition-colors"
                       >
                         <ExternalLink className="w-3 h-3" />
-                        View Full Chat
+                        View Chat
                       </button>
                       <div className="flex items-center gap-2">
                         <button
@@ -938,14 +938,14 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
                           className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors"
                         >
                           <CheckCircle className="w-3 h-3" />
-                          Mark as Verified
+                          Verify
                         </button>
                         <button
                           onClick={() => handleSendCorrection(query.id)}
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-[#85b878] text-white rounded-lg hover:bg-[#536d3d] transition-colors text-xs"
                         >
                           <Send className="w-3 h-3" />
-                          Send Correction
+                          Correct
                         </button>
                       </div>
                     </div>
@@ -959,34 +959,24 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
 
       {/* Pagination */}
       {filteredQueries.length > 0 && totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4 mt-2">
-          <div className="text-sm text-[#9C9A92]">
-            Showing {startIndex + 1}-{Math.min(endIndex, filteredQueries.length)} of {filteredQueries.length}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#3B3B3B] disabled:hover:text-[#C2C0B6]"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-              Previous
-            </button>
-
-            <div className="flex items-center gap-1 px-3">
-              <span className="text-sm text-white">Page {currentPage}</span>
-              <span className="text-sm text-[#6B6B6B]">of {totalPages}</span>
-            </div>
-
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#3B3B3B] disabled:hover:text-[#C2C0B6]"
-            >
-              Next
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+        <div className="flex items-center justify-center gap-2 px-5 pt-4 pb-0 mt-2">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Prev
+          </button>
+          <span className="px-3 py-1.5 text-sm text-[#6B6B6B]">
+            {startIndex + 1}–{Math.min(endIndex, filteredQueries.length)}
+          </span>
+          <button
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
         </div>
       )}
 

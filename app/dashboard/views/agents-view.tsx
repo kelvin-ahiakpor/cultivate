@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown, ChevronLeft, ChevronRight, X, AlertTriangle, PanelLeft } from "lucide-react";
+import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown, X, AlertTriangle, PanelLeft, Eye } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
 
 // Mock data - will be replaced with real API data
@@ -84,8 +84,9 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
-  
-  // Edit, Deactivate, Delete modals
+
+  // View, Edit, Deactivate, Delete modals
+  const [viewAgentModal, setViewAgentModal] = useState<typeof mockAgents[0] | null>(null);
   const [editModalAgent, setEditModalAgent] = useState<typeof mockAgents[0] | null>(null);
   const [deactivateModalAgent, setDeactivateModalAgent] = useState<typeof mockAgents[0] | null>(null);
   const [deleteModalAgent, setDeleteModalAgent] = useState<typeof mockAgents[0] | null>(null);
@@ -206,72 +207,100 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
       <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar scrollbar-outset">
         <div className="space-y-3 mr-3">
         {paginatedAgents.map((agent) => (
-          <div
-            key={agent.id}
-            className="bg-[#2B2B2B] rounded-xl p-5 border border-[#3B3B3B] hover:border-[#85b878]/30 transition-colors"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${agent.isActive ? 'bg-[#85b878]/20' : 'bg-[#3B3B3B]'}`}>
-                  <Bot className={`w-5 h-5 ${agent.isActive ? 'text-[#85b878]' : 'text-[#6B6B6B]'}`} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-medium text-white">{agent.name}</h3>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${agent.isActive ? 'bg-[#85b878]/20 text-[#85b878]' : 'bg-[#3B3B3B] text-[#6B6B6B]'}`}>
-                      {agent.isActive ? "Active" : "Inactive"}
-                    </span>
+          <div key={agent.id}>
+            {/* Mobile: Simplified card with eye icon only */}
+            <div className="lg:hidden bg-[#2B2B2B] rounded-xl p-4 border border-[#3B3B3B] hover:border-[#85b878]/30 transition-colors">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${agent.isActive ? 'bg-[#85b878]/20' : 'bg-[#3B3B3B]'}`}>
+                    <Bot className={`w-5 h-5 ${agent.isActive ? 'text-[#85b878]' : 'text-[#6B6B6B]'}`} />
                   </div>
-                  <p className="text-xs text-[#6B6B6B] mt-1 line-clamp-1 max-w-md">
-                    {agent.systemPrompt}
-                  </p>
-                  <div className="flex items-center gap-4 mt-2.5">
-                    <span className="text-xs text-[#9C9A92]">{agent.conversations} conversations</span>
-                    <span className="text-xs text-[#9C9A92]">{agent.knowledgeBases} knowledge bases</span>
-                    <span className="text-xs text-[#9C9A92]">Threshold: {agent.confidenceThreshold}</span>
-                    <span className="text-xs text-[#6B6B6B]">Updated {agent.updatedAt}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="relative">
-                <button
-                  onClick={() => setOpenMenuId(openMenuId === agent.id ? null : agent.id)}
-                  className="p-1.5 hover:bg-[#3B3B3B] rounded-lg transition-colors"
-                >
-                  <MoreHorizontal className="w-4 h-4 text-[#C2C0B6]" />
-                </button>
-
-                {openMenuId === agent.id && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                    <div className="absolute right-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-[#2B2B2B] py-1 z-50 min-w-[160px]">
-                      <button 
-                        onClick={() => handleEditAgent(agent)}
-                        className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                        Edit
-                      </button>
-                      <button 
-                        onClick={() => handleToggleActivation(agent)}
-                        className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors"
-                      >
-                        <Power className="w-3.5 h-3.5" />
-                        {agent.isActive ? "Deactivate" : "Activate"}
-                      </button>
-                      <div className="border-t border-[#2B2B2B] my-1" />
-                      <button 
-                        onClick={() => handleDeleteAgent(agent)}
-                        className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-[#141413] hover:text-red-300 flex items-center gap-2 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Delete
-                      </button>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-sm font-medium text-white truncate">{agent.name}</h3>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${agent.isActive ? 'bg-[#85b878]/20 text-[#85b878]' : 'bg-[#3B3B3B] text-[#6B6B6B]'}`}>
+                        {agent.isActive ? "Active" : "Inactive"}
+                      </span>
                     </div>
-                  </>
-                )}
+                    <p className="text-xs text-[#6B6B6B] line-clamp-2">
+                      {agent.systemPrompt}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setViewAgentModal(agent)}
+                  className="w-8 h-8 bg-[#3B3B3B] hover:bg-[#4B4B4B] rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
+                  aria-label="View details"
+                >
+                  <Eye className="w-4 h-4 text-[#85b878]" />
+                </button>
+              </div>
+            </div>
+
+            {/* Desktop: Original card with all stats */}
+            <div className="hidden lg:block bg-[#2B2B2B] rounded-xl p-5 border border-[#3B3B3B] hover:border-[#85b878]/30 transition-colors">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${agent.isActive ? 'bg-[#85b878]/20' : 'bg-[#3B3B3B]'}`}>
+                    <Bot className={`w-5 h-5 ${agent.isActive ? 'text-[#85b878]' : 'text-[#6B6B6B]'}`} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-medium text-white">{agent.name}</h3>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${agent.isActive ? 'bg-[#85b878]/20 text-[#85b878]' : 'bg-[#3B3B3B] text-[#6B6B6B]'}`}>
+                        {agent.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#6B6B6B] mt-1 line-clamp-1 max-w-md">
+                      {agent.systemPrompt}
+                    </p>
+                    <div className="flex items-center gap-4 mt-2.5">
+                      <span className="text-xs text-[#9C9A92]">{agent.conversations} chats</span>
+                      <span className="text-xs text-[#9C9A92]">{agent.knowledgeBases} docs</span>
+                      <span className="text-xs text-[#9C9A92]">Threshold: {agent.confidenceThreshold}</span>
+                      <span className="text-xs text-[#6B6B6B]">Updated {agent.updatedAt}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <button
+                    onClick={() => setOpenMenuId(openMenuId === agent.id ? null : agent.id)}
+                    className="p-1.5 hover:bg-[#3B3B3B] rounded-lg transition-colors"
+                  >
+                    <MoreHorizontal className="w-4 h-4 text-[#C2C0B6]" />
+                  </button>
+
+                  {openMenuId === agent.id && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+                      <div className="absolute right-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-[#2B2B2B] py-1 z-50 min-w-[160px]">
+                        <button
+                          onClick={() => handleEditAgent(agent)}
+                          className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleToggleActivation(agent)}
+                          className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors"
+                        >
+                          <Power className="w-3.5 h-3.5" />
+                          {agent.isActive ? "Deactivate" : "Activate"}
+                        </button>
+                        <div className="border-t border-[#2B2B2B] my-1" />
+                        <button
+                          onClick={() => handleDeleteAgent(agent)}
+                          className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-[#141413] hover:text-red-300 flex items-center gap-2 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -280,34 +309,24 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
 
       {/* Pagination */}
       {filteredAgents.length > 0 && totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4 mt-2">
-          <div className="text-sm text-[#9C9A92]">
-            Showing {startIndex + 1}-{Math.min(endIndex, filteredAgents.length)} of {filteredAgents.length}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#3B3B3B] disabled:hover:text-[#C2C0B6]"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-              Previous
-            </button>
-
-            <div className="flex items-center gap-1 px-3">
-              <span className="text-sm text-white">Page {currentPage}</span>
-              <span className="text-sm text-[#6B6B6B]">of {totalPages}</span>
-            </div>
-
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#3B3B3B] disabled:hover:text-[#C2C0B6]"
-            >
-              Next
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+        <div className="flex items-center justify-center gap-2 px-5 pt-4 pb-0 mt-2">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Prev
+          </button>
+          <span className="px-3 py-1.5 text-sm text-[#6B6B6B]">
+            {startIndex + 1}–{Math.min(endIndex, filteredAgents.length)}
+          </span>
+          <button
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
         </div>
       )}
 
@@ -321,6 +340,204 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
       )}
 
       </div>{/* end scrollable */}
+
+      {/* View Agent Modal */}
+      {viewAgentModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 z-40"
+            onClick={() => setViewAgentModal(null)}
+          />
+          {/* Mobile: Centered modal */}
+          <div className="lg:hidden fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-none">
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#1C1C1C] rounded-xl border border-[#2B2B2B] w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl pointer-events-auto"
+            >
+              {/* Panel Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[#2B2B2B]">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${viewAgentModal.isActive ? 'bg-[#85b878]/20' : 'bg-[#3B3B3B]'}`}>
+                    <Bot className={`w-4 h-4 ${viewAgentModal.isActive ? 'text-[#85b878]' : 'text-[#6B6B6B]'}`} />
+                  </div>
+                  <h2 className="text-sm font-medium text-white truncate">{viewAgentModal.name}</h2>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${viewAgentModal.isActive ? 'bg-[#85b878]/20 text-[#85b878]' : 'bg-[#3B3B3B] text-[#6B6B6B]'}`}>
+                    {viewAgentModal.isActive ? "Active" : "Inactive"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setViewAgentModal(null)}
+                  className="p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors flex-shrink-0"
+                >
+                  <X className="w-4 h-4 text-[#9C9A92]" />
+                </button>
+              </div>
+
+              {/* Agent Details */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 thin-scrollbar">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-xs font-medium text-[#9C9A92] uppercase tracking-wide mb-2">System Prompt</h3>
+                    <p className="text-sm text-[#C2C0B6] leading-relaxed">{viewAgentModal.systemPrompt}</p>
+                  </div>
+
+                  <div className="bg-[#2B2B2B] rounded-lg p-3 space-y-2.5">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-[#9C9A92]">Conversations</span>
+                      <span className="text-white">{viewAgentModal.conversations} chats</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-[#9C9A92]">Knowledge bases</span>
+                      <span className="text-white">{viewAgentModal.knowledgeBases} docs</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-[#9C9A92]">Confidence threshold</span>
+                      <span className="text-white">{viewAgentModal.confidenceThreshold}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-[#9C9A92]">Last updated</span>
+                      <span className="text-white">{viewAgentModal.updatedAt}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-4 py-3 border-t border-[#2B2B2B] space-y-2">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      handleEditAgent(viewAgentModal);
+                      setViewAgentModal(null);
+                    }}
+                    className="flex-1 px-4 py-2 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleToggleActivation(viewAgentModal);
+                      setViewAgentModal(null);
+                    }}
+                    className="flex-1 px-4 py-2 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-orange-500 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Power className="w-3.5 h-3.5" />
+                    {viewAgentModal.isActive ? "Deactivate" : "Activate"}
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    handleDeleteAgent(viewAgentModal);
+                    setViewAgentModal(null);
+                  }}
+                  className="w-full px-4 py-2 text-sm text-red-400 hover:text-red-300 border border-[#3B3B3B] rounded-lg hover:border-red-500 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop: Side panel */}
+          <div className="hidden lg:flex fixed top-0 right-0 h-full w-[600px] bg-[#1C1C1C] border-l border-[#2B2B2B] z-50 flex-col shadow-2xl">
+            {/* Panel Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#2B2B2B]">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${viewAgentModal.isActive ? 'bg-[#85b878]/20' : 'bg-[#3B3B3B]'}`}>
+                  <Bot className={`w-5 h-5 ${viewAgentModal.isActive ? 'text-[#85b878]' : 'text-[#6B6B6B]'}`} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-medium text-white">{viewAgentModal.name}</h2>
+                  <p className="text-xs text-[#9C9A92] mt-0.5">
+                    <span className={viewAgentModal.isActive ? 'text-[#85b878]' : 'text-[#6B6B6B]'}>
+                      {viewAgentModal.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewAgentModal(null)}
+                className="p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4 text-[#9C9A92]" />
+              </button>
+            </div>
+
+            {/* Agent Metadata */}
+            <div className="px-5 py-4 border-b border-[#2B2B2B] space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#9C9A92]">Conversations</span>
+                <span className="text-white">{viewAgentModal.conversations} chats</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#9C9A92]">Knowledge bases</span>
+                <span className="text-white">{viewAgentModal.knowledgeBases} documents</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#9C9A92]">Confidence threshold</span>
+                <span className="text-white">{viewAgentModal.confidenceThreshold}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#9C9A92]">Last updated</span>
+                <span className="text-white">{viewAgentModal.updatedAt}</span>
+              </div>
+            </div>
+
+            {/* Scrollable Agent Details */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 thin-scrollbar">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-xs font-medium text-[#9C9A92] uppercase tracking-wide mb-2">System Prompt</h3>
+                  <div className="text-sm text-[#C2C0B6] leading-relaxed">
+                    <p>{viewAgentModal.systemPrompt}</p>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-[#2B2B2B]">
+                  <h3 className="text-xs font-medium text-[#9C9A92] uppercase tracking-wide mb-3">Configuration</h3>
+                  <div className="space-y-2">
+                    <div className="p-3 bg-[#141413] border border-[#2B2B2B] rounded-lg">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs text-[#6B6B6B]">Confidence Threshold</span>
+                        <span className="text-xs text-white">{viewAgentModal.confidenceThreshold}</span>
+                      </div>
+                      <p className="text-xs text-[#9C9A92] leading-relaxed">
+                        Queries below this confidence will be flagged for agronomist review
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Panel Footer */}
+            <div className="px-5 py-3 border-t border-[#2B2B2B] flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  handleEditAgent(viewAgentModal);
+                  setViewAgentModal(null);
+                }}
+                className="flex-1 px-4 py-2 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors flex items-center justify-center gap-2"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewAgentModal(null)}
+                className="flex-1 px-4 py-2 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#C2C0B6] transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Create Agent Modal */}
       {showCreateModal && (

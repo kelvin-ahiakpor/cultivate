@@ -387,7 +387,7 @@ export default function DashboardClient({ user }: DashboardProps) {
               <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto pb-6">
               <div className="mr-3">
                 {/* Flagged query reviewed */}
-                <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B]">
+                <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]">
                     <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <CheckCircle className="w-4 h-4 text-[#85b878]" />
                     </div>
@@ -400,7 +400,7 @@ export default function DashboardClient({ user }: DashboardProps) {
                   </div>
 
                   {/* Correction sent */}
-                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B]">
+                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]">
                     <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Pencil className="w-4 h-4 text-[#608e96]" />
                     </div>
@@ -413,7 +413,7 @@ export default function DashboardClient({ user }: DashboardProps) {
                   </div>
 
                   {/* New flagged query */}
-                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B]">
+                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]">
                     <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Flag className="w-4 h-4 text-[#e8c8ab]" />
                     </div>
@@ -426,7 +426,7 @@ export default function DashboardClient({ user }: DashboardProps) {
                   </div>
 
                   {/* Agent created */}
-                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B]">
+                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]">
                     <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Bot className="w-4 h-4 text-[#85b878]" />
                     </div>
@@ -439,7 +439,7 @@ export default function DashboardClient({ user }: DashboardProps) {
                   </div>
 
                   {/* Farmer conversation */}
-                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B]">
+                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]">
                     <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <MessageCircle className="w-4 h-4 text-[#608e96]" />
                     </div>
@@ -452,7 +452,7 @@ export default function DashboardClient({ user }: DashboardProps) {
                   </div>
 
                   {/* New flagged query */}
-                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B]">
+                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]">
                     <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Flag className="w-4 h-4 text-[#e8c8ab]" />
                     </div>
@@ -465,7 +465,7 @@ export default function DashboardClient({ user }: DashboardProps) {
                   </div>
 
                   {/* Knowledge base uploaded */}
-                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B]">
+                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]">
                     <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <BookOpen className="w-4 h-4 text-[#608e96]" />
                     </div>

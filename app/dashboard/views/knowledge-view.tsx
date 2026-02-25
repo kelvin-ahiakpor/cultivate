@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, ChevronLeft, ChevronRight, X, ExternalLink, ChevronDown, PanelLeft } from "lucide-react";
+import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, ChevronDown, PanelLeft } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
 
 // Mock data - expanded for pagination
@@ -159,7 +159,7 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
   return (
     <div className="flex flex-col h-full overflow-y-hidden overflow-x-clip">
       {/* PART 1: Fixed Section - stays at top */}
-      <div className="flex-shrink-0 bg-[#1E1E1E] z-10 pb-4 pt-8 lg:pt-0">
+      <div className="flex-shrink-0 bg-[#1E1E1E] z-10 pt-8 lg:pt-0">
         {/* Mobile header — glass button absolute left, title centered, icon action absolute right */}
         <div className="relative flex items-center justify-center mb-6 lg:hidden">
           {!sidebarOpen && (
@@ -237,8 +237,8 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
           </p>
         </div>
 
-        {/* Table Header - part of fixed section */}
-        <div className="grid grid-cols-[1fr_120px_80px_140px_40px] gap-4 px-5 py-3 mr-2 border-b border-[#3B3B3B]">
+        {/* Table Header - Desktop only */}
+        <div className="hidden lg:grid grid-cols-[1fr_120px_80px_140px_40px] gap-4 px-5 py-3 mr-2 border-b border-[#3B3B3B]">
           <span className="text-xs text-[#6B6B6B] uppercase tracking-wide">Document</span>
           <span className="text-xs text-[#6B6B6B] uppercase tracking-wide">Agent</span>
           <span className="text-xs text-[#6B6B6B] uppercase tracking-wide">Chunks</span>
@@ -247,37 +247,62 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
         </div>
       </div>
 
-      {/* PART 2: Scrollable Table Rows */}
+      {/* PART 2: Scrollable Table Rows / Card List */}
       <div className="flex-1 overflow-y-auto min-h-0 pb-6 thin-scrollbar scrollbar-outset">
-        {/* Table Rows */}
-        {paginatedDocs.map((doc) => (
-          <div
-            key={doc.id}
-            className="grid grid-cols-[1fr_120px_80px_140px_40px] gap-4 px-5 py-3.5 mr-3 border-b border-[#3B3B3B] hover:bg-[#2B2B2B]/30 transition-colors"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 bg-[#3B3B3B] rounded-lg flex items-center justify-center flex-shrink-0">
-                {doc.fileType === "PDF" ? (
-                  <FileText className="w-4 h-4 text-[#e8c8ab]" />
-                ) : (
-                  <File className="w-4 h-4 text-[#608e96]" />
-                )}
+        {/* Mobile: Card layout */}
+        <div className="lg:hidden space-y-3 px-4 mr-3">
+          {paginatedDocs.map((doc) => (
+            <div
+              key={doc.id}
+              onClick={() => setViewPanelDoc(doc)}
+              className="bg-[#2B2B2B] rounded-lg p-4 hover:bg-[#2B2B2B]/70 transition-colors cursor-pointer"
+            >
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white truncate mb-1">{doc.title}</p>
+                  <p className="text-xs text-[#6B6B6B] truncate">{doc.fileName}</p>
+                </div>
+                <div className="w-8 h-8 bg-[#3B3B3B] rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Eye className="w-4 h-4 text-[#85b878]" />
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-sm text-white truncate">{doc.title}</p>
-                <p className="text-xs text-[#6B6B6B] truncate">{doc.fileName}</p>
+              <p className="text-xs text-[#9C9A92] truncate">{doc.agentName}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop: Table Rows */}
+        <div className="hidden lg:block">
+          {paginatedDocs.map((doc, index) => (
+            <div
+              key={doc.id}
+              className={`grid grid-cols-[1fr_120px_80px_140px_40px] gap-4 px-5 py-3.5 mr-3 hover:bg-[#2B2B2B]/30 transition-colors ${
+                index === paginatedDocs.length - 1 ? '' : 'border-b border-[#3B3B3B]'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 bg-[#3B3B3B] rounded-lg flex items-center justify-center flex-shrink-0">
+                  {doc.fileType === "PDF" ? (
+                    <FileText className="w-4 h-4 text-[#e8c8ab]" />
+                  ) : (
+                    <File className="w-4 h-4 text-[#608e96]" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm text-white truncate">{doc.title}</p>
+                  <p className="text-xs text-[#6B6B6B] truncate">{doc.fileName}</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center">
-              <span className="text-xs text-[#9C9A92] truncate">{doc.agentName}</span>
-            </div>
-            <div className="flex items-center">
-              <span className="text-xs text-[#9C9A92]">{doc.chunkCount}</span>
-            </div>
-            <div className="flex items-center">
-              <span className="text-xs text-[#6B6B6B]">{doc.uploadedAt}</span>
-            </div>
-            <div className="flex items-center relative">
+              <div className="flex items-center">
+                <span className="text-xs text-[#9C9A92] truncate">{doc.agentName}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-xs text-[#9C9A92]">{doc.chunkCount}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-xs text-[#6B6B6B]">{doc.uploadedAt}</span>
+              </div>
+              <div className="flex items-center relative">
               <button
                 onClick={() => setOpenMenuId(openMenuId === doc.id ? null : doc.id)}
                 className="p-1 hover:bg-[#3B3B3B] rounded transition-colors"
@@ -324,6 +349,7 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
             </div>
           </div>
         ))}
+        </div>
 
         {paginatedDocs.length === 0 && (
           <div className="p-8 text-center">
@@ -336,36 +362,26 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
           </div>
         )}
 
-        {/* Pagination Controls */}
-        {filteredDocs.length > 0 && (
-          <div className="flex items-center justify-between px-5 pt-4 pb-0 border-t border-[#3B3B3B] mt-2">
-            <div className="text-sm text-[#9C9A92]">
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredDocs.length)} of {filteredDocs.length}
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#3B3B3B] disabled:hover:text-[#C2C0B6]"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-                Previous
-              </button>
-              
-              <div className="flex items-center gap-1 px-3">
-                <span className="text-sm text-white">Page {currentPage}</span>
-                <span className="text-sm text-[#6B6B6B]">of {totalPages}</span>
-              </div>
-
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#3B3B3B] disabled:hover:text-[#C2C0B6]"
-              >
-                Next
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+        {/* Pagination */}
+        {filteredDocs.length > 0 && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 px-5 pt-4 pb-0 mt-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Prev
+            </button>
+            <span className="px-3 py-1.5 text-sm text-[#6B6B6B]">
+              {startIndex + 1}–{Math.min(endIndex, filteredDocs.length)}
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
           </div>
         )}
       </div>
@@ -483,14 +499,84 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
         </>
       )}
 
-      {/* View Document Side Panel */}
+      {/* View Document Panel - Mobile: Full screen modal, Desktop: Side panel */}
       {viewPanelDoc && (
         <>
           <div
-            className="fixed inset-0 bg-black/40 z-40"
+            className="fixed inset-0 bg-black/60 z-40"
             onClick={() => setViewPanelDoc(null)}
           />
-          <div className="fixed top-0 right-0 h-full w-[600px] bg-[#1C1C1C] border-l border-[#2B2B2B] z-50 flex flex-col shadow-2xl">
+          {/* Mobile: Centered modal */}
+          <div className="lg:hidden fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-none">
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#1C1C1C] rounded-xl border border-[#2B2B2B] w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl pointer-events-auto"
+            >
+            {/* Panel Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#2B2B2B]">
+              <div className="flex-1 min-w-0 pr-2">
+                <h2 className="text-sm font-medium text-white truncate">{viewPanelDoc.title}</h2>
+                <p className="text-xs text-[#9C9A92] mt-0.5 truncate">{viewPanelDoc.fileName}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewPanelDoc(null)}
+                className="p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors flex-shrink-0"
+              >
+                <X className="w-4 h-4 text-[#9C9A92]" />
+              </button>
+            </div>
+
+            {/* Document Metadata */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 thin-scrollbar">
+              <div className="space-y-4">
+                <div className="bg-[#2B2B2B] rounded-lg p-3 space-y-2.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[#9C9A92]">Chunks</span>
+                    <span className="text-white">{viewPanelDoc.chunkCount} segments</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[#9C9A92]">Uploaded</span>
+                    <span className="text-white">{viewPanelDoc.uploadedAt}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[#9C9A92]">Last updated</span>
+                    <span className="text-white">{viewPanelDoc.uploadedAt}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[#9C9A92]">Referenced in</span>
+                    <span className="text-white">{viewPanelDoc.referencedInChats} chats</span>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-medium text-[#9C9A92] uppercase tracking-wide mb-2">Used by agents</h3>
+                  <div className="bg-[#2B2B2B] rounded-lg p-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-[#85b878]/20 rounded flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs text-[#85b878]">✓</span>
+                      </div>
+                      <span className="text-sm text-white">{viewPanelDoc.agentName}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-3 border-t border-[#2B2B2B]">
+              <button
+                onClick={() => setViewPanelDoc(null)}
+                className="w-full px-4 py-2 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#C2C0B6] transition-colors"
+              >
+                Close
+              </button>
+            </div>
+            </div>
+          </div>
+
+          {/* Desktop: Side panel */}
+          <div className="hidden lg:flex fixed top-0 right-0 h-full w-[600px] bg-[#1C1C1C] border-l border-[#2B2B2B] z-50 flex-col shadow-2xl">
             {/* Panel Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-[#2B2B2B]">
               <div>
@@ -509,7 +595,7 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
             {/* Document Metadata */}
             <div className="px-5 py-4 border-b border-[#2B2B2B] space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-[#9C9A92]">Agent</span>
+                <span className="text-[#9C9A92]">Primary Agent</span>
                 <span className="text-white">{viewPanelDoc.agentName}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
@@ -520,8 +606,16 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
                 <span className="text-[#9C9A92]">Uploaded</span>
                 <span className="text-white">{viewPanelDoc.uploadedAt}</span>
               </div>
-              <a 
-                href="#" 
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#9C9A92]">Last updated</span>
+                <span className="text-white">{viewPanelDoc.uploadedAt}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#9C9A92]">Referenced in chats</span>
+                <span className="text-white">{viewPanelDoc.referencedInChats} conversations</span>
+              </div>
+              <a
+                href="#"
                 onClick={(e) => { e.preventDefault(); /* Open actual file when backend ready */ }}
                 className="flex items-center gap-2 text-sm text-[#85b878] hover:text-[#9dcf84] transition-colors"
               >

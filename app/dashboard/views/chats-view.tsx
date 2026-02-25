@@ -116,11 +116,13 @@ export default function ChatsView({ sidebarOpen, setSidebarOpen }: { sidebarOpen
 
       {/* PART 2: Scrollable Chat List */}
       <div className="flex-1 overflow-y-auto min-h-0 pb-6 thin-scrollbar scrollbar-outset">
-        <div className="divide-y divide-[#3B3B3B] mr-3">
-          {paginatedChats.map((chat) => (
+        <div className="mr-3">
+          {paginatedChats.map((chat, index) => (
             <div
               key={chat.id}
-              className="px-4 py-4 hover:bg-[#2B2B2B]/40 transition-colors cursor-pointer"
+              className={`px-4 py-4 hover:bg-[#2B2B2B]/40 transition-colors cursor-pointer ${
+                index < paginatedChats.length - 1 ? 'border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]' : ''
+              }`}
             >
               <p className="text-sm text-white">{chat.title}</p>
               <div className="flex items-center justify-between mt-1">
