@@ -312,7 +312,7 @@ export default function ChatPageClient({ user }: ChatPageProps) {
         </div>
 
         {/* User Profile */}
-        <div className={`${isStandalone ? '' : 'border-t border-[#2B2B2B]'} p-2 ${isStandalone ? 'pb-8' : 'pb-2'} lg:pb-2 relative ${!sidebarOpen ? 'flex justify-center' : ''}`}>
+        <div className={`${isStandalone ? '' : 'border-t border-[#2B2B2B]'} p-2 ${isStandalone ? 'pb-6 pl-3' : 'pb-2'} lg:pb-2 relative ${!sidebarOpen ? 'flex justify-center' : ''}`}>
           {/* div instead of button so the nested Download button is valid HTML */}
           <div
             className={`group relative flex items-center p-1.5 ${sidebarOpen ? 'w-full justify-between gap-2' : 'justify-center'}`}

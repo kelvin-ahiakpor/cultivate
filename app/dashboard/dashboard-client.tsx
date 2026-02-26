@@ -180,7 +180,7 @@ export default function DashboardClient({ user }: DashboardProps) {
 
         {/* User Profile — outer div, not button, to avoid nested <button> hydration error
             Click zones: avatar+name area opens menu; install button opens install modal */}
-        <div className={`border-t border-[#2B2B2B] p-2 ${isStandalone ? 'pb-8' : 'pb-2'} lg:pb-2 relative ${!sidebarOpen ? 'flex justify-center' : ''}`}>
+        <div className={`border-t border-[#2B2B2B] p-2 ${isStandalone ? 'pb-6 pl-3' : 'pb-2'} lg:pb-2 relative ${!sidebarOpen ? 'flex justify-center' : ''}`}>
           <div
             className={`group relative flex items-center p-1.5 cursor-pointer transition-colors ${isStandalone ? 'rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1]' : 'rounded-lg hover:bg-black hover:border-black'} ${sidebarOpen ? 'w-full justify-between' : 'justify-center'}`}
           >
