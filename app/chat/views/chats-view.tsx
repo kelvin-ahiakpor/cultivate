@@ -238,9 +238,9 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
           {/* Top blur fade — content blurs as it scrolls under header */}
           <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[#1E1E1E] to-transparent z-10 pointer-events-none" />
         <div className="h-full overflow-y-auto thin-scrollbar scrollbar-outset">
-          <div className="max-w-3xl mx-auto flex flex-col min-h-full">
+          <div className="max-w-3xl standalone:max-w-4xl mx-auto flex flex-col min-h-full">
             {/* Messages — slightly narrower than input bar */}
-            <div className="flex-1 px-12 standalone:px-4 lg:px-12 py-6 space-y-6">
+            <div className="flex-1 px-8 standalone:px-2 lg:px-8 py-6 space-y-6">
               {mockConversationMessages.map((message) => (
                 <div key={message.id}>
                   {message.role === "USER" ? (
@@ -256,10 +256,17 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
                   )}
                 </div>
               ))}
+              <div className="pt-2">
+                <p className="text-sm text-[#C2C0B6] text-right leading-snug max-w-[250px] ml-auto">
+                  AI can make mistakes.
+                  <br />
+                  Please verify important information.
+                </p>
+              </div>
             </div>
 
             {/* Reply Input — sticky to bottom, wider than messages */}
-            <div className="sticky bottom-0 bg-[#1E1E1E]">
+            <div className="sticky bottom-0 bg-[#1E1E1E] pb-4">
               <div className="mx-3.5 mb-3">
                 <div className="bg-[#2B2B2B] rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
                   <textarea
@@ -282,9 +289,6 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-[#C2C0B6] text-center pb-4 pt-0.5">
-                AI can make mistakes. Please verify important information.
-              </p>
             </div>
           </div>
         </div>
