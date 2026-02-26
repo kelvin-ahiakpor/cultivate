@@ -117,7 +117,7 @@ export default function DashboardClient({ user }: DashboardProps) {
         <div className={`p-2 pt-16 lg:pt-4 min-h-[53px] flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
           {sidebarOpen && (
             <Link href="/" className="flex items-center gap-2 no-underline hover:no-underline">
-              <span className="pl-2 text-xl standalone:text-2xl lg:text-xl font-serif font-semibold text-white">Cultivate</span>
+              <span className={`pl-2 ${isStandalone ? "text-[1.65rem]" : "text-2xl"} lg:text-xl font-serif font-semibold text-white`}>Cultivate</span>
             </Link>
           )}
           <button
@@ -165,7 +165,7 @@ export default function DashboardClient({ user }: DashboardProps) {
               <div className="space-y-0.5 standalone:space-y-2 lg:space-y-0.5">
                 {recentAgents.map((agent) => (
                   <div key={agent} className="group flex items-stretch rounded-lg hover:bg-[#141413] has-[button:hover]:bg-transparent transition-colors cursor-pointer">
-                    <span className="flex-1 truncate text-sm standalone:text-lg lg:text-sm text-[#C2C0B6] group-hover:text-white flex items-center pl-2 py-2">
+                    <span className={`flex-1 truncate ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm text-[#C2C0B6] group-hover:text-white flex items-center pl-2 py-2`}>
                       {agent}
                     </span>
                     <button className="opacity-0 group-hover:opacity-100 transition-opacity px-2.5 py-2 hover:bg-[#141413] rounded-lg flex items-center">

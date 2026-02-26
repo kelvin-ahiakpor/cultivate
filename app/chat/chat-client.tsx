@@ -136,10 +136,10 @@ export default function ChatPageClient({ user }: ChatPageProps) {
         className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#1C1C1C] border-r border-[#2B2B2B] flex flex-col transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${sidebarOpen ? 'translate-x-0 shadow-[4px_0_24px_rgba(0,0,0,0.4)]' : '-translate-x-full shadow-none'} lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:shadow-none ${sidebarOpen ? 'lg:w-72' : 'lg:w-14'}`}
       >
         {/* Logo — pt-16 on mobile matches conversation header safe area for Dynamic Island alignment */}
-        <div className={`p-2 pt-16 lg:pt-2 min-h-[53px] flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
+        <div className={`p-2 pt-16 lg:pt-4 min-h-[53px] flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
           {sidebarOpen && (
             <Link href="/" className="flex items-center gap-2 no-underline hover:no-underline">
-              <span className="pl-2 text-xl standalone:text-2xl lg:text-xl font-serif font-semibold text-white">Cultivate</span>
+              <span className={`pl-2 ${isStandalone ? "text-[1.65rem]" : "text-2xl"} lg:text-xl font-serif font-semibold text-white`}>Cultivate</span>
             </Link>
           )}
           <button
@@ -156,12 +156,12 @@ export default function ChatPageClient({ user }: ChatPageProps) {
             {/* New Chat */}
             <button
               onClick={() => { setActiveView("chat"); if (window.innerWidth < 1024) setSidebarOpen(false); }}
-              className={`group relative w-full flex items-center gap-3 pl-3 pr-2 py-1.5 rounded-lg transition-colors ${!sidebarOpen ? 'justify-center' : ''} ${
+              className={`group relative w-full flex items-center gap-3 pl-3 pr-2 py-1 rounded-lg transition-colors ${!sidebarOpen ? 'justify-center' : ''} ${
                 activeView === "chat" ? "bg-[#141413] text-white" : "text-[#C2C0B6] hover:bg-[#141413] hover:text-white"
               }`}
             >
-              <div className="w-6 h-6 standalone:w-7 standalone:h-7 lg:w-6 lg:h-6 bg-[#2B2B2B] rounded-full flex items-center justify-center flex-shrink-0">
-                <Plus className="w-4.5 h-4.5 lg:w-4 lg:h-4" />
+              <div className="w-5 h-5 standalone:w-6 standalone:h-6 lg:w-5 lg:h-5 bg-[#2B2B2B] rounded-full flex items-center justify-center flex-shrink-0">
+                <Plus className="w-4 h-4 standalone:w-[18px] standalone:h-[18px] lg:w-4 lg:h-4" />
               </div>
               {sidebarOpen && <span className={`${isStandalone ? "text-lg" : "text-sm"} lg:text-sm`}>New chat</span>}
               {!sidebarOpen && (
@@ -208,7 +208,7 @@ export default function ChatPageClient({ user }: ChatPageProps) {
           {sidebarOpen && (
             <div className="mt-4">
               {/* Recents label — text-sm mobile (14px), text-xs desktop (12px) */}
-              <div className="text-xs standalone:text-sm lg:text-xs text-[#9C9A92] px-2 mb-1.5">
+              <div className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#9C9A92] px-2 mb-1.5`}>
                 Recents
               </div>
               {/* Sidebar chat items — Claude-style pattern (see sidebar-chat-patterns.md)
@@ -234,7 +234,7 @@ export default function ChatPageClient({ user }: ChatPageProps) {
                     >
                       {/* Text label — min-w-0 is critical for flex child truncation */}
                       <span
-                        className={`flex-1 min-w-0 text-sm standalone:text-lg lg:text-sm py-1.5 pl-1.5 overflow-hidden whitespace-nowrap ${
+                        className={`flex-1 min-w-0 ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm py-1.5 pl-2 overflow-hidden whitespace-nowrap ${
                           isActive
                             ? 'text-white [mask-image:linear-gradient(to_right,black_75%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_right,black_75%,transparent_100%)]'
                             : 'text-[#C2C0B6] group-hover:text-white truncate group-hover:[text-overflow:clip] group-hover:[mask-image:linear-gradient(to_right,black_75%,transparent_100%)] group-hover:[-webkit-mask-image:linear-gradient(to_right,black_75%,transparent_100%)]'
@@ -301,7 +301,7 @@ export default function ChatPageClient({ user }: ChatPageProps) {
               {mockChats.length > (isDesktop ? 30 : 10) && (
                 <button
                   onClick={handleAllChatsClick}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 text-sm standalone:text-lg lg:text-sm text-[#9C9A92] hover:text-white hover:bg-[#141413] rounded-lg transition-colors"
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm text-[#9C9A92] hover:text-white hover:bg-[#141413] rounded-lg transition-colors`}
                 >
                   <CircleEllipsis className="w-4 h-4 flex-shrink-0" />
                   All chats

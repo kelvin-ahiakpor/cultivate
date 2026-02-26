@@ -137,20 +137,20 @@ export default function SystemsView() {
       {/* PART 1: Fixed Section */}
       <div className="flex-shrink-0 bg-[#1E1E1E] z-10 pb-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6 mr-2">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-serif text-[#C2C0B6]">Systems</h1>
-            <p className="text-sm text-[#9C9A92] mt-1">{mockSystems.length} Farmitecture products installed</p>
+            <p className="text-sm standalone:text-base lg:text-sm text-[#9C9A92] mt-1">{mockSystems.length} Farmitecture products installed</p>
           </div>
         </div>
 
         {/* Search and Filter */}
-        <div className="flex items-center gap-3 mb-6 mr-2">
+        <div className="flex items-center gap-3 mb-6">
           {/* Status Filter */}
           <div className="flex gap-2">
             <button
               onClick={() => setSelectedStatus("all")}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-sm standalone:text-base lg:text-sm transition-colors ${
                 selectedStatus === "all"
                   ? "bg-[#5a7048] text-white"
                   : "bg-[#2B2B2B] text-[#C2C0B6] hover:bg-[#3B3B3B]"
@@ -160,7 +160,7 @@ export default function SystemsView() {
             </button>
             <button
               onClick={() => setSelectedStatus("active")}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-sm standalone:text-base lg:text-sm transition-colors ${
                 selectedStatus === "active"
                   ? "bg-[#5a7048] text-white"
                   : "bg-[#2B2B2B] text-[#C2C0B6] hover:bg-[#3B3B3B]"
@@ -170,7 +170,7 @@ export default function SystemsView() {
             </button>
             <button
               onClick={() => setSelectedStatus("pending_setup")}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-sm standalone:text-base lg:text-sm transition-colors ${
                 selectedStatus === "pending_setup"
                   ? "bg-[#5a7048] text-white"
                   : "bg-[#2B2B2B] text-[#C2C0B6] hover:bg-[#3B3B3B]"
@@ -188,14 +188,14 @@ export default function SystemsView() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search systems..."
-              className="w-full pl-9 pr-3 py-2 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
+              className="w-full pl-9 pr-3 py-2 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
             />
           </div>
         </div>
       </div>
 
       {/* PART 2: Scrollable Section */}
-      <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar scrollbar-outset mr-3">
+      <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar scrollbar-outset">
         {filteredSystems.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
             <Layers className="w-16 h-16 text-[#3B3B3B] mb-4" />

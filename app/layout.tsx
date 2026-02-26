@@ -16,7 +16,7 @@ const playfair = Playfair_Display({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#5a7048",
+  themeColor: "#1E1E1E",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
