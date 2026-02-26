@@ -250,7 +250,7 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
       {/* PART 2: Scrollable Table Rows / Card List */}
       <div className="flex-1 overflow-y-auto min-h-0 pb-6 thin-scrollbar scrollbar-outset">
         {/* Mobile: Card layout */}
-        <div className="lg:hidden space-y-3 px-4 mr-3">
+        <div className="lg:hidden space-y-3 pl-1.5 pr-1.5 mr-3">
           {paginatedDocs.map((doc) => (
             <div
               key={doc.id}

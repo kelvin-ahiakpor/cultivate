@@ -207,6 +207,13 @@
   scrollbar-gutter: stable;
 }
 
+@media (display-mode: standalone) {
+  .scrollbar-outset {
+    margin-right: calc(-4px - env(safe-area-inset-right));
+    padding-right: calc(4px + env(safe-area-inset-right));
+  }
+}
+
 /* PWA / Mobile optimizations */
 html,
 body {

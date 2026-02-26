@@ -86,8 +86,21 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [openedChat, setOpenedChat] = useState<Chat | null>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const itemsPerPage = 30;
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const checkStandalone = () => {
+      const iosStandalone = Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+      setIsStandalone(mediaQuery.matches || iosStandalone);
+    };
+
+    checkStandalone();
+    mediaQuery.addEventListener("change", checkStandalone);
+    return () => mediaQuery.removeEventListener("change", checkStandalone);
+  }, []);
 
   // Open/close chat from sidebar click
   useEffect(() => {
@@ -321,13 +334,15 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
             <div
               key={chat.id}
               onClick={() => { setOpenedChat(chat); onChatSelect?.(chat.id); }}
-              className={`px-4 py-4 hover:bg-[#2B2B2B]/40 transition-colors cursor-pointer ${
-                index < paginatedChats.length - 1 ? 'border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]' : ''
+              className={`pl-1.5 pr-1.5 py-2.5 hover:bg-[#2B2B2B]/40 transition-colors cursor-pointer ${
+                index < paginatedChats.length - 1
+                  ? `border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`
+                  : ''
               }`}
             >
               <p className="text-sm standalone:text-base lg:text-sm text-white">{chat.title}</p>
               <div className="flex items-center justify-between mt-1">
-                <p className="text-xs standalone:text-sm lg:text-xs text-[#6B6B6B]">Last message {chat.lastMessage}</p>
+                <p className="text-xs standalone:text-sm lg:text-xs text-[#6B6B6B]">{isStandalone ? chat.lastMessage : `Last message ${chat.lastMessage}`}</p>
                 <p className="text-xs standalone:text-sm lg:text-xs text-[#9C9A92]">{chat.agentName}</p>
               </div>
             </div>

@@ -19,6 +19,7 @@ interface ChatPageProps {
 export default function ChatPageClient({ user }: ChatPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   const [isDesktop, setIsDesktop] = useState(false);
 
@@ -53,6 +54,18 @@ export default function ChatPageClient({ user }: ChatPageProps) {
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const checkStandalone = () => {
+      const iosStandalone = Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+      setIsStandalone(mediaQuery.matches || iosStandalone);
+    };
+
+    checkStandalone();
+    mediaQuery.addEventListener("change", checkStandalone);
+    return () => mediaQuery.removeEventListener("change", checkStandalone);
+  }, []);
+
   const handleInstall = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
@@ -60,6 +73,14 @@ export default function ChatPageClient({ user }: ChatPageProps) {
       setDeferredPrompt(null);
     }
     setShowInstallModal(false);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut({ callbackUrl: `${window.location.origin}/` });
+    } catch {
+      window.location.assign("/api/auth/signout?callbackUrl=/");
+    }
   };
 
   const getInitials = (name: string) => {
@@ -142,7 +163,7 @@ export default function ChatPageClient({ user }: ChatPageProps) {
               <div className="w-6 h-6 standalone:w-7 standalone:h-7 lg:w-6 lg:h-6 bg-[#2B2B2B] rounded-full flex items-center justify-center flex-shrink-0">
                 <Plus className="w-4.5 h-4.5 lg:w-4 lg:h-4" />
               </div>
-              {sidebarOpen && <span className="text-sm standalone:text-lg lg:text-sm">New chat</span>}
+              {sidebarOpen && <span className={`${isStandalone ? "text-lg" : "text-sm"} lg:text-sm`}>New chat</span>}
               {!sidebarOpen && (
                 <div className="absolute left-full ml-2 px-2 py-1 bg-[#2B2B2B] text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                   New chat
@@ -158,7 +179,7 @@ export default function ChatPageClient({ user }: ChatPageProps) {
               }`}
             >
               <MessageCircle className="w-5 h-5 standalone:w-6 standalone:h-6 lg:w-5 lg:h-5 text-white flex-shrink-0" />
-              {sidebarOpen && <span className="text-sm standalone:text-lg lg:text-sm">Chats</span>}
+              {sidebarOpen && <span className={`${isStandalone ? "text-lg" : "text-sm"} lg:text-sm`}>Chats</span>}
               {!sidebarOpen && (
                 <div className="absolute left-full ml-2 px-2 py-1 bg-[#2B2B2B] text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                   Chats
@@ -174,7 +195,7 @@ export default function ChatPageClient({ user }: ChatPageProps) {
               }`}
             >
               <Layers className="w-5 h-5 standalone:w-6 standalone:h-6 lg:w-5 lg:h-5 text-white flex-shrink-0" />
-              {sidebarOpen && <span className="text-sm standalone:text-lg lg:text-sm">Systems</span>}
+              {sidebarOpen && <span className={`${isStandalone ? "text-lg" : "text-sm"} lg:text-sm`}>Systems</span>}
               {!sidebarOpen && (
                 <div className="absolute left-full ml-2 px-2 py-1 bg-[#2B2B2B] text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                   Systems
@@ -350,7 +371,7 @@ export default function ChatPageClient({ user }: ChatPageProps) {
                 </button>
                 <div className="border-t border-[#2B2B2B] mt-1 pt-1">
                   <button
-                    onClick={() => signOut()}
+                    onClick={handleSignOut}
                     className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors rounded"
                   >
                     <LogOut className="w-4 h-4" />

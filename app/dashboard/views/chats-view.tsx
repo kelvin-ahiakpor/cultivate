@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MessageCircle, Search, PanelLeft } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
 
@@ -46,7 +46,20 @@ const mockChats = [
 export default function ChatsView({ sidebarOpen, setSidebarOpen }: { sidebarOpen: boolean; setSidebarOpen: (v: boolean) => void }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isStandalone, setIsStandalone] = useState(false);
   const itemsPerPage = 30;
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const checkStandalone = () => {
+      const iosStandalone = Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+      setIsStandalone(mediaQuery.matches || iosStandalone);
+    };
+
+    checkStandalone();
+    mediaQuery.addEventListener("change", checkStandalone);
+    return () => mediaQuery.removeEventListener("change", checkStandalone);
+  }, []);
 
   const filteredChats = mockChats.filter(chat =>
     chat.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -99,13 +112,13 @@ export default function ChatsView({ sidebarOpen, setSidebarOpen }: { sidebarOpen
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+            className={`w-full pl-10 pr-4 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg ${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]`}
           />
         </div>
 
         {/* Showing range */}
         <div className="mb-1 px-1">
-          <p className="text-sm text-[#9C9A92]">
+          <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#9C9A92]`}>
             Showing {filteredChats.length === 0 ? 0 : startIndex + 1}–{Math.min(endIndex, filteredChats.length)} of {filteredChats.length} {filteredChats.length === 1 ? 'chat' : 'chats'}
             {searchQuery && (
               <span className="text-[#6B6B6B]"> &middot; filtered from {mockChats.length} total</span>
@@ -120,14 +133,16 @@ export default function ChatsView({ sidebarOpen, setSidebarOpen }: { sidebarOpen
           {paginatedChats.map((chat, index) => (
             <div
               key={chat.id}
-              className={`px-4 py-4 hover:bg-[#2B2B2B]/40 transition-colors cursor-pointer ${
-                index < paginatedChats.length - 1 ? 'border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]' : ''
+              className={`pl-1.5 pr-1.5 py-2.5 hover:bg-[#2B2B2B]/40 transition-colors cursor-pointer ${
+                index < paginatedChats.length - 1
+                  ? `border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`
+                  : ''
               }`}
             >
-              <p className="text-sm text-white">{chat.title}</p>
+              <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-white`}>{chat.title}</p>
               <div className="flex items-center justify-between mt-1">
-                <p className="text-xs text-[#6B6B6B]">Last message {chat.lastMessage}</p>
-                <p className="text-xs text-[#9C9A92]">{chat.agentName} &middot; {chat.farmerName}</p>
+                <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B]`}>{isStandalone ? chat.lastMessage : `Last message ${chat.lastMessage}`}</p>
+                <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#9C9A92]`}>{isStandalone ? chat.farmerName : `${chat.agentName} · ${chat.farmerName}`}</p>
               </div>
             </div>
           ))}
@@ -136,7 +151,7 @@ export default function ChatsView({ sidebarOpen, setSidebarOpen }: { sidebarOpen
         {filteredChats.length === 0 && (
           <div className="p-8 text-center">
             <MessageCircle className="w-10 h-10 text-[#6B6B6B] mx-auto mb-3" />
-            <p className="text-sm text-[#6B6B6B]">
+            <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#6B6B6B]`}>
               {searchQuery
                 ? "No conversations match your search."
                 : "No conversations yet."}
@@ -146,7 +161,7 @@ export default function ChatsView({ sidebarOpen, setSidebarOpen }: { sidebarOpen
 
         {/* Pagination */}
         {filteredChats.length > 0 && totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 px-5 pt-4 pb-0 border-t border-[#3B3B3B] mt-2">
+          <div className="flex items-center justify-center gap-2 px-5 pt-4 pb-0 mt-2 border-t border-[#3B3B3B]">
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}

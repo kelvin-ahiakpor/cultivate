@@ -497,6 +497,7 @@ const MIN_PANEL_WIDTH = 400;
 export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { sidebarOpen?: boolean; setSidebarOpen?: (v: boolean) => void }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<FlagStatus>("all");
+  const [isDesktop, setIsDesktop] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -529,6 +530,13 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
   // Sidebar width: w-72 = 288px when open, w-14 = 56px when collapsed
   const sidebarWidth = sidebarOpen ? 288 : 56;
   const maxPanelWidth = typeof window !== "undefined" ? window.innerWidth - sidebarWidth : 1200;
+  
+  useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
 
   // --- Resize handlers ---
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
@@ -1134,11 +1142,11 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
               className={`fixed top-0 right-0 h-full bg-[#1C1C1C] border-l border-[#2B2B2B] z-50 flex flex-col shadow-2xl transition-transform duration-300 ${
                 isClosing ? 'translate-x-full' : 'translate-x-0'
               }`}
-              style={{ width: `${panelWidth}px` }}
+              style={{ width: isDesktop ? `${panelWidth}px` : "100vw" }}
             >
               {/* Drag handle - centered on left edge */}
               <div
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 bg-[#1C1C1C] rounded-full p-1.5 cursor-col-resize z-10 border border-[#2B2B2B] hover:border-white shadow-lg group"
+                className="hidden lg:block absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 bg-[#1C1C1C] rounded-full p-1.5 cursor-col-resize z-10 border border-[#2B2B2B] hover:border-white shadow-lg group"
                 onMouseDown={handleResizeStart}
                 onDoubleClick={handleDoubleClickResize}
                 title="Drag to resize, double-click to reset"
@@ -1146,11 +1154,19 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
                 <GripVertical className="w-3.5 h-3.5 text-[#e8c8ab] group-hover:text-white transition-colors" />
               </div>
               {/* Panel Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[#2B2B2B]">
+              <div className="flex items-center justify-between px-5 pt-16 pb-3 lg:py-4 border-b border-[#2B2B2B]">
                 <div className="flex items-center gap-3">
+                  <div className="lg:hidden">
+                    <GlassCircleButton
+                      onClick={handleCloseChatPanel}
+                      aria-label="Back"
+                    >
+                      <ArrowLeft className="w-4 h-4 text-white" />
+                    </GlassCircleButton>
+                  </div>
                   <button
                     onClick={handleCloseChatPanel}
-                    className="p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors"
+                    className="hidden lg:flex p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors"
                   >
                     <ArrowLeft className="w-4 h-4 text-[#C2C0B6]" />
                   </button>
@@ -1169,7 +1185,7 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
                   </span>
                   <button
                     onClick={handleCloseChatPanel}
-                    className="p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors"
+                      className="hidden lg:flex p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors"
                   >
                     <X className="w-4 h-4 text-[#9C9A92]" />
                   </button>

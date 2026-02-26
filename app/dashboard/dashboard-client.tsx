@@ -26,6 +26,7 @@ interface DashboardProps {
 export default function DashboardClient({ user }: DashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -45,6 +46,18 @@ export default function DashboardClient({ user }: DashboardProps) {
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const checkStandalone = () => {
+      const iosStandalone = Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+      setIsStandalone(mediaQuery.matches || iosStandalone);
+    };
+
+    checkStandalone();
+    mediaQuery.addEventListener("change", checkStandalone);
+    return () => mediaQuery.removeEventListener("change", checkStandalone);
+  }, []);
+
   const handleInstall = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
@@ -52,6 +65,14 @@ export default function DashboardClient({ user }: DashboardProps) {
       setDeferredPrompt(null);
     }
     setShowInstallModal(false);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut({ callbackUrl: `${window.location.origin}/` });
+    } catch {
+      window.location.assign("/api/auth/signout?callbackUrl=/");
+    }
   };
   const [activeNav, setActiveNav] = useState("overview");
   const [activityPanelOpen, setActivityPanelOpen] = useState(false);
@@ -123,7 +144,7 @@ export default function DashboardClient({ user }: DashboardProps) {
                 }`}
               >
                 <item.icon className="w-5 h-5 standalone:w-6 standalone:h-6 lg:w-5 lg:h-5 flex-shrink-0" />
-                {sidebarOpen && <span className="text-sm standalone:text-lg lg:text-sm">{item.label}</span>}
+                {sidebarOpen && <span className={`${isStandalone ? "text-lg" : "text-sm"} lg:text-sm`}>{item.label}</span>}
                 {!sidebarOpen && (
                   <div className="absolute left-full ml-2 px-2 py-1 bg-[#2B2B2B] text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                     {item.label}
@@ -159,7 +180,7 @@ export default function DashboardClient({ user }: DashboardProps) {
 
         {/* User Profile — outer div, not button, to avoid nested <button> hydration error
             Click zones: avatar+name area opens menu; install button opens install modal */}
-        <div className={`border-t border-[#2B2B2B] p-2 relative hover:bg-black hover:border-black transition-colors ${!sidebarOpen ? 'flex justify-center' : ''}`}>
+        <div className={`border-t border-[#2B2B2B] p-2 standalone:pb-[calc(env(safe-area-inset-bottom)+20px)] relative hover:bg-black hover:border-black transition-colors ${!sidebarOpen ? 'flex justify-center' : ''}`}>
           <div
             className={`group relative flex items-center rounded-lg p-1.5 cursor-pointer ${sidebarOpen ? 'w-full justify-between' : 'justify-center'}`}
           >
@@ -222,7 +243,7 @@ export default function DashboardClient({ user }: DashboardProps) {
                 </button>
                 <div className="border-t border-[#2B2B2B] mt-1 pt-1">
                   <button
-                    onClick={() => signOut({ callbackUrl: `${window.location.origin}/` })}
+                    onClick={handleSignOut}
                     className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors rounded"
                   >
                     <LogOut className="w-4 h-4" />
@@ -387,98 +408,98 @@ export default function DashboardClient({ user }: DashboardProps) {
               <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto pb-6">
               <div className="mr-3">
                 {/* Flagged query reviewed */}
-                <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]">
+                <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                     <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <CheckCircle className="w-4 h-4 text-[#85b878]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#C2C0B6]">
+                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#C2C0B6]`}>
                         You <span className="text-[#85b878]">verified</span> a response about maize aphid identification
                       </p>
-                      <p className="text-xs text-[#6B6B6B] mt-0.5">Pest Management &middot; 12 hours ago</p>
+                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>Pest Management &middot; 12 hours ago</p>
                     </div>
                   </div>
 
                   {/* Correction sent */}
-                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]">
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                     <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Pencil className="w-4 h-4 text-[#608e96]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#C2C0B6]">
+                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#C2C0B6]`}>
                         You <span className="text-[#608e96]">corrected</span> a response about okra planting schedule
                       </p>
-                      <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 2 days ago</p>
+                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>General Farm Advisor &middot; 2 days ago</p>
                     </div>
                   </div>
 
                   {/* New flagged query */}
-                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]">
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                     <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Flag className="w-4 h-4 text-[#e8c8ab]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#C2C0B6]">
+                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#C2C0B6]`}>
                         New <span className="text-[#e8c8ab]">flagged query</span> from Kwame Asante about cassava disease
                       </p>
-                      <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 2 hours ago &middot; 45% confidence</p>
+                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>General Farm Advisor &middot; 2 hours ago &middot; 45% confidence</p>
                     </div>
                   </div>
 
                   {/* Agent created */}
-                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]">
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                     <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Bot className="w-4 h-4 text-[#85b878]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#C2C0B6]">
+                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#C2C0B6]`}>
                         <span className="text-[#85b878]">Cocoa Specialist</span> agent was created
                       </p>
-                      <p className="text-xs text-[#6B6B6B] mt-0.5">4 knowledge bases attached &middot; 1 day ago</p>
+                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>4 knowledge bases attached &middot; 1 day ago</p>
                     </div>
                   </div>
 
                   {/* Farmer conversation */}
-                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]">
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                     <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <MessageCircle className="w-4 h-4 text-[#608e96]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#C2C0B6]">
+                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#C2C0B6]`}>
                         Ama Mensah started a <span className="text-[#608e96]">new conversation</span> about tomato fertilizer
                       </p>
-                      <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 5 hours ago</p>
+                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>General Farm Advisor &middot; 5 hours ago</p>
                     </div>
                   </div>
 
                   {/* New flagged query */}
-                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]">
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                     <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Flag className="w-4 h-4 text-[#e8c8ab]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#C2C0B6]">
+                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#C2C0B6]`}>
                         New <span className="text-[#e8c8ab]">flagged query</span> from Abena Darkwa about cocoa pod disease
                       </p>
-                      <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 6 hours ago &middot; 41% confidence</p>
+                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>General Farm Advisor &middot; 6 hours ago &middot; 41% confidence</p>
                     </div>
                   </div>
 
                   {/* Knowledge base uploaded */}
-                  <div className="flex items-start gap-3 px-5 py-3.5 border-b border-[#3B3B3B] standalone:border-b-0 lg:border-b lg:border-[#3B3B3B]">
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                     <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <BookOpen className="w-4 h-4 text-[#608e96]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#C2C0B6]">
+                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#C2C0B6]`}>
                         <span className="text-[#608e96]">Cocoa Farming Guide 2026.pdf</span> uploaded to knowledge base
                       </p>
-                      <p className="text-xs text-[#6B6B6B] mt-0.5">Cocoa Specialist &middot; 3 days ago &middot; 42 chunks</p>
+                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>Cocoa Specialist &middot; 3 days ago &middot; 42 chunks</p>
                     </div>
                   </div>
 
                   {/* View all footer */}
-                  <div className="px-5 py-3">
+                  <div className="pl-1.5 pr-1.5 py-3">
                     <button
                       onClick={() => setActivityPanelOpen(true)}
                       className="flex items-center gap-1 text-xs text-[#9C9A92] hover:text-white transition-colors"
@@ -536,7 +557,8 @@ export default function DashboardClient({ user }: DashboardProps) {
             className="fixed inset-0 bg-black/40 z-40"
             onClick={handleCloseActivityPanel}
           />
-          <div className="fixed top-0 right-0 h-full w-[500px] bg-[#1C1C1C] border-l border-[#2B2B2B] z-50 flex flex-col shadow-2xl">
+          <div className="fixed inset-0 z-50 px-3 pt-[128i px] pb-3 standalone:pb-[calc(env(safe-area-inset-bottom)+12px)] lg:p-0 lg:inset-y-0 lg:right-0 lg:left-auto lg:w-[500px] lg:h-full">
+            <div className="w-full h-auto max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-24px)] bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl lg:rounded-none lg:border-l lg:border-t-0 lg:border-r-0 lg:border-b-0 lg:h-full lg:max-h-none flex flex-col shadow-2xl">
             {/* Panel Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-[#2B2B2B]">
               <div>
@@ -553,9 +575,9 @@ export default function DashboardClient({ user }: DashboardProps) {
             </div>
 
             {/* Scrollable Activity List */}
-            <div className="flex-1 overflow-y-auto px-5 py-4">
+            <div className="overflow-y-auto px-5 py-4 lg:flex-1">
               {/* Flagged query reviewed */}
-              <div className="flex items-start gap-3 py-3.5 border-b border-[#3B3B3B]">
+              <div className={`flex items-start gap-3 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                 <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                   <CheckCircle className="w-4 h-4 text-[#85b878]" />
                 </div>
@@ -568,7 +590,7 @@ export default function DashboardClient({ user }: DashboardProps) {
               </div>
 
               {/* Correction sent */}
-              <div className="flex items-start gap-3 py-3.5 border-b border-[#3B3B3B]">
+              <div className={`flex items-start gap-3 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                 <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Pencil className="w-4 h-4 text-[#608e96]" />
                 </div>
@@ -581,7 +603,7 @@ export default function DashboardClient({ user }: DashboardProps) {
               </div>
 
               {/* New flagged query */}
-              <div className="flex items-start gap-3 py-3.5 border-b border-[#3B3B3B]">
+              <div className={`flex items-start gap-3 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                 <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Flag className="w-4 h-4 text-[#e8c8ab]" />
                 </div>
@@ -594,7 +616,7 @@ export default function DashboardClient({ user }: DashboardProps) {
               </div>
 
               {/* Agent created */}
-              <div className="flex items-start gap-3 py-3.5 border-b border-[#3B3B3B]">
+              <div className={`flex items-start gap-3 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                 <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Bot className="w-4 h-4 text-[#85b878]" />
                 </div>
@@ -607,7 +629,7 @@ export default function DashboardClient({ user }: DashboardProps) {
               </div>
 
               {/* Farmer conversation */}
-              <div className="flex items-start gap-3 py-3.5 border-b border-[#3B3B3B]">
+              <div className={`flex items-start gap-3 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                 <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                   <MessageCircle className="w-4 h-4 text-[#608e96]" />
                 </div>
@@ -620,7 +642,7 @@ export default function DashboardClient({ user }: DashboardProps) {
               </div>
 
               {/* More activities... */}
-              <div className="flex items-start gap-3 py-3.5 border-b border-[#3B3B3B]">
+              <div className={`flex items-start gap-3 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                 <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Flag className="w-4 h-4 text-[#e8c8ab]" />
                 </div>
@@ -632,7 +654,7 @@ export default function DashboardClient({ user }: DashboardProps) {
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 py-3.5 border-b border-[#3B3B3B]">
+              <div className={`flex items-start gap-3 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                 <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                   <BookOpen className="w-4 h-4 text-[#608e96]" />
                 </div>
@@ -655,6 +677,7 @@ export default function DashboardClient({ user }: DashboardProps) {
                 Close
               </button>
             </div>
+          </div>
           </div>
         </>
       )}
