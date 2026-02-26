@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink } from "lucide-react";
+import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, ChevronLeft } from "lucide-react";
+import GlassCircleButton from "@/components/glass-circle-button";
 
 interface System {
   id: string;
@@ -19,7 +20,13 @@ interface System {
   warrantyUntil?: string;
 }
 
-export default function SystemsView() {
+interface SystemsViewProps {
+  sidebarOpen?: boolean;
+  setSidebarOpen?: (value: boolean) => void;
+  onBackToChat?: () => void;
+}
+
+export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBackToChat }: SystemsViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
 
@@ -135,12 +142,31 @@ export default function SystemsView() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* PART 1: Fixed Section */}
-      <div className="flex-shrink-0 bg-[#1E1E1E] z-10 pb-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+      <div className="flex-shrink-0 bg-[#1E1E1E] z-10 pb-4 pt-8 lg:pt-0">
+        {/* Mobile header — chats-style glass back button + centered title */}
+        <div className="relative flex items-center justify-center mb-6 lg:hidden">
+          <div className="absolute left-0">
+            {onBackToChat ? (
+              <GlassCircleButton onClick={onBackToChat} aria-label="Back">
+                <ChevronLeft className="w-5 h-5 text-white" />
+              </GlassCircleButton>
+            ) : !sidebarOpen && setSidebarOpen ? (
+              <GlassCircleButton onClick={() => setSidebarOpen(true)} aria-label="Open menu">
+                <ChevronLeft className="w-5 h-5 text-white" />
+              </GlassCircleButton>
+            ) : null}
+          </div>
+          <div className="text-center">
+            <h1 className="text-2xl font-serif text-[#C2C0B6]">Systems</h1>
+            <p className="text-sm text-[#9C9A92] mt-1">{mockSystems.length} Farmitecture products installed</p>
+          </div>
+        </div>
+
+        {/* Desktop header */}
+        <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-serif text-[#C2C0B6]">Systems</h1>
-            <p className="text-sm standalone:text-base lg:text-sm text-[#9C9A92] mt-1">{mockSystems.length} Farmitecture products installed</p>
+            <p className="text-sm text-[#9C9A92] mt-1">{mockSystems.length} Farmitecture products installed</p>
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageCircle, Search, ChevronLeft, ChevronRight, Plus, ChevronDown, Share, Pencil, Trash2, Unlink, Box } from "lucide-react";
+import { MessageCircle, Search, ChevronLeft, ChevronRight, Plus, ChevronDown, Share, Pencil, Trash2, Unlink, Box, PanelLeft } from "lucide-react";
 import { CabbageIcon } from "@/components/send-icons";
 import GlassCircleButton from "@/components/glass-circle-button";
 
@@ -80,9 +80,11 @@ interface ChatsViewProps {
   initialChatId?: string | null;
   onChatOpened?: () => void;
   onNewChat?: () => void;
+  sidebarOpen?: boolean;
+  setSidebarOpen?: (value: boolean) => void;
 }
 
-export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, onNewChat }: ChatsViewProps) {
+export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, onNewChat, sidebarOpen = true, setSidebarOpen }: ChatsViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [openedChat, setOpenedChat] = useState<Chat | null>(null);
@@ -136,10 +138,10 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
     return (
       <div className="flex flex-col h-full overflow-hidden">
         {/* Conversation Header
-            Mobile: back button | agent name + system pill | new chat button (Claude-style)
+          Mobile: back button | chat title + system pill | new chat button (Claude-style)
             Desktop: breadcrumb — system name / chat title pill with chevron dropdown */}
         <div className="flex-shrink-0 bg-[#1E1E1E] pt-16 lg:pt-3 pb-3 px-3 lg:pl-4 lg:pr-3">
-          {/* Mobile header — back | agent name (+ system pill) | new chat
+            {/* Mobile header — back | chat title (+ system pill) | new chat
               Back: glass circle (replaces sidebar nav button — they're mutually exclusive)
               New chat: mirrors sidebar's circle button but with green Plus */}
           <div className="lg:hidden flex items-center justify-between">
@@ -151,7 +153,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
               <ChevronLeft className="w-5 h-5 text-white" />
             </GlassCircleButton>
             <div className="flex flex-col items-center gap-0.5 min-w-0 flex-1 mx-3">
-              <span className="text-sm standalone:text-base lg:text-sm font-medium text-white truncate">{openedChat.agentName}</span>
+              <span className="text-sm standalone:text-base lg:text-sm font-medium text-white truncate">{openedChat.title}</span>
               {openedChat.systemName && (
                 <div className="inline-flex items-center gap-1 bg-[#2B2B2B] rounded-full px-2.5 py-0.5">
                   <Box className="w-3 h-3 text-[#9C9A92]" />
@@ -258,7 +260,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
 
             {/* Reply Input — sticky to bottom, wider than messages */}
             <div className="sticky bottom-0 bg-[#1E1E1E]">
-              <div className="mx-3.5 mb-1">
+              <div className="mx-3.5 mb-3">
                 <div className="bg-[#2B2B2B] rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
                   <textarea
                     placeholder="Reply..."
@@ -280,7 +282,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-[#6B6B6B] text-center pb-2 pt-0.5">
+              <p className="text-xs text-[#C2C0B6] text-center pb-4 pt-0.5">
                 AI can make mistakes. Please verify important information.
               </p>
             </div>
@@ -295,12 +297,27 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
   return (
     <div className="flex flex-col h-full overflow-y-hidden overflow-x-clip">
       {/* PART 1: Fixed Section */}
-      <div className="flex-shrink-0 bg-[#1E1E1E] z-10 pb-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+      <div className="flex-shrink-0 bg-[#1E1E1E] z-10 pb-4 pt-8 lg:pt-0">
+        {/* Mobile header — glass button absolute left, title centered */}
+        <div className="relative flex items-center justify-center mb-6 lg:hidden">
+          {!sidebarOpen && setSidebarOpen && (
+            <div className="absolute left-0">
+              <GlassCircleButton onClick={() => setSidebarOpen(true)} aria-label="Open menu">
+                <PanelLeft className="w-5 h-5 text-white rotate-180" />
+              </GlassCircleButton>
+            </div>
+          )}
+          <div className="text-center">
+            <h1 className="text-2xl font-serif text-[#C2C0B6]">Chats</h1>
+            <p className="text-sm text-[#9C9A92] mt-1">{mockChats.length} conversations with Cultivate</p>
+          </div>
+        </div>
+
+        {/* Desktop header */}
+        <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl standalone:text-3xl lg:text-2xl font-serif text-[#C2C0B6]">Chats</h1>
-            <p className="text-sm standalone:text-base lg:text-sm text-[#9C9A92] mt-1">{mockChats.length} conversations with Cultivate</p>
+            <h1 className="text-2xl font-serif text-[#C2C0B6]">Chats</h1>
+            <p className="text-sm text-[#9C9A92] mt-1">{mockChats.length} conversations with Cultivate</p>
           </div>
         </div>
 
@@ -362,34 +379,24 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
 
         {/* Pagination Controls */}
         {filteredChats.length > 0 && totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 pt-4 pb-0 mt-2">
-            <div className="text-sm text-[#9C9A92]">
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredChats.length)} of {filteredChats.length}
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#3B3B3B] disabled:hover:text-[#C2C0B6]"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-                Previous
-              </button>
-
-              <div className="flex items-center gap-1 px-3">
-                <span className="text-sm text-white">Page {currentPage}</span>
-                <span className="text-sm text-[#6B6B6B]">of {totalPages}</span>
-              </div>
-
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#3B3B3B] disabled:hover:text-[#C2C0B6]"
-              >
-                Next
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+          <div className="flex items-center justify-center gap-2 px-5 pt-4 pb-0 mt-2 border-t border-[#3B3B3B]">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Prev
+            </button>
+            <span className={`px-3 py-1.5 ${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#6B6B6B]`}>
+              {startIndex + 1}–{Math.min(endIndex, filteredChats.length)}
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
           </div>
         )}
       </div>

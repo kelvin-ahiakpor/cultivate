@@ -121,8 +121,8 @@ export default function ChatPageClient({ user }: ChatPageProps) {
         className={`fixed inset-0 z-30 bg-black/50 lg:hidden transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setSidebarOpen(false)}
       />
-      {/* Mobile: button to open sidebar — hidden when a conversation is open (back arrow takes its place) */}
-      {!sidebarOpen && !(activeView === "chats" && selectedChatId) && (
+      {/* Mobile: button to open sidebar — hidden on Chats view (Chats header has its own glass control) */}
+      {!sidebarOpen && activeView !== "chats" && activeView !== "systems" && (
         <button
           onClick={() => setSidebarOpen(true)}
           className="fixed top-16 left-3 z-50 lg:hidden w-9 h-9 flex items-center justify-center bg-[#2B2B2B] hover:bg-[#3B3B3B] rounded-lg transition-colors"
@@ -312,13 +312,15 @@ export default function ChatPageClient({ user }: ChatPageProps) {
         </div>
 
         {/* User Profile */}
-        <div className={`border-t border-[#2B2B2B] p-2 relative hover:bg-black hover:border-black transition-colors ${!sidebarOpen ? 'flex justify-center' : ''}`}>
+        <div className={`${isStandalone ? '' : 'border-t border-[#2B2B2B]'} p-2 ${isStandalone ? 'pb-8' : 'pb-2'} lg:pb-2 relative ${!sidebarOpen ? 'flex justify-center' : ''}`}>
           {/* div instead of button so the nested Download button is valid HTML */}
           <div
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            className={`group relative flex items-center rounded-lg p-1.5 cursor-pointer ${sidebarOpen ? 'w-full justify-between' : 'justify-center'}`}
+            className={`group relative flex items-center p-1.5 ${sidebarOpen ? 'w-full justify-between gap-2' : 'justify-center'}`}
           >
-            <div className={`flex items-center ${sidebarOpen ? 'gap-2' : ''}`}>
+            <div
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className={`flex items-center ${sidebarOpen ? 'gap-2' : ''} ${isStandalone && sidebarOpen ? 'w-auto max-w-[calc(100%-3rem)] px-2.5 py-1.5 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] cursor-pointer transition-colors' : 'cursor-pointer'}`}
+            >
               <div className="w-10 h-10 bg-[#85b878] rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-base font-medium">{getInitials(user.name)}</span>
               </div>
@@ -334,15 +336,14 @@ export default function ChatPageClient({ user }: ChatPageProps) {
               )}
             </div>
             {sidebarOpen && (
-              <div className="flex items-center gap-0.5">
+              <div className="flex items-center">
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowInstallModal(true); }}
-                  className="p-1.5 border border-[#3B3B3B] hover:border-[#5a7048] rounded-md transition-colors text-[#9C9A92] hover:text-[#C2C0B6]"
+                  className={`${isStandalone ? 'h-10 w-10 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] flex items-center justify-center' : 'p-1.5 border border-[#3B3B3B] hover:border-[#5a7048] rounded-md'} transition-colors text-[#9C9A92] hover:text-[#C2C0B6]`}
                   title="Install app"
                 >
                   <Download className="w-4 h-4" />
                 </button>
-                <ChevronDown className={`w-4 h-4 text-[#C2C0B6] transition-transform ${showUserMenu ? "rotate-180" : ""}`} />
               </div>
             )}
             {/* Tooltip when collapsed */}
@@ -394,13 +395,24 @@ export default function ChatPageClient({ user }: ChatPageProps) {
           <div className={`flex-1 min-h-0 overflow-hidden ${
             selectedChatId ? '' : 'max-w-5xl w-full mx-auto px-4 sm:px-8 py-8'
           }`}>
-            <ChatsView initialChatId={selectedChatId} onChatOpened={handleChatOpened} onChatSelect={(chatId) => setSelectedChatId(chatId)} onNewChat={() => { setSelectedChatId(null); setActiveView("chat"); }} />
+            <ChatsView
+              initialChatId={selectedChatId}
+              onChatOpened={handleChatOpened}
+              onChatSelect={(chatId) => setSelectedChatId(chatId)}
+              onNewChat={() => { setSelectedChatId(null); setActiveView("chat"); }}
+              sidebarOpen={sidebarOpen}
+              setSidebarOpen={setSidebarOpen}
+            />
           </div>
         )}
 
         {activeView === "systems" && (
           <div className="max-w-5xl w-full mx-auto px-4 sm:px-8 py-8 flex-1 min-h-0 overflow-hidden">
-            <SystemsView />
+            <SystemsView
+              sidebarOpen={sidebarOpen}
+              setSidebarOpen={setSidebarOpen}
+              onBackToChat={() => setActiveView("chat")}
+            />
           </div>
         )}
 
