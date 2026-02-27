@@ -238,7 +238,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
         <div className="h-full overflow-y-auto thin-scrollbar scrollbar-outset">
           <div className="max-w-3xl standalone:max-w-4xl mx-auto flex flex-col min-h-full">
             {/* Messages — slightly narrower than input bar */}
-            <div className="flex-1 px-8 standalone:px-2 lg:px-8 pt-6 pb-24 space-y-6">
+            <div className={`flex-1 px-8 standalone:px-2 lg:px-8 pt-6 ${isStandalone ? "pb-16" : "pb-6"} space-y-6`}>
               {mockConversationMessages.map((message) => (
                 <div key={message.id}>
                   {message.role === "USER" ? (
@@ -254,19 +254,23 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
                   )}
                 </div>
               ))}
-              <div className="pt-2">
-                <p className="text-sm text-[#C2C0B6] text-right leading-snug max-w-[250px] ml-auto">
-                  AI can make mistakes.
-                  <br />
-                  Please verify important information.
-                </p>
-              </div>
+              {isStandalone && (
+                <div className="pt-2">
+                  <p className="text-sm text-[#C2C0B6] text-right leading-snug max-w-[250px] ml-auto">
+                    AI can make mistakes.
+                    <br />
+                    Please verify important information.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Reply Input — sticky to bottom, wider than messages */}
-            <div className="sticky bottom-0 relative z-30 -mt-10 bg-transparent pb-4 pt-0">
-              <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent backdrop-blur-[0.5px]" />
-              <div className="relative z-10 mx-3.5 mb-3">
+            <div className={`sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-[#1E1E1E] pb-2"}`}>
+              {isStandalone && (
+                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent backdrop-blur-[0.5px]" />
+              )}
+              <div className={`${isStandalone ? "relative z-10 " : ""}mx-3.5 ${isStandalone ? "mb-3" : "mb-1"}`}>
                 <div className="bg-[#2B2B2B] rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
                   <textarea
                     placeholder="Reply..."
@@ -287,6 +291,11 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
                     </div>
                   </div>
                 </div>
+                {!isStandalone && (
+                  <p className="mt-2 text-sm text-[#9C9A92] text-center leading-snug">
+                    AI can make mistakes. Please verify important information.
+                  </p>
+                )}
               </div>
             </div>
           </div>
