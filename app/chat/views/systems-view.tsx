@@ -221,106 +221,110 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
       </div>
 
       {/* PART 2: Scrollable Section */}
-      <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar scrollbar-outset">
-        {filteredSystems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center py-12">
-            <Layers className="w-16 h-16 text-[#3B3B3B] mb-4" />
-            <p className="text-[#9C9A92] text-sm">No systems found</p>
-            <p className="text-[#6B6B6B] text-xs mt-1">Contact Farmitecture to purchase farming systems</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 pb-4">
-            {filteredSystems.map((system) => (
-              <div
-                key={system.id}
-                className="bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl p-5 hover:border-[#3B3B3B] transition-colors"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className="w-12 h-12 bg-[#2B2B2B] rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Package className="w-6 h-6 text-[#5a7048]" />
+      <div className="relative flex-1 min-h-0">
+        <div className="h-full overflow-y-auto thin-scrollbar scrollbar-outset">
+          {filteredSystems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center py-12">
+              <Layers className="w-16 h-16 text-[#3B3B3B] mb-4" />
+              <p className="text-[#9C9A92] text-sm">No systems found</p>
+              <p className="text-[#6B6B6B] text-xs mt-1">Contact Farmitecture to purchase farming systems</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 pb-4">
+              {filteredSystems.map((system) => (
+                <div
+                  key={system.id}
+                  className="bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl p-5 hover:border-[#3B3B3B] transition-colors"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className="w-12 h-12 bg-[#2B2B2B] rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Package className="w-6 h-6 text-[#5a7048]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base font-medium text-white mb-1">{system.name}</h3>
+                        <p className="text-sm text-[#9C9A92]">{system.type}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-base font-medium text-white mb-1">{system.name}</h3>
-                      <p className="text-sm text-[#9C9A92]">{system.type}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-sm font-medium ${getStatusColor(system.status)}`}>
-                      {getStatusLabel(system.status)}
-                    </span>
-                    {system.status === "active" && <CheckCircle className="w-4 h-4 text-[#85b878]" />}
-                    {system.status === "pending_setup" && <Clock className="w-4 h-4 text-orange-400" />}
-                  </div>
-                </div>
-
-                <p className="text-sm text-[#C2C0B6] mb-4">{system.description}</p>
-
-                {/* Specifications */}
-                {system.specifications && (
-                  <div className="bg-[#2B2B2B] rounded-lg p-3 mb-4">
-                    <p className="text-xs text-[#9C9A92] uppercase tracking-wide mb-2">Specifications</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {system.specifications.size && (
-                        <div>
-                          <p className="text-xs text-[#6B6B6B]">Size</p>
-                          <p className="text-sm text-white">{system.specifications.size}</p>
-                        </div>
-                      )}
-                      {system.specifications.capacity && (
-                        <div>
-                          <p className="text-xs text-[#6B6B6B]">Capacity</p>
-                          <p className="text-sm text-white">{system.specifications.capacity}</p>
-                        </div>
-                      )}
-                      {system.specifications.material && (
-                        <div className="col-span-2">
-                          <p className="text-xs text-[#6B6B6B]">Material</p>
-                          <p className="text-sm text-white">{system.specifications.material}</p>
-                        </div>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm font-medium ${getStatusColor(system.status)}`}>
+                        {getStatusLabel(system.status)}
+                      </span>
+                      {system.status === "active" && <CheckCircle className="w-4 h-4 text-[#85b878]" />}
+                      {system.status === "pending_setup" && <Clock className="w-4 h-4 text-orange-400" />}
                     </div>
                   </div>
-                )}
 
-                {/* Dates */}
-                <div className="flex items-center gap-4 text-xs text-[#9C9A92]">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>Purchased: {new Date(system.purchaseDate).toLocaleDateString()}</span>
-                  </div>
-                  {system.installationDate && (
+                  <p className="text-sm text-[#C2C0B6] mb-4">{system.description}</p>
+
+                  {/* Specifications */}
+                  {system.specifications && (
+                    <div className="bg-[#2B2B2B] rounded-lg p-3 mb-4">
+                      <p className="text-xs text-[#9C9A92] uppercase tracking-wide mb-2">Specifications</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {system.specifications.size && (
+                          <div>
+                            <p className="text-xs text-[#6B6B6B]">Size</p>
+                            <p className="text-sm text-white">{system.specifications.size}</p>
+                          </div>
+                        )}
+                        {system.specifications.capacity && (
+                          <div>
+                            <p className="text-xs text-[#6B6B6B]">Capacity</p>
+                            <p className="text-sm text-white">{system.specifications.capacity}</p>
+                          </div>
+                        )}
+                        {system.specifications.material && (
+                          <div className="col-span-2">
+                            <p className="text-xs text-[#6B6B6B]">Material</p>
+                            <p className="text-sm text-white">{system.specifications.material}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dates */}
+                  <div className="flex items-center gap-4 text-xs text-[#9C9A92]">
                     <div className="flex items-center gap-1.5">
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      <span>Installed: {new Date(system.installationDate).toLocaleDateString()}</span>
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>Purchased: {new Date(system.purchaseDate).toLocaleDateString()}</span>
                     </div>
-                  )}
-                  {system.warrantyUntil && (
-                    <div className="flex items-center gap-1.5">
-                      <span>Warranty until: {new Date(system.warrantyUntil).toLocaleDateString()}</span>
-                    </div>
-                  )}
-                </div>
+                    {system.installationDate && (
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span>Installed: {new Date(system.installationDate).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                    {system.warrantyUntil && (
+                      <div className="flex items-center gap-1.5">
+                        <span>Warranty until: {new Date(system.warrantyUntil).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                  </div>
 
-                {/* Action */}
-                <div className="mt-4 pt-4 border-t border-[#2B2B2B] flex items-center justify-between">
-                  <a
-                    href="#"
-                    className="text-sm text-[#5a7048] hover:text-[#85b878] transition-colors flex items-center gap-1"
-                  >
-                    View manual
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                  {system.status === "pending_setup" && (
-                    <button className="px-3 py-1.5 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm">
-                      Request Setup
-                    </button>
-                  )}
+                  {/* Action */}
+                  <div className="mt-4 pt-4 border-t border-[#2B2B2B] flex items-center justify-between">
+                    <a
+                      href="#"
+                      className="text-sm text-[#5a7048] hover:text-[#85b878] transition-colors flex items-center gap-1"
+                    >
+                      View manual
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                    {system.status === "pending_setup" && (
+                      <button className="px-3 py-1.5 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm">
+                        Request Setup
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 h-8 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent lg:hidden" />
       </div>
     </div>
   );

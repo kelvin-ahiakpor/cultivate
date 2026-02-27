@@ -235,12 +235,10 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
 
         {/* Scrollable area — messages + input in one container (Claude-style integrated layout) */}
         <div className="flex-1 min-h-0 relative">
-          {/* Top blur fade — content blurs as it scrolls under header */}
-          <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-[#1E1E1E] to-transparent z-10 pointer-events-none" />
         <div className="h-full overflow-y-auto thin-scrollbar scrollbar-outset">
           <div className="max-w-3xl standalone:max-w-4xl mx-auto flex flex-col min-h-full">
             {/* Messages — slightly narrower than input bar */}
-            <div className="flex-1 px-8 standalone:px-2 lg:px-8 py-6 space-y-6">
+            <div className="flex-1 px-8 standalone:px-2 lg:px-8 pt-6 pb-24 space-y-6">
               {mockConversationMessages.map((message) => (
                 <div key={message.id}>
                   {message.role === "USER" ? (
@@ -266,8 +264,9 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
             </div>
 
             {/* Reply Input — sticky to bottom, wider than messages */}
-            <div className="sticky bottom-0 bg-[#1E1E1E] pb-4">
-              <div className="mx-3.5 mb-3">
+            <div className="sticky bottom-0 relative z-30 -mt-10 bg-transparent pb-4 pt-0">
+              <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent backdrop-blur-[0.5px]" />
+              <div className="relative z-10 mx-3.5 mb-3">
                 <div className="bg-[#2B2B2B] rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
                   <textarea
                     placeholder="Reply..."
@@ -349,59 +348,65 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
       </div>
 
       {/* PART 2: Scrollable Chat List */}
-      <div className="flex-1 overflow-y-auto min-h-0 pb-6 thin-scrollbar scrollbar-outset">
-        <div className="mr-3">
-          {paginatedChats.map((chat, index) => (
-            <div
-              key={chat.id}
-              onClick={() => { setOpenedChat(chat); onChatSelect?.(chat.id); }}
-              className={`pl-1.5 pr-1.5 py-2.5 hover:bg-[#2B2B2B]/40 transition-colors cursor-pointer ${
-                index < paginatedChats.length - 1
-                  ? `border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`
-                  : ''
-              }`}
-            >
-              <p className="text-sm standalone:text-base lg:text-sm text-white">{chat.title}</p>
-              <div className="flex items-center justify-between mt-1">
-                <p className="text-xs standalone:text-sm lg:text-xs text-[#6B6B6B]">{isStandalone ? chat.lastMessage : `Last message ${chat.lastMessage}`}</p>
-                <p className="text-xs standalone:text-sm lg:text-xs text-[#9C9A92]">{chat.agentName}</p>
+      <div className="relative flex-1 min-h-0">
+        <div className="h-full overflow-y-auto pb-6 thin-scrollbar scrollbar-outset">
+          <div className="mr-3">
+            {paginatedChats.map((chat, index) => (
+              <div
+                key={chat.id}
+                onClick={() => { setOpenedChat(chat); onChatSelect?.(chat.id); }}
+                className={`pl-1.5 pr-1.5 py-2.5 hover:bg-[#2B2B2B]/40 transition-colors cursor-pointer ${
+                  index < paginatedChats.length - 1
+                    ? `border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`
+                    : ''
+                }`}
+              >
+                <p className="text-sm standalone:text-base lg:text-sm text-white">{chat.title}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-xs standalone:text-sm lg:text-xs text-[#6B6B6B]">{isStandalone ? chat.lastMessage : `Last message ${chat.lastMessage}`}</p>
+                  <p className="text-xs standalone:text-sm lg:text-xs text-[#9C9A92]">{chat.agentName}</p>
+                </div>
               </div>
+            ))}
+          </div>
+
+          {filteredChats.length === 0 && (
+            <div className="p-8 text-center">
+              <MessageCircle className="w-10 h-10 text-[#6B6B6B] mx-auto mb-3" />
+              <p className="text-sm standalone:text-base lg:text-sm text-[#6B6B6B]">
+                {searchQuery
+                  ? "No conversations match your search."
+                  : "No conversations yet. Start a new chat!"}
+              </p>
             </div>
-          ))}
+          )}
+
+          {/* Pagination Controls */}
+          {filteredChats.length > 0 && totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 px-5 pt-4 pb-0 mt-2 border-t border-[#3B3B3B]">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Prev
+              </button>
+              <span className={`px-3 py-1.5 ${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#6B6B6B]`}>
+                {startIndex + 1}–{Math.min(endIndex, filteredChats.length)}
+              </span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
 
-        {filteredChats.length === 0 && (
-          <div className="p-8 text-center">
-            <MessageCircle className="w-10 h-10 text-[#6B6B6B] mx-auto mb-3" />
-            <p className="text-sm standalone:text-base lg:text-sm text-[#6B6B6B]">
-              {searchQuery
-                ? "No conversations match your search."
-                : "No conversations yet. Start a new chat!"}
-            </p>
-          </div>
-        )}
-
-        {/* Pagination Controls */}
-        {filteredChats.length > 0 && totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 px-5 pt-4 pb-0 mt-2 border-t border-[#3B3B3B]">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Prev
-            </button>
-            <span className={`px-3 py-1.5 ${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#6B6B6B]`}>
-              {startIndex + 1}–{Math.min(endIndex, filteredChats.length)}
-            </span>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
+        {isStandalone && (
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 h-8 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent" />
         )}
       </div>
     </div>
