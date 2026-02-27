@@ -237,7 +237,8 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
         <div className="flex-1 min-h-0 relative">
         <div className="h-full overflow-y-auto thin-scrollbar scrollbar-outset">
           <div className="max-w-3xl standalone:max-w-4xl mx-auto flex flex-col min-h-full">
-            {/* Messages — slightly narrower than input bar */}
+            {/* Messages — slightly narrower than input bar.
+              Standalone gets extra bottom room because footer overlays message area there only. */}
             <div className={`flex-1 px-8 standalone:px-2 lg:px-8 pt-6 ${isStandalone ? "pb-16" : "pb-6"} space-y-6`}>
               {mockConversationMessages.map((message) => (
                 <div key={message.id}>
@@ -254,6 +255,9 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
                   )}
                 </div>
               ))}
+              {/* Disclaimer location split:
+                  - standalone: in-flow (Claude-like)
+                  - web/desktop: fixed under input */}
               {isStandalone && (
                 <div className="pt-2">
                   <p className="text-sm text-[#C2C0B6] text-right leading-snug max-w-[250px] ml-auto">
@@ -265,7 +269,8 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
               )}
             </div>
 
-            {/* Reply Input — sticky to bottom, wider than messages */}
+            {/* Reply Input — sticky to bottom, wider than messages.
+              Overlay/wash effect is intentionally standalone-only. */}
             <div className={`sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-[#1E1E1E] pb-2"}`}>
               {isStandalone && (
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent backdrop-blur-[0.5px]" />
