@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageCircle, Search, PanelLeft } from "lucide-react";
+import { MessageCircle, Search, PanelLeft, Loader2 } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
+import { useConversations } from "@/lib/hooks/use-conversations";
 
 // Mock data - farmer conversations
 const mockChats = [
@@ -43,11 +44,23 @@ const mockChats = [
   { id: "35", title: "Mushroom cultivation on cocoa farms", farmerName: "Francis Kumi", agentName: "Cocoa Specialist", lastMessage: "3 weeks ago", messageCount: 6 },
 ];
 
-export default function ChatsView({ sidebarOpen, setSidebarOpen }: { sidebarOpen: boolean; setSidebarOpen: (v: boolean) => void }) {
+export default function ChatsView({
+  sidebarOpen,
+  setSidebarOpen,
+  // demoMode: uses mockChats local data, makes zero API requests. See BACKEND-PROGRESS.md § Phase 5.
+  demoMode,
+}: {
+  sidebarOpen: boolean;
+  setSidebarOpen: (v: boolean) => void;
+  demoMode?: boolean;
+}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isStandalone, setIsStandalone] = useState(false);
   const itemsPerPage = 30;
+
+  // SWR hook — null key in demo mode → zero requests
+  const apiData = useConversations(searchQuery, currentPage, itemsPerPage, demoMode);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(display-mode: standalone)");
@@ -61,17 +74,20 @@ export default function ChatsView({ sidebarOpen, setSidebarOpen }: { sidebarOpen
     return () => mediaQuery.removeEventListener("change", checkStandalone);
   }, []);
 
-  const filteredChats = mockChats.filter(chat =>
-    chat.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    chat.farmerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    chat.agentName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Demo: filter + paginate mockChats locally. Real: API already filtered + paginated.
+  const filteredChats = demoMode
+    ? mockChats.filter(chat =>
+        chat.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        chat.farmerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        chat.agentName.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : apiData.conversations;
 
-  // Pagination
-  const totalPages = Math.ceil(filteredChats.length / itemsPerPage);
+  const totalPages = demoMode ? Math.ceil(filteredChats.length / itemsPerPage) : apiData.totalPages;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedChats = filteredChats.slice(startIndex, endIndex);
+  const paginatedChats = demoMode ? filteredChats.slice(startIndex, endIndex) : filteredChats;
+  const totalCount = demoMode ? mockChats.length : apiData.total;
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -93,14 +109,14 @@ export default function ChatsView({ sidebarOpen, setSidebarOpen }: { sidebarOpen
           )}
           <div className="text-center">
             <h1 className="text-2xl font-serif text-[#C2C0B6]">Chats</h1>
-            <p className="text-sm text-[#9C9A92] mt-1">{mockChats.length} farmer conversations</p>
+            <p className="text-sm text-[#9C9A92] mt-1">{totalCount} farmer conversations</p>
           </div>
         </div>
         {/* Desktop header */}
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-serif text-[#C2C0B6]">Chats</h1>
-            <p className="text-sm text-[#9C9A92] mt-1">{mockChats.length} farmer conversations</p>
+            <p className="text-sm text-[#9C9A92] mt-1">{totalCount} farmer conversations</p>
           </div>
         </div>
 
@@ -121,7 +137,7 @@ export default function ChatsView({ sidebarOpen, setSidebarOpen }: { sidebarOpen
           <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#9C9A92]`}>
             Showing {filteredChats.length === 0 ? 0 : startIndex + 1}–{Math.min(endIndex, filteredChats.length)} of {filteredChats.length} {filteredChats.length === 1 ? 'chat' : 'chats'}
             {searchQuery && (
-              <span className="text-[#6B6B6B]"> &middot; filtered from {mockChats.length} total</span>
+              <span className="text-[#6B6B6B]"> &middot; filtered from {totalCount} total</span>
             )}
           </p>
         </div>
@@ -129,8 +145,16 @@ export default function ChatsView({ sidebarOpen, setSidebarOpen }: { sidebarOpen
 
       {/* PART 2: Scrollable Chat List */}
       <div className="flex-1 overflow-y-auto min-h-0 pb-6 thin-scrollbar scrollbar-outset">
-        <div className="mr-3">
-          {paginatedChats.map((chat, index) => (
+        {/* Loading skeleton — only shown in real mode while SWR is fetching */}
+        {!demoMode && apiData.isLoading && (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-6 h-6 text-[#6B6B6B] animate-spin" />
+          </div>
+        )}
+
+        {(!apiData.isLoading || demoMode) && (
+          <div className="mr-3">
+            {paginatedChats.map((chat, index) => (
             <div
               key={chat.id}
               className={`pl-1.5 pr-1.5 py-2.5 hover:bg-[#2B2B2B]/40 transition-colors cursor-pointer ${
@@ -146,9 +170,10 @@ export default function ChatsView({ sidebarOpen, setSidebarOpen }: { sidebarOpen
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        )}
 
-        {filteredChats.length === 0 && (
+        {(!apiData.isLoading || demoMode) && filteredChats.length === 0 && (
           <div className="p-8 text-center">
             <MessageCircle className="w-10 h-10 text-[#6B6B6B] mx-auto mb-3" />
             <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#6B6B6B]`}>

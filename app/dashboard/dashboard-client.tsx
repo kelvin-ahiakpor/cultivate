@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import React from "react";
 import Link from "next/link";
 import {
   LayoutDashboard, Bot, BookOpen, Flag, BarChart3,
   Plus, Settings, HelpCircle, LogOut,
   PanelLeft, MoreHorizontal, Upload, Eye,
-  CheckCircle, Pencil, ArrowRight, MessageCircle, X, Download,
+  CheckCircle, Pencil, ArrowRight, MessageCircle, X, Download, Loader2,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import AgentsView from "./views/agents-view";
@@ -14,6 +15,8 @@ import KnowledgeView from "./views/knowledge-view";
 import FlaggedView from "./views/flagged-view";
 import ChatsView from "./views/chats-view";
 import GlassCircleButton from "@/components/glass-circle-button";
+import { useDashboardStats } from "@/lib/hooks/use-dashboard-stats";
+import { useActivity, relativeTime, type ActivityItem } from "@/lib/hooks/use-activity";
 
 interface DashboardProps {
   user: {
@@ -24,6 +27,30 @@ interface DashboardProps {
   // demoMode: when true, all child views use local mock data and make zero API requests.
   // Passed down from /demo/dashboard/page.tsx. See BACKEND-PROGRESS.md § Phase 5 for the pattern.
   demoMode?: boolean;
+}
+
+/** Maps an API activity type to its icon + color. Used in the real-mode activity feed. */
+function ActivityRow({ item, isStandalone }: { item: ActivityItem; isStandalone: boolean }) {
+  const config: Record<ActivityItem["type"], { icon: React.ReactNode; color: string; accent: string }> = {
+    flagged_created:     { icon: <Flag className="w-4 h-4 text-[#e8c8ab]" />,        color: "bg-[#e8c8ab]/20", accent: "text-[#e8c8ab]" },
+    flagged_verified:    { icon: <CheckCircle className="w-4 h-4 text-[#85b878]" />, color: "bg-[#85b878]/20", accent: "text-[#85b878]" },
+    flagged_corrected:   { icon: <Pencil className="w-4 h-4 text-[#608e96]" />,      color: "bg-[#608e96]/20", accent: "text-[#608e96]" },
+    conversation_started:{ icon: <MessageCircle className="w-4 h-4 text-[#608e96]" />, color: "bg-[#608e96]/20", accent: "text-[#608e96]" },
+    agent_created:       { icon: <Bot className="w-4 h-4 text-[#85b878]" />,         color: "bg-[#85b878]/20", accent: "text-[#85b878]" },
+    knowledge_uploaded:  { icon: <BookOpen className="w-4 h-4 text-[#608e96]" />,    color: "bg-[#608e96]/20", accent: "text-[#608e96]" },
+  };
+  const { icon, color } = config[item.type] ?? config.conversation_started;
+  return (
+    <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+      <div className={`w-8 h-8 ${color} rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5`}>{icon}</div>
+      <div className="flex-1 min-w-0">
+        <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#C2C0B6]`}>{item.description}</p>
+        <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>
+          {item.agentName && <>{item.agentName} &middot; </>}{relativeTime(item.timestamp)}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export default function DashboardClient({ user, demoMode = false }: DashboardProps) {
@@ -82,6 +109,35 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
   };
   const [activeNav, setActiveNav] = useState("overview");
   const [activityPanelOpen, setActivityPanelOpen] = useState(false);
+  // Ref to measure the 8th item's bottom — makes the list snap to exactly 8 visible items
+  const activityListRef = useRef<HTMLDivElement>(null);
+  const [activityListMaxH, setActivityListMaxH] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!activityPanelOpen || !activityListRef.current) return;
+    // Wait one frame so the panel has painted before measuring
+    const frame = requestAnimationFrame(() => {
+      const list = activityListRef.current;
+      if (!list) return;
+      const children = list.children;
+      const snapAt = 8; // show this many items before scrolling
+      if (children.length >= snapAt) {
+        const nthItem = children[snapAt - 1] as HTMLElement;
+        const listTop = list.getBoundingClientRect().top;
+        const nthBottom = nthItem.getBoundingClientRect().bottom;
+        // +16 for the py-4 (bottom padding) inside the list
+        setActivityListMaxH(nthBottom - listTop + 8);
+      } else {
+        setActivityListMaxH(undefined); // fewer than 7 items — no cap needed
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [activityPanelOpen]);
+
+  // Overview stats — disabled in demo mode (zero API requests)
+  const { stats, isLoading: statsLoading } = useDashboardStats(demoMode);
+  // Activity feed — disabled in demo mode (zero API requests)
+  const { activities, isLoading: activityLoading } = useActivity(7, 20, demoMode);
 
   const handleCloseActivityPanel = () => {
     setActivityPanelOpen(false);
@@ -321,7 +377,9 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                       <Bot className="w-5 h-5 text-[#85b878]" />
                     </div>
                   </div>
-                  <p className="text-3xl font-semibold text-white">5</p>
+                  <p className="text-3xl font-semibold text-white">
+                    {demoMode ? 5 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-[#6B6B6B]" /> : (stats?.activeAgents ?? "—")}
+                  </p>
                 </button>
 
                 <button onClick={() => setActiveNav("knowledge")} className="bg-[#2B2B2B] rounded-xl p-5 text-left hover:border-[#608e96] border border-transparent transition-colors">
@@ -331,7 +389,9 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                       <BookOpen className="w-5 h-5 text-[#608e96]" />
                     </div>
                   </div>
-                  <p className="text-3xl font-semibold text-white">18</p>
+                  <p className="text-3xl font-semibold text-white">
+                    {demoMode ? 18 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-[#6B6B6B]" /> : (stats?.knowledgeDocs ?? "—")}
+                  </p>
                 </button>
 
                 <button onClick={() => setActiveNav("flagged")} className="bg-[#2B2B2B] rounded-xl p-5 text-left hover:border-[#e8c8ab] border border-transparent transition-colors">
@@ -341,7 +401,9 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                       <Flag className="w-5 h-5 text-[#e8c8ab]" />
                     </div>
                   </div>
-                  <p className="text-3xl font-semibold text-white">4</p>
+                  <p className="text-3xl font-semibold text-white">
+                    {demoMode ? 4 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-[#6B6B6B]" /> : (stats?.pendingFlags ?? "—")}
+                  </p>
                 </button>
               </div>
 
@@ -409,8 +471,18 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
               {/* PART 2: Scrollable Recent Activity List */}
               <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto pb-6">
               <div className="mr-3">
-                {/* Flagged query reviewed */}
-                <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+
+                {/* Loading state — only in real mode */}
+                {!demoMode && activityLoading && (
+                  <div className="flex items-center justify-center py-10">
+                    <Loader2 className="w-5 h-5 text-[#6B6B6B] animate-spin" />
+                  </div>
+                )}
+
+                {/* Demo mode: hardcoded activity items that show what a mature account looks like */}
+                {demoMode && (
+                  <>
+                <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                     <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <CheckCircle className="w-4 h-4 text-[#85b878]" />
                     </div>
@@ -421,9 +493,7 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                       <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>Pest Management &middot; 12 hours ago</p>
                     </div>
                   </div>
-
-                  {/* Correction sent */}
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                     <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Pencil className="w-4 h-4 text-[#608e96]" />
                     </div>
@@ -434,9 +504,7 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                       <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>General Farm Advisor &middot; 2 days ago</p>
                     </div>
                   </div>
-
-                  {/* New flagged query */}
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                     <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Flag className="w-4 h-4 text-[#e8c8ab]" />
                     </div>
@@ -447,9 +515,7 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                       <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>General Farm Advisor &middot; 2 hours ago &middot; 45% confidence</p>
                     </div>
                   </div>
-
-                  {/* Agent created */}
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                     <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Bot className="w-4 h-4 text-[#85b878]" />
                     </div>
@@ -460,9 +526,7 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                       <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>4 knowledge bases attached &middot; 1 day ago</p>
                     </div>
                   </div>
-
-                  {/* Farmer conversation */}
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                     <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <MessageCircle className="w-4 h-4 text-[#608e96]" />
                     </div>
@@ -473,9 +537,7 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                       <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>General Farm Advisor &middot; 5 hours ago</p>
                     </div>
                   </div>
-
-                  {/* New flagged query */}
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                     <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Flag className="w-4 h-4 text-[#e8c8ab]" />
                     </div>
@@ -486,9 +548,7 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                       <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>General Farm Advisor &middot; 6 hours ago &middot; 41% confidence</p>
                     </div>
                   </div>
-
-                  {/* Knowledge base uploaded */}
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                     <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                       <BookOpen className="w-4 h-4 text-[#608e96]" />
                     </div>
@@ -499,30 +559,44 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                       <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>Cocoa Specialist &middot; 3 days ago &middot; 42 chunks</p>
                     </div>
                   </div>
+                  </>
+                )}
 
-                  {/* View all footer */}
-                  <div className="pl-1.5 pr-1.5 py-3">
-                    <button
-                      onClick={() => setActivityPanelOpen(true)}
-                      className="flex items-center gap-1 text-xs text-[#9C9A92] hover:text-white transition-colors"
-                    >
-                      View all activity
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
+                {/* Real mode: dynamic activity items from API */}
+                {!demoMode && !activityLoading && activities.map((item: ActivityItem, i: number) => (
+                  <ActivityRow key={i} item={item} isStandalone={isStandalone} />
+                ))}
+
+                {/* Empty state — real mode, no activity yet */}
+                {!demoMode && !activityLoading && activities.length === 0 && (
+                  <div className="py-8 text-center">
+                    <p className="text-sm text-[#6B6B6B]">No activity in the last 7 days.</p>
                   </div>
+                )}
+
+                {/* View all footer */}
+                <div className="pl-1.5 pr-1.5 py-3">
+                  <button
+                    onClick={() => setActivityPanelOpen(true)}
+                    className="flex items-center gap-1 text-xs text-[#9C9A92] hover:text-white transition-colors"
+                  >
+                    View all activity
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
                 </div>
+              </div>
               </div>
                 </div>{/* closes scroll container: overflow-y-auto lg:overflow-hidden */}
                 </div>{/* closes scroll zone: flex-1 min-h-0 relative */}
             </div>
           )}
 
-          {activeNav === "chats" && <ChatsView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />}
+          {activeNav === "chats" && <ChatsView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} demoMode={demoMode} />}
           {/* demoMode disables SWR fetch — view uses local mockAgents instead */}
           {activeNav === "agents" && <AgentsView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} demoMode={demoMode} />}
-          {/* TODO Phase 5: pass demoMode to these views once they're connected to the API */}
-          {activeNav === "knowledge" && <KnowledgeView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />}
-          {activeNav === "flagged" && <FlaggedView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />}
+          {activeNav === "knowledge" && <KnowledgeView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} demoMode={demoMode} />}
+          {/* demoMode disables SWR fetch — view uses initialFlagged local state */}
+          {activeNav === "flagged" && <FlaggedView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} demoMode={demoMode} />}
 
           {activeNav === "analytics" && (
             <div>
@@ -561,8 +635,9 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
             className="fixed inset-0 bg-black/40 z-40"
             onClick={handleCloseActivityPanel}
           />
-          <div className="fixed inset-0 z-50 px-3 pt-[128i px] pb-3 standalone:pb-[calc(env(safe-area-inset-bottom)+12px)] lg:p-0 lg:inset-y-0 lg:right-0 lg:left-auto lg:w-[500px] lg:h-full">
-            <div className="w-full h-auto max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-24px)] bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl lg:rounded-none lg:border-l lg:border-t-0 lg:border-r-0 lg:border-b-0 lg:h-full lg:max-h-none flex flex-col shadow-2xl">
+          {/* Mobile: centered dialog that grows with content. Desktop: right-side panel. */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-3 py-[calc(env(safe-area-inset-top)+12px)] lg:p-0 lg:block lg:inset-y-0 lg:right-0 lg:left-auto lg:w-[500px] lg:h-full">
+            <div className="w-full max-w-sm mx-auto max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-24px)] bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl lg:rounded-none lg:border-l lg:border-t-0 lg:border-r-0 lg:border-b-0 lg:max-w-none lg:h-full lg:max-h-none flex flex-col shadow-2xl">
             {/* Panel Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-[#2B2B2B]">
               <div>
@@ -578,97 +653,122 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
               </button>
             </div>
 
-            {/* Scrollable Activity List */}
-            <div className="overflow-y-auto px-5 py-4 lg:flex-1">
-              {/* Flagged query reviewed */}
-              <div className={`flex items-start gap-3 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+            {/* Scrollable Activity List — height snaps to 8th item, scrolls beyond */}
+            <div
+              ref={activityListRef}
+              style={activityListMaxH ? { maxHeight: `${activityListMaxH}px` } : undefined}
+              className="overflow-y-auto thin-scrollbar px-5 py-2 lg:max-h-none lg:flex-1"
+            >
+              {/* Demo mode: hardcoded items showing a mature account's history */}
+              {demoMode && (
+                <>
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                 <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                   <CheckCircle className="w-4 h-4 text-[#85b878]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]">
-                    You <span className="text-[#85b878]">verified</span> a response about maize aphid identification
-                  </p>
+                  <p className="text-sm text-[#C2C0B6]">You <span className="text-[#85b878]">verified</span> a response about maize aphid identification</p>
                   <p className="text-xs text-[#6B6B6B] mt-0.5">Pest Management &middot; 12 hours ago</p>
                 </div>
               </div>
-
-              {/* Correction sent */}
-              <div className={`flex items-start gap-3 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                 <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Pencil className="w-4 h-4 text-[#608e96]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]">
-                    You <span className="text-[#608e96]">corrected</span> a response about okra planting schedule
-                  </p>
+                  <p className="text-sm text-[#C2C0B6]">You <span className="text-[#608e96]">corrected</span> a response about okra planting schedule</p>
                   <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 2 days ago</p>
                 </div>
               </div>
-
-              {/* New flagged query */}
-              <div className={`flex items-start gap-3 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                 <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Flag className="w-4 h-4 text-[#e8c8ab]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]">
-                    New <span className="text-[#e8c8ab]">flagged query</span> from Kwame Asante about cassava disease
-                  </p>
+                  <p className="text-sm text-[#C2C0B6]">New <span className="text-[#e8c8ab]">flagged query</span> from Kwame Asante about cassava disease</p>
                   <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 2 hours ago &middot; 45% confidence</p>
                 </div>
               </div>
-
-              {/* Agent created */}
-              <div className={`flex items-start gap-3 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                 <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Bot className="w-4 h-4 text-[#85b878]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]">
-                    <span className="text-[#85b878]">Cocoa Specialist</span> agent was created
-                  </p>
+                  <p className="text-sm text-[#C2C0B6]"><span className="text-[#85b878]">Cocoa Specialist</span> agent was created</p>
                   <p className="text-xs text-[#6B6B6B] mt-0.5">4 knowledge bases attached &middot; 1 day ago</p>
                 </div>
               </div>
-
-              {/* Farmer conversation */}
-              <div className={`flex items-start gap-3 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                 <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                   <MessageCircle className="w-4 h-4 text-[#608e96]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]">
-                    Ama Mensah started a <span className="text-[#608e96]">new conversation</span> about tomato fertilizer
-                  </p>
+                  <p className="text-sm text-[#C2C0B6]">Ama Mensah started a <span className="text-[#608e96]">new conversation</span> about tomato fertilizer</p>
                   <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 5 hours ago</p>
                 </div>
               </div>
-
-              {/* More activities... */}
-              <div className={`flex items-start gap-3 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                 <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Flag className="w-4 h-4 text-[#e8c8ab]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]">
-                    New <span className="text-[#e8c8ab]">flagged query</span> from Abena Darkwa about cocoa pod disease
-                  </p>
+                  <p className="text-sm text-[#C2C0B6]">New <span className="text-[#e8c8ab]">flagged query</span> from Abena Darkwa about cocoa pod disease</p>
                   <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 6 hours ago &middot; 41% confidence</p>
                 </div>
               </div>
-
-              <div className={`flex items-start gap-3 py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
                 <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                   <BookOpen className="w-4 h-4 text-[#608e96]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]">
-                    <span className="text-[#608e96]">Cocoa Farming Guide 2026.pdf</span> uploaded to knowledge base
-                  </p>
+                  <p className="text-sm text-[#C2C0B6]"><span className="text-[#608e96]">Cocoa Farming Guide 2026.pdf</span> uploaded to knowledge base</p>
                   <p className="text-xs text-[#6B6B6B] mt-0.5">Cocoa Specialist &middot; 3 days ago &middot; 42 chunks</p>
                 </div>
               </div>
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+                <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CheckCircle className="w-4 h-4 text-[#85b878]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[#C2C0B6]">You <span className="text-[#85b878]">verified</span> a response about tomato blight treatment</p>
+                  <p className="text-xs text-[#6B6B6B] mt-0.5">Pest Management &middot; 4 days ago</p>
+                </div>
+              </div>
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+                <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <MessageCircle className="w-4 h-4 text-[#608e96]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[#C2C0B6]">Kofi Mensah started a <span className="text-[#608e96]">new conversation</span> about armyworm outbreak</p>
+                  <p className="text-xs text-[#6B6B6B] mt-0.5">Pest Management &middot; 5 days ago</p>
+                </div>
+              </div>
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+                <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Bot className="w-4 h-4 text-[#85b878]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[#C2C0B6]"><span className="text-[#85b878]">Maize Expert</span> agent was updated with new system prompt</p>
+                  <p className="text-xs text-[#6B6B6B] mt-0.5">6 days ago</p>
+                </div>
+              </div>
+                </>
+              )}
+
+              {/* Real mode: same activities array fetched for the overview — no second API call */}
+              {!demoMode && activityLoading && (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-5 h-5 text-[#6B6B6B] animate-spin" />
+                </div>
+              )}
+              {!demoMode && !activityLoading && activities.map((item: ActivityItem, i: number) => (
+                <ActivityRow key={i} item={item} isStandalone={isStandalone} />
+              ))}
+              {!demoMode && !activityLoading && activities.length === 0 && (
+                <div className="py-8 text-center">
+                  <p className="text-sm text-[#6B6B6B]">No activity in the last 30 days.</p>
+                </div>
+              )}
             </div>
 
             {/* Panel Footer */}

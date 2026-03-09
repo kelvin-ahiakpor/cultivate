@@ -1,0 +1,128 @@
+"use client";
+
+import useSWR from "swr";
+
+const fetcher = (url: string) =>
+  fetch(url).then((res) => {
+    if (!res.ok) throw new Error("Failed to fetch");
+    return res.json();
+  });
+
+// Normalised shape used by the view — same fields as mockDocuments
+export interface KnowledgeDoc {
+  id: string;
+  title: string;
+  fileName: string;
+  fileType: string;      // "PDF" | "DOCX" | "TXT"
+  chunkCount: number;
+  agentId: string;
+  agentName: string;
+  uploadedAt: string;    // formatted display string e.g. "Jan 28, 2026"
+  status: string;
+  referencedInChats: number; // 0 for real data — API doesn't return this yet
+}
+
+interface RawDoc {
+  id: string;
+  title: string;
+  fileName: string;
+  fileType: string;
+  chunkCount: number;
+  uploadedAt: string; // ISO
+  status: string;
+  agent: { id: string; name: string } | null;
+}
+
+interface KnowledgeBasesResponse {
+  documents: RawDoc[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+}
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function normalize(doc: RawDoc): KnowledgeDoc {
+  return {
+    id: doc.id,
+    title: doc.title,
+    fileName: doc.fileName,
+    fileType: doc.fileType.toUpperCase(),
+    chunkCount: doc.chunkCount,
+    agentId: doc.agent?.id || "",
+    agentName: doc.agent?.name || "Unassigned",
+    uploadedAt: formatDate(doc.uploadedAt),
+    status: doc.status,
+    referencedInChats: 0, // not returned by API yet
+  };
+}
+
+/**
+ * Hook to fetch knowledge base documents.
+ * @param search - Filter by title
+ * @param agentId - Filter by agent ID (empty = all)
+ * @param page - 1-indexed
+ * @param limit - Items per page
+ * @param disabled - Pass true in demo mode → null SWR key → zero network requests
+ */
+export function useKnowledgeBases(
+  search?: string,
+  agentId?: string,
+  page: number = 1,
+  limit: number = 30,
+  disabled: boolean = false
+) {
+  const params = new URLSearchParams();
+  if (search) params.append("search", search);
+  if (agentId) params.append("agentId", agentId);
+  params.append("page", page.toString());
+  params.append("limit", limit.toString());
+
+  const { data, error, isLoading, mutate } = useSWR<KnowledgeBasesResponse>(
+    disabled ? null : `/api/knowledge-bases?${params.toString()}`,
+    fetcher,
+    { revalidateOnFocus: false }
+  );
+
+  return {
+    documents: (data?.documents || []).map(normalize),
+    total: data?.pagination.total || 0,
+    totalPages: data?.pagination.totalPages || 1,
+    isLoading,
+    isError: error,
+    mutate,
+  };
+}
+
+/**
+ * Upload a new document to the knowledge base.
+ * FormData fields: file, title, agentId
+ */
+export async function uploadDocument(formData: FormData) {
+  const res = await fetch("/api/knowledge-bases/upload", {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Upload failed");
+  }
+  return res.json();
+}
+
+/**
+ * Delete a knowledge base document by ID.
+ * Also removes chunks from pgvector and file from Supabase Storage.
+ */
+export async function deleteDocument(id: string) {
+  const res = await fetch(`/api/knowledge-bases/${id}`, { method: "DELETE" });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Delete failed");
+  }
+  return res.json();
+}

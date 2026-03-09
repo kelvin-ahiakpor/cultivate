@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, ChevronDown, PanelLeft } from "lucide-react";
+import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, ChevronDown, PanelLeft, Loader2 } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
+import { useKnowledgeBases, uploadDocument, deleteDocument, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
+import { useAgents } from "@/lib/hooks/use-agents";
 
 // Mock data - expanded for pagination
 const mockDocuments = [
@@ -60,20 +62,39 @@ const mockDocuments = [
   { id: "52", title: "Onion Production Manual", fileName: "onion.pdf", fileType: "PDF", chunkCount: 38, agentName: "General Farm Advisor", uploadedAt: "Oct 11, 2025", referencedInChats: 52 },
 ];
 
-const agents = ["All Agents", "General Farm Advisor", "Pest Management", "Maize Expert"];
+// Demo-only hardcoded agent names for filter dropdown and upload form
+const demoAgentNames = ["All Agents", "General Farm Advisor", "Pest Management", "Maize Expert"];
 
-export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebarOpen: boolean; setSidebarOpen: (v: boolean) => void }) {
+export default function KnowledgeView({
+  sidebarOpen,
+  setSidebarOpen,
+  demoMode = false,
+}: {
+  sidebarOpen: boolean;
+  setSidebarOpen: (v: boolean) => void;
+  // demoMode: uses local mockDocuments, makes zero API requests. See BACKEND-PROGRESS.md § Phase 5.
+  demoMode?: boolean;
+}) {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState("All Agents");
+  // agentFilter: demo = agent name string, real = agent ID string (empty = all)
+  const [agentFilter, setAgentFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
-  
+
   // View and Delete modals
-  const [viewPanelDoc, setViewPanelDoc] = useState<typeof mockDocuments[0] | null>(null);
-  const [deleteModalDoc, setDeleteModalDoc] = useState<typeof mockDocuments[0] | null>(null);
+  const [viewPanelDoc, setViewPanelDoc] = useState<KnowledgeDoc | null>(null);
+  const [deleteModalDoc, setDeleteModalDoc] = useState<KnowledgeDoc | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Upload form state
+  const [uploadTitle, setUploadTitle] = useState("");
+  const [uploadAgentId, setUploadAgentId] = useState("");
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   
   // Upload modal states
   const [uploadType, setUploadType] = useState<'new' | 'update'>('new');
@@ -81,15 +102,50 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
   const [showDocSelectorModal, setShowDocSelectorModal] = useState(false);
   const [docSearchQuery, setDocSearchQuery] = useState('');
 
-  const handleViewDocument = (doc: typeof mockDocuments[0]) => {
+  // Fetch documents — disabled in demo mode (null SWR key → zero requests)
+  const apiData = useKnowledgeBases(
+    searchQuery,
+    agentFilter,
+    currentPage,
+    itemsPerPage,
+    demoMode
+  );
+
+  // Fetch real agents for filter dropdown and upload form — also disabled in demo
+  const { agents: realAgents } = useAgents("", 1, 100, demoMode);
+
+  // Demo: filter mockDocuments client-side. Real: API already filtered + paginated.
+  const filteredDocs: KnowledgeDoc[] = demoMode
+    ? (mockDocuments as KnowledgeDoc[]).filter((doc) => {
+        const matchesAgent = !agentFilter || doc.agentName === agentFilter;
+        const matchesSearch =
+          !searchQuery ||
+          doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          doc.agentName.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesAgent && matchesSearch;
+      })
+    : apiData.documents;
+
+  const totalCount = demoMode ? mockDocuments.length : apiData.total;
+  const filteredCount = demoMode ? filteredDocs.length : apiData.total;
+  const totalPages = demoMode
+    ? Math.ceil(filteredDocs.length / itemsPerPage)
+    : apiData.totalPages;
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  // Demo: slice client-side. Real: already paginated from server.
+  const paginatedDocs = demoMode ? filteredDocs.slice(startIndex, endIndex) : filteredDocs;
+
+  const handleViewDocument = (doc: KnowledgeDoc) => {
     setViewPanelDoc(doc);
     setOpenMenuId(null);
   };
 
-  const handleDownloadDocument = (doc: typeof mockDocuments[0]) => {
-    // Client-side download simulation (no endpoint for now)
+  const handleDownloadDocument = (doc: KnowledgeDoc) => {
+    // No file URL available yet — placeholder
     const link = document.createElement('a');
-    link.href = '#'; // Replace with actual file URL when backend is ready
+    link.href = '#';
     link.download = doc.fileName;
     document.body.appendChild(link);
     link.click();
@@ -97,15 +153,28 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
     setOpenMenuId(null);
   };
 
-  const handleDeleteConfirm = () => {
-    // Perform delete action here (API call when backend is ready)
-    console.log('Deleting document:', deleteModalDoc?.id);
-    setDeleteModalDoc(null);
+  const handleDeleteConfirm = async () => {
+    if (!deleteModalDoc) return;
+    if (demoMode) { setDeleteModalDoc(null); return; }
+    setDeleting(true);
+    try {
+      await deleteDocument(deleteModalDoc.id);
+      apiData.mutate();
+    } catch (e) {
+      console.error("Delete failed:", e);
+    } finally {
+      setDeleting(false);
+      setDeleteModalDoc(null);
+    }
   };
 
   const handleOpenUploadModal = () => {
     setUploadType('new');
     setUpdateDocId('');
+    setUploadTitle('');
+    setUploadAgentId('');
+    setUploadFile(null);
+    setUploadError('');
     setShowUploadModal(true);
   };
 
@@ -113,41 +182,55 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
     setUploadType('new');
     setUpdateDocId('');
     setDocSearchQuery('');
+    setUploadTitle('');
+    setUploadAgentId('');
+    setUploadFile(null);
+    setUploadError('');
     setShowUploadModal(false);
   };
 
-  const handleSelectDocument = (docId: string, docTitle: string) => {
+  const handleUploadSubmit = async () => {
+    if (demoMode) { handleCloseUploadModal(); return; }
+    if (!uploadTitle.trim() || !uploadAgentId || !uploadFile) {
+      setUploadError("Please fill in the title, assign an agent, and select a file.");
+      return;
+    }
+    setUploading(true);
+    setUploadError("");
+    try {
+      const fd = new FormData();
+      fd.append("title", uploadTitle.trim());
+      fd.append("agentId", uploadAgentId);
+      fd.append("file", uploadFile);
+      await uploadDocument(fd);
+      apiData.mutate();
+      handleCloseUploadModal();
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSelectDocument = (docId: string) => {
     setUpdateDocId(docId);
     setShowDocSelectorModal(false);
     setDocSearchQuery('');
   };
 
-  // Alphabetically sorted documents
-  const sortedDocuments = [...mockDocuments].sort((a, b) => a.title.localeCompare(b.title));
-  
-  // Filtered documents for selector modal
+  // Alphabetically sorted docs for selector modal (demo: mockDocuments, real: current page)
+  const sortedDocuments = [...(demoMode ? (mockDocuments as KnowledgeDoc[]) : apiData.documents)]
+    .sort((a, b) => a.title.localeCompare(b.title));
+
+  // Filtered docs for selector modal search
   const filteredSelectorDocs = sortedDocuments.filter(doc =>
     doc.title.toLowerCase().includes(docSearchQuery.toLowerCase()) ||
     doc.fileName.toLowerCase().includes(docSearchQuery.toLowerCase())
   );
 
-  // Filter by agent and search query
-  const filteredDocs = mockDocuments.filter(doc => {
-    const matchesAgent = selectedAgent === "All Agents" || doc.agentName === selectedAgent;
-    const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.agentName.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesAgent && matchesSearch;
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(filteredDocs.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedDocs = filteredDocs.slice(startIndex, endIndex);
-
   // Reset to page 1 when filters change
-  const handleAgentChange = (agent: string) => {
-    setSelectedAgent(agent);
+  const handleAgentChange = (value: string) => {
+    setAgentFilter(value === "All Agents" ? "" : value);
     setCurrentPage(1);
   };
 
@@ -171,7 +254,7 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
           )}
           <div className="text-center">
             <h1 className="text-2xl font-serif text-[#C2C0B6]">Knowledge Base</h1>
-            <p className="text-sm text-[#9C9A92] mt-1">{mockDocuments.length} documents uploaded</p>
+            <p className="text-sm text-[#9C9A92] mt-1">{totalCount} documents uploaded</p>
           </div>
           <div className="absolute right-0">
             <button
@@ -187,7 +270,7 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-serif text-[#C2C0B6]">Knowledge Base</h1>
-            <p className="text-sm text-[#9C9A92] mt-1">{mockDocuments.length} documents uploaded</p>
+            <p className="text-sm text-[#9C9A92] mt-1">{totalCount} documents uploaded</p>
           </div>
           <button
             onClick={handleOpenUploadModal}
@@ -200,17 +283,19 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
 
         {/* Filter and Search */}
         <div className="flex items-center gap-3 mb-6">
-          {/* Agent Filter */}
+          {/* Agent Filter — demo: hardcoded names, real: from API */}
           <div className="relative">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B] pointer-events-none" />
             <select
-              value={selectedAgent}
+              value={agentFilter || "All Agents"}
               onChange={(e) => handleAgentChange(e.target.value)}
               className="pl-10 pr-4 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-[#C2C0B6] focus:outline-none focus:border-[#85b878] cursor-pointer appearance-none min-w-[200px]"
             >
-              {agents.map(agent => (
-                <option key={agent} value={agent}>{agent}</option>
-              ))}
+              <option value="All Agents">All Agents</option>
+              {demoMode
+                ? demoAgentNames.slice(1).map(name => <option key={name} value={name}>{name}</option>)
+                : realAgents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)
+              }
             </select>
           </div>
 
@@ -219,7 +304,7 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B]" />
             <input
               type="text"
-              placeholder="Search documents..."
+              placeholder="Search docs..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
@@ -230,9 +315,9 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
         {/* Document Count */}
         <div className="mb-4 px-1">
           <p className="text-sm text-[#9C9A92]">
-            {filteredDocs.length} {filteredDocs.length === 1 ? 'document' : 'documents'}
-            {(searchQuery || selectedAgent !== "All Agents") && (
-              <span className="text-[#6B6B6B]"> &middot; filtered from {mockDocuments.length} total</span>
+            {filteredCount} {filteredCount === 1 ? 'document' : 'documents'}
+            {(searchQuery || agentFilter) && (
+              <span className="text-[#6B6B6B]"> &middot; filtered from {totalCount} total</span>
             )}
           </p>
         </div>
@@ -355,15 +440,15 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
           <div className="p-8 text-center">
             <BookOpen className="w-10 h-10 text-[#6B6B6B] mx-auto mb-3" />
             <p className="text-sm text-[#6B6B6B]">
-              {searchQuery || selectedAgent !== "All Agents" 
-                ? "No documents match your filters." 
+              {searchQuery || agentFilter
+                ? "No documents match your filters."
                 : "No documents uploaded yet."}
             </p>
           </div>
         )}
 
         {/* Pagination */}
-        {filteredDocs.length > 0 && totalPages > 1 && (
+        {filteredCount > 0 && totalPages > 1 && (
           <div className="flex items-center justify-center gap-2 px-5 pt-4 pb-0 mt-2">
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
@@ -373,7 +458,7 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
               Prev
             </button>
             <span className="px-3 py-1.5 text-sm text-[#6B6B6B]">
-              {startIndex + 1}–{Math.min(endIndex, filteredDocs.length)}
+              {startIndex + 1}–{Math.min(endIndex, filteredCount)}
             </span>
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
@@ -434,7 +519,7 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
                       className="w-full px-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-left hover:border-[#5a7048] transition-colors"
                     >
                       {updateDocId ? (
-                        <span className="text-white">{mockDocuments.find(d => d.id === updateDocId)?.title}</span>
+                        <span className="text-white">{sortedDocuments.find(d => d.id === updateDocId)?.title}</span>
                       ) : (
                         <span className="text-[#6B6B6B]">Click to select a document...</span>
                       )}
@@ -446,6 +531,8 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
                   <label className="block text-sm text-[#9C9A92] mb-1.5">Document Title</label>
                   <input
                     type="text"
+                    value={uploadTitle}
+                    onChange={(e) => setUploadTitle(e.target.value)}
                     placeholder="e.g. Maize Farming Best Practices"
                     className="w-full px-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
                   />
@@ -454,11 +541,16 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
                 <div>
                   <label className="block text-sm text-[#9C9A92] mb-1.5">Assign to Agent</label>
                   <div className="relative">
-                  <select className="w-full px-3 py-2.5 pr-10 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white focus:outline-none focus:border-[#5a7048] appearance-none">
+                    <select
+                      value={uploadAgentId}
+                      onChange={(e) => setUploadAgentId(e.target.value)}
+                      className="w-full px-3 py-2.5 pr-10 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white focus:outline-none focus:border-[#5a7048] appearance-none"
+                    >
                       <option value="">Select an agent...</option>
-                      <option>General Farm Advisor</option>
-                      <option>Maize Expert</option>
-                      <option>Pest Management</option>
+                      {demoMode
+                        ? demoAgentNames.slice(1).map(name => <option key={name} value={name}>{name}</option>)
+                        : realAgents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)
+                      }
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B] pointer-events-none" />
                   </div>
@@ -468,30 +560,57 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
                 <div
                   onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                   onDragLeave={() => setDragOver(false)}
-                  onDrop={(e) => { e.preventDefault(); setDragOver(false); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    const file = e.dataTransfer.files[0];
+                    if (file) setUploadFile(file);
+                  }}
                   className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
                     dragOver ? 'border-[#85b878] bg-[#85b878]/5' : 'border-[#3B3B3B]'
                   }`}
                 >
                   <Upload className="w-8 h-8 text-[#6B6B6B] mx-auto mb-3" />
-                  <p className="text-sm text-[#C2C0B6] mb-1">Drag and drop your file here</p>
-                  <p className="text-xs text-[#6B6B6B] mb-3">or</p>
-                  <button className="px-4 py-2 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-[#C2C0B6] hover:border-[#85b878] transition-colors">
-                    Browse Files
-                  </button>
+                  {uploadFile ? (
+                    <p className="text-sm text-[#85b878]">{uploadFile.name}</p>
+                  ) : (
+                    <>
+                      <p className="text-sm text-[#C2C0B6] mb-1">Drag and drop your file here</p>
+                      <p className="text-xs text-[#6B6B6B] mb-3">or</p>
+                      <label className="px-4 py-2 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-[#C2C0B6] hover:border-[#85b878] transition-colors cursor-pointer">
+                        Browse Files
+                        <input
+                          type="file"
+                          accept=".pdf,.docx,.txt"
+                          className="hidden"
+                          onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                        />
+                      </label>
+                    </>
+                  )}
                   <p className="text-xs text-[#6B6B6B] mt-3">Supports PDF, DOCX, TXT (max 25MB)</p>
                 </div>
+
+                {uploadError && (
+                  <p className="text-sm text-red-400">{uploadError}</p>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 mt-6">
                 <button
                   onClick={handleCloseUploadModal}
-                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors"
+                  disabled={uploading}
+                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
-                <button className="px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm">
-                  Upload
+                <button
+                  onClick={handleUploadSubmit}
+                  disabled={uploading}
+                  className="px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
+                >
+                  {uploading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {uploading ? "Uploading..." : "Upload"}
                 </button>
               </div>
             </div>
@@ -720,9 +839,11 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
                 </button>
                 <button 
                   onClick={handleDeleteConfirm}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
+                  disabled={deleting}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
                 >
-                  Delete Document
+                  {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {deleting ? "Deleting..." : "Delete Document"}
                 </button>
               </div>
             </div>
@@ -754,7 +875,7 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
                   type="text"
                   value={docSearchQuery}
                   onChange={(e) => setDocSearchQuery(e.target.value)}
-                  placeholder="Search documents..."
+                  placeholder="Search docs..."
                   className="w-full pl-9 pr-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
                 />
               </div>
@@ -770,7 +891,7 @@ export default function KnowledgeView({ sidebarOpen, setSidebarOpen }: { sidebar
                     <button
                       key={doc.id}
                       type="button"
-                      onClick={() => handleSelectDocument(doc.id, doc.title)}
+                      onClick={() => handleSelectDocument(doc.id)}
                       className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors ${
                         updateDocId === doc.id
                           ? 'bg-[#5a7048] text-white'

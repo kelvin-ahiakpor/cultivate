@@ -47,6 +47,13 @@ export async function GET(request: NextRequest) {
                   id: true,
                   title: true,
                   farmer: { select: { id: true, name: true } },
+                  // Get the most recent USER message — that's the farmer's question
+                  messages: {
+                    where: { role: "USER" },
+                    orderBy: { createdAt: "desc" },
+                    take: 1,
+                    select: { content: true },
+                  },
                 },
               },
             },

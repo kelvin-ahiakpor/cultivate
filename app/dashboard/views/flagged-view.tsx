@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Flag, Search, CheckCircle, ChevronDown, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft } from "lucide-react";
+import { Flag, Search, CheckCircle, ChevronDown, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft, Loader2 } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { SproutIcon } from "@/components/send-icons";
+import { useFlaggedQueries, reviewFlaggedQuery, type FlaggedQueryItem as FlaggedQuery } from "@/lib/hooks/use-flagged-queries";
 
 type FlagStatus = "all" | "PENDING" | "VERIFIED" | "CORRECTED";
 
@@ -16,22 +17,7 @@ interface ChatMessage {
   isFlagged?: boolean;
 }
 
-interface FlaggedQuery {
-  id: string;
-  farmerName: string;
-  farmerMessage: string;
-  agentResponse: string;
-  agentName: string;
-  confidenceScore: number;
-  status: "PENDING" | "VERIFIED" | "CORRECTED";
-  createdAt: string;
-  reviewedAt?: string;
-  agronomistResponse?: string;
-  verificationNotes?: string;
-  conversationId: string;
-}
-
-// Sample conversations linked to flagged queries
+// Sample conversations for demo mode — gives the chat panel realistic content
 const sampleConversations: Record<string, { title: string; messages: ChatMessage[] }> = {
   "conv-1": {
     title: "Cassava farming advice",
@@ -494,7 +480,16 @@ const initialFlagged: FlaggedQuery[] = [
 const DEFAULT_PANEL_WIDTH = 576; // max-w-xl equivalent
 const MIN_PANEL_WIDTH = 400;
 
-export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { sidebarOpen?: boolean; setSidebarOpen?: (v: boolean) => void }) {
+export default function FlaggedView({
+  sidebarOpen = true,
+  setSidebarOpen,
+  demoMode = false,
+}: {
+  sidebarOpen?: boolean;
+  setSidebarOpen?: (v: boolean) => void;
+  // demoMode: uses initialFlagged local state, makes zero API requests. See BACKEND-PROGRESS.md § Phase 5.
+  demoMode?: boolean;
+}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<FlagStatus>("all");
   const [isDesktop, setIsDesktop] = useState(false);
@@ -502,7 +497,19 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
   const itemsPerPage = 10;
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [responseText, setResponseText] = useState("");
-  const [queries, setQueries] = useState<FlaggedQuery[]>(initialFlagged);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Demo mode: local mutable state. Real mode: driven by SWR + API calls.
+  const [demoQueries, setDemoQueries] = useState<FlaggedQuery[]>(initialFlagged);
+
+  // SWR — disabled in demo mode (null key → zero requests)
+  const apiData = useFlaggedQueries(
+    searchQuery,
+    statusFilter === "all" ? "" : statusFilter,
+    currentPage,
+    itemsPerPage,
+    demoMode
+  );
 
   // Verification modal state
   const [showVerifyModal, setShowVerifyModal] = useState(false);
@@ -577,18 +584,27 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
     if (panelWidth > max) setPanelWidth(max);
   }, [sidebarWidth, panelWidth]);
 
-  const filteredQueries = queries.filter(q => {
-    const matchesSearch = q.farmerMessage.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      q.farmerName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || q.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Demo: filter + paginate locally. Real: API already filtered + paginated.
+  const filteredQueries: FlaggedQuery[] = demoMode
+    ? demoQueries.filter(q => {
+        const matchesSearch =
+          !searchQuery ||
+          q.farmerMessage.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          q.farmerName.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesStatus = statusFilter === "all" || q.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      })
+    : apiData.queries;
 
-  // Pagination
-  const totalPages = Math.ceil(filteredQueries.length / itemsPerPage);
+  const totalPages = demoMode ? Math.ceil(filteredQueries.length / itemsPerPage) : apiData.totalPages;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedQueries = filteredQueries.slice(startIndex, endIndex);
+  const paginatedQueries = demoMode ? filteredQueries.slice(startIndex, endIndex) : filteredQueries;
+
+  // Pending count — demo counts from local state, real counts from total (status=PENDING)
+  const pendingCount = demoMode
+    ? demoQueries.filter(q => q.status === "PENDING").length
+    : apiData.total;
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -599,8 +615,6 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
     setStatusFilter(status);
     setCurrentPage(1);
   };
-
-  const pendingCount = queries.filter(q => q.status === "PENDING").length;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -614,18 +628,26 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
   // --- Verification handlers ---
   const handleOpenVerifyModal = (queryId: string) => {
     setVerifyingQueryId(queryId);
-    // Pre-populate with whatever the user typed in the correction textarea
     setVerifyNotes(responseText);
     setShowVerifyModal(true);
   };
 
-  const handleConfirmVerification = () => {
+  const handleConfirmVerification = async () => {
     if (!verifyingQueryId) return;
-    setQueries(prev => prev.map(q =>
-      q.id === verifyingQueryId
-        ? { ...q, status: "VERIFIED" as const, verificationNotes: verifyNotes || undefined, reviewedAt: "Just now" }
-        : q
-    ));
+    if (demoMode) {
+      setDemoQueries(prev => prev.map(q =>
+        q.id === verifyingQueryId
+          ? { ...q, status: "VERIFIED" as const, verificationNotes: verifyNotes || undefined, reviewedAt: "Just now" }
+          : q
+      ));
+    } else {
+      setSubmitting(true);
+      try {
+        await reviewFlaggedQuery(verifyingQueryId, { status: "VERIFIED", verificationNotes: verifyNotes || undefined });
+        apiData.mutate();
+      } catch (e) { console.error("Verify failed:", e); }
+      finally { setSubmitting(false); }
+    }
     setShowVerifyModal(false);
     setVerifyingQueryId(null);
     setVerifyNotes("");
@@ -633,7 +655,7 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
   };
 
   const handleEditVerification = (queryId: string) => {
-    const query = queries.find(q => q.id === queryId);
+    const query = (demoMode ? demoQueries : apiData.queries).find(q => q.id === queryId);
     if (!query) return;
     setVerifyingQueryId(queryId);
     setVerifyNotes(query.verificationNotes || "");
@@ -641,37 +663,57 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
   };
 
   // --- Correction handlers ---
-  const handleSendCorrection = (queryId: string) => {
+  const handleSendCorrection = async (queryId: string) => {
     if (!responseText.trim()) return;
-    setQueries(prev => prev.map(q =>
-      q.id === queryId
-        ? { ...q, status: "CORRECTED" as const, agronomistResponse: responseText, reviewedAt: "Just now" }
-        : q
-    ));
-    setResponseText("");
+    if (demoMode) {
+      setDemoQueries(prev => prev.map(q =>
+        q.id === queryId
+          ? { ...q, status: "CORRECTED" as const, agronomistResponse: responseText, reviewedAt: "Just now" }
+          : q
+      ));
+      setResponseText("");
+    } else {
+      setSubmitting(true);
+      try {
+        await reviewFlaggedQuery(queryId, { status: "CORRECTED", agronomistResponse: responseText });
+        apiData.mutate();
+        setResponseText("");
+      } catch (e) { console.error("Correction failed:", e); }
+      finally { setSubmitting(false); }
+    }
   };
 
   const handleEditCorrection = (queryId: string) => {
-    const query = queries.find(q => q.id === queryId);
+    const query = (demoMode ? demoQueries : apiData.queries).find(q => q.id === queryId);
     if (!query) return;
     setEditingCorrectionId(queryId);
     setEditCorrectionText(query.agronomistResponse || "");
     setShowEditCorrectionModal(true);
   };
 
-  const handleSaveEditedCorrection = () => {
+  const handleSaveEditedCorrection = async () => {
     if (!editingCorrectionId || !editCorrectionText.trim()) return;
-    setQueries(prev => prev.map(q =>
-      q.id === editingCorrectionId
-        ? { ...q, agronomistResponse: editCorrectionText, reviewedAt: "Just now" }
-        : q
-    ));
+    if (demoMode) {
+      setDemoQueries(prev => prev.map(q =>
+        q.id === editingCorrectionId
+          ? { ...q, agronomistResponse: editCorrectionText, reviewedAt: "Just now" }
+          : q
+      ));
+    } else {
+      // No dedicated edit-correction API — resubmit as CORRECTED with new text
+      setSubmitting(true);
+      try {
+        await reviewFlaggedQuery(editingCorrectionId, { status: "CORRECTED", agronomistResponse: editCorrectionText });
+        apiData.mutate();
+      } catch (e) { console.error("Edit correction failed:", e); }
+      finally { setSubmitting(false); }
+    }
     setShowEditCorrectionModal(false);
     setEditingCorrectionId(null);
     setEditCorrectionText("");
   };
 
-  // --- Revoke handlers ---
+  // --- Revoke handlers (demo only — no revoke API endpoint) ---
   const handleOpenRevokeModal = (queryId: string, type: "verification" | "correction") => {
     setRevokingQueryId(queryId);
     setRevokeType(type);
@@ -680,17 +722,14 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
 
   const handleConfirmRevoke = () => {
     if (!revokingQueryId) return;
-    setQueries(prev => prev.map(q =>
-      q.id === revokingQueryId
-        ? {
-          ...q,
-          status: "PENDING" as const,
-          verificationNotes: undefined,
-          agronomistResponse: undefined,
-          reviewedAt: undefined,
-        }
-        : q
-    ));
+    // Only works in demo mode — no PATCH back to PENDING endpoint exists
+    if (demoMode) {
+      setDemoQueries(prev => prev.map(q =>
+        q.id === revokingQueryId
+          ? { ...q, status: "PENDING" as const, verificationNotes: undefined, agronomistResponse: undefined, reviewedAt: undefined }
+          : q
+      ));
+    }
     setShowRevokeModal(false);
     setRevokingQueryId(null);
   };
@@ -950,10 +989,11 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
                         </button>
                         <button
                           onClick={() => handleSendCorrection(query.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#85b878] text-white rounded-lg hover:bg-[#536d3d] transition-colors text-xs"
+                          disabled={submitting}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#85b878] text-white rounded-lg hover:bg-[#536d3d] transition-colors text-xs disabled:opacity-50"
                         >
-                          <Send className="w-3 h-3" />
-                          Correct
+                          {submitting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                          {submitting ? "Saving..." : "Correct"}
                         </button>
                       </div>
                     </div>
@@ -1034,10 +1074,11 @@ export default function FlaggedView({ sidebarOpen = true, setSidebarOpen }: { si
                 </button>
                 <button
                   onClick={handleConfirmVerification}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-[#85b878] text-white rounded-lg hover:bg-[#536d3d] transition-colors text-sm"
+                  disabled={submitting}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-[#85b878] text-white rounded-lg hover:bg-[#536d3d] transition-colors text-sm disabled:opacity-50"
                 >
-                  <CheckCircle className="w-4 h-4" />
-                  Confirm Verification
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                  {submitting ? "Verifying..." : "Confirm Verification"}
                 </button>
               </div>
             </div>
