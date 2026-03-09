@@ -9,6 +9,6 @@ export default function DemoChatPage() {
         email: "demo-farmer@example.com",
         role: "FARMER",
       }}
-    />
-  );
+      demoMode={true}
+    />  );
 }

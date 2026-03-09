@@ -1,111 +1,112 @@
 "use client";
 
 import { useState } from "react";
-import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, ChevronLeft } from "lucide-react";
+import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, ChevronLeft, Loader2 } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
+import { useSystems, type FarmerSystemItem } from "@/lib/hooks/use-systems";
 
 interface System {
   id: string;
   name: string;
   type: string;
   purchaseDate: string;
-  status: "active" | "pending_setup" | "inactive";
+  status: "ACTIVE" | "PENDING_SETUP" | "INACTIVE";
   description: string;
   specifications?: {
     size?: string;
     capacity?: string;
     material?: string;
+  } | null;
+  installationDate?: string | null;
+  warrantyUntil?: string | null;
+}
+
+// Mock data — used only in demo mode
+const mockSystems: System[] = [
+  {
+    id: "sys-1",
+    name: "Hydroponic NFT System - Medium",
+    type: "Hydroponic System",
+    purchaseDate: "2025-11-15",
+    status: "ACTIVE",
+    description: "Nutrient Film Technique (NFT) hydroponic setup for leafy greens",
+    specifications: { size: "4m x 1.2m", capacity: "60 plant sites", material: "Food-grade PVC pipes" },
+    installationDate: "2025-11-20",
+    warrantyUntil: "2026-11-15",
+  },
+  {
+    id: "sys-2",
+    name: "Drip Irrigation Kit - 0.5 Acre",
+    type: "Irrigation System",
+    purchaseDate: "2026-01-10",
+    status: "ACTIVE",
+    description: "Complete drip irrigation system with timer and filters",
+    specifications: { capacity: "0.5 acre coverage", material: "UV-resistant polyethylene tubing" },
+    installationDate: "2026-01-15",
+    warrantyUntil: "2027-01-10",
+  },
+  {
+    id: "sys-3",
+    name: "Vertical Garden Tower",
+    type: "Vertical Farming",
+    purchaseDate: "2026-02-01",
+    status: "PENDING_SETUP",
+    description: "Stackable modular vertical garden for herbs and small vegetables",
+    specifications: { size: "1.5m height", capacity: "40 plant pockets", material: "Recycled plastic modules" },
+  },
+  {
+    id: "sys-4",
+    name: "Greenhouse Structure - 100sqm",
+    type: "Greenhouse",
+    purchaseDate: "2025-09-20",
+    status: "ACTIVE",
+    description: "UV-treated polyethylene greenhouse with ventilation",
+    specifications: { size: "10m x 10m x 3m", material: "Galvanized steel frame, 200-micron PE cover" },
+    installationDate: "2025-10-05",
+    warrantyUntil: "2027-09-20",
+  },
+  {
+    id: "sys-5",
+    name: "Solar Water Pump - 1HP",
+    type: "Water Pump",
+    purchaseDate: "2025-12-10",
+    status: "ACTIVE",
+    description: "Solar-powered submersible pump for irrigation",
+    specifications: { capacity: "30,000 liters/day", material: "Stainless steel impeller" },
+    installationDate: "2025-12-15",
+    warrantyUntil: "2027-12-10",
+  },
+];
+
+function toSystem(item: FarmerSystemItem): System {
+  return {
+    id: item.id,
+    name: item.name,
+    type: item.type,
+    description: item.description,
+    status: item.status,
+    purchaseDate: item.purchaseDate,
+    installationDate: item.installationDate,
+    warrantyUntil: item.warrantyUntil,
+    specifications: item.specifications as System["specifications"],
   };
-  installationDate?: string;
-  warrantyUntil?: string;
 }
 
 interface SystemsViewProps {
   sidebarOpen?: boolean;
   setSidebarOpen?: (value: boolean) => void;
   onBackToChat?: () => void;
+  demoMode?: boolean;
 }
 
-export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBackToChat }: SystemsViewProps) {
+export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBackToChat, demoMode = false }: SystemsViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
 
-  // Mock data - Farmitecture products/systems
-  const mockSystems: System[] = [
-    {
-      id: "sys-1",
-      name: "Hydroponic NFT System - Medium",
-      type: "Hydroponic System",
-      purchaseDate: "2025-11-15",
-      status: "active",
-      description: "Nutrient Film Technique (NFT) hydroponic setup for leafy greens",
-      specifications: {
-        size: "4m x 1.2m",
-        capacity: "60 plant sites",
-        material: "Food-grade PVC pipes",
-      },
-      installationDate: "2025-11-20",
-      warrantyUntil: "2026-11-15",
-    },
-    {
-      id: "sys-2",
-      name: "Drip Irrigation Kit - 0.5 Acre",
-      type: "Irrigation System",
-      purchaseDate: "2026-01-10",
-      status: "active",
-      description: "Complete drip irrigation system with timer and filters",
-      specifications: {
-        capacity: "0.5 acre coverage",
-        material: "UV-resistant polyethylene tubing",
-      },
-      installationDate: "2026-01-15",
-      warrantyUntil: "2027-01-10",
-    },
-    {
-      id: "sys-3",
-      name: "Vertical Garden Tower",
-      type: "Vertical Farming",
-      purchaseDate: "2026-02-01",
-      status: "pending_setup",
-      description: "Stackable modular vertical garden for herbs and small vegetables",
-      specifications: {
-        size: "1.5m height",
-        capacity: "40 plant pockets",
-        material: "Recycled plastic modules",
-      },
-    },
-    {
-      id: "sys-4",
-      name: "Greenhouse Structure - 100sqm",
-      type: "Greenhouse",
-      purchaseDate: "2025-09-20",
-      status: "active",
-      description: "UV-treated polyethylene greenhouse with ventilation",
-      specifications: {
-        size: "10m x 10m x 3m",
-        material: "Galvanized steel frame, 200-micron PE cover",
-      },
-      installationDate: "2025-10-05",
-      warrantyUntil: "2027-09-20",
-    },
-    {
-      id: "sys-5",
-      name: "Solar Water Pump - 1HP",
-      type: "Water Pump",
-      purchaseDate: "2025-12-10",
-      status: "active",
-      description: "Solar-powered submersible pump for irrigation",
-      specifications: {
-        capacity: "30,000 liters/day",
-        material: "Stainless steel impeller",
-      },
-      installationDate: "2025-12-15",
-      warrantyUntil: "2027-12-10",
-    },
-  ];
+  const apiSystems = useSystems(demoMode);
+  const allSystems: System[] = demoMode ? mockSystems : apiSystems.systems.map(toSystem);
 
-  // Filter systems
-  const filteredSystems = mockSystems.filter(system => {
+  const filteredSystems = allSystems.filter(system => {
     const matchesStatus = selectedStatus === "all" || system.status === selectedStatus;
     const matchesSearch = system.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       system.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -115,27 +116,19 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "active":
-        return "text-[#85b878]";
-      case "pending_setup":
-        return "text-orange-400";
-      case "inactive":
-        return "text-[#6B6B6B]";
-      default:
-        return "text-[#9C9A92]";
+      case "ACTIVE": return "text-[#85b878]";
+      case "PENDING_SETUP": return "text-orange-400";
+      case "INACTIVE": return "text-[#6B6B6B]";
+      default: return "text-[#9C9A92]";
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "active":
-        return "Active";
-      case "pending_setup":
-        return "Pending Setup";
-      case "inactive":
-        return "Inactive";
-      default:
-        return status;
+      case "ACTIVE": return "Active";
+      case "PENDING_SETUP": return "Pending Setup";
+      case "INACTIVE": return "Inactive";
+      default: return status;
     }
   };
 
@@ -158,7 +151,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-serif text-[#C2C0B6]">Systems</h1>
-            <p className="text-sm text-[#9C9A92] mt-1">{mockSystems.length} Farmitecture products installed</p>
+            <p className="text-sm text-[#9C9A92] mt-1">{allSystems.length} Farmitecture products installed</p>
           </div>
         </div>
 
@@ -166,7 +159,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-serif text-[#C2C0B6]">Systems</h1>
-            <p className="text-sm text-[#9C9A92] mt-1">{mockSystems.length} Farmitecture products installed</p>
+            <p className="text-sm text-[#9C9A92] mt-1">{allSystems.length} Farmitecture products installed</p>
           </div>
         </div>
 
@@ -185,9 +178,9 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
               All
             </button>
             <button
-              onClick={() => setSelectedStatus("active")}
+              onClick={() => setSelectedStatus("ACTIVE")}
               className={`px-3 py-1.5 rounded-lg text-sm standalone:text-base lg:text-sm transition-colors ${
-                selectedStatus === "active"
+                selectedStatus === "ACTIVE"
                   ? "bg-[#5a7048] text-white"
                   : "bg-[#2B2B2B] text-[#C2C0B6] hover:bg-[#3B3B3B]"
               }`}
@@ -195,9 +188,9 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
               Active
             </button>
             <button
-              onClick={() => setSelectedStatus("pending_setup")}
+              onClick={() => setSelectedStatus("PENDING_SETUP")}
               className={`px-3 py-1.5 rounded-lg text-sm standalone:text-base lg:text-sm transition-colors ${
-                selectedStatus === "pending_setup"
+                selectedStatus === "PENDING_SETUP"
                   ? "bg-[#5a7048] text-white"
                   : "bg-[#2B2B2B] text-[#C2C0B6] hover:bg-[#3B3B3B]"
               }`}
@@ -223,7 +216,11 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
       {/* PART 2: Scrollable Section */}
       <div className="relative flex-1 min-h-0">
         <div className="h-full overflow-y-auto thin-scrollbar scrollbar-outset">
-          {filteredSystems.length === 0 ? (
+          {!demoMode && apiSystems.isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-5 h-5 text-[#9C9A92] animate-spin" />
+            </div>
+          ) : filteredSystems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
               <Layers className="w-16 h-16 text-[#3B3B3B] mb-4" />
               <p className="text-[#9C9A92] text-sm">No systems found</p>
@@ -250,8 +247,8 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
                       <span className={`text-sm font-medium ${getStatusColor(system.status)}`}>
                         {getStatusLabel(system.status)}
                       </span>
-                      {system.status === "active" && <CheckCircle className="w-4 h-4 text-[#85b878]" />}
-                      {system.status === "pending_setup" && <Clock className="w-4 h-4 text-orange-400" />}
+                      {system.status === "ACTIVE" && <CheckCircle className="w-4 h-4 text-[#85b878]" />}
+                      {system.status === "PENDING_SETUP" && <Clock className="w-4 h-4 text-orange-400" />}
                     </div>
                   </div>
 
@@ -312,7 +309,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
                       View manual
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
-                    {system.status === "pending_setup" && (
+                    {system.status === "PENDING_SETUP" && (
                       <button className="px-3 py-1.5 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm">
                         Request Setup
                       </button>

@@ -26,6 +26,7 @@ model Organization {
   knowledgeBases KnowledgeBase[]
   quota          OrganizationQuota?
   apiUsage       ApiUsage[]
+  farmerSystems  FarmerSystem[]
 
   @@map("organizations")
 }
@@ -55,6 +56,7 @@ model User {
   feedback       Feedback[]
   accounts       Account[]
   sessions       Session[]
+  farmerSystems  FarmerSystem[]
 
   @@map("users")
 }
@@ -271,6 +273,38 @@ model DocumentChunk {
 
   @@index([knowledgeBaseId])
   @@map("document_chunks")
+}
+
+// Farming systems/products a farmer has purchased (e.g. Farmitecture equipment)
+// Self-registered by farmer after purchase, or added by admin on their behalf.
+model FarmerSystem {
+  id               String       @id @default(cuid())
+  name             String       // "Hydroponic NFT System - Medium"
+  type             String       // "Hydroponic System", "Irrigation System", etc.
+  description      String       @db.Text
+  status           SystemStatus @default(PENDING_SETUP)
+  purchaseDate     DateTime
+  installationDate DateTime?
+  warrantyUntil    DateTime?
+  specifications   Json?        // { size, capacity, material, ... }
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  // Relations
+  farmerId       String
+  farmer         User         @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([farmerId])
+  @@map("farmer_systems")
+}
+
+enum SystemStatus {
+  ACTIVE
+  PENDING_SETUP
+  INACTIVE
 }
 
 // NextAuth.js Models

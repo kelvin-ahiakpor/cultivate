@@ -7,6 +7,7 @@ import { signOut } from "next-auth/react";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon } from "@/components/send-icons";
 import ChatsView, { mockChats } from "./views/chats-view";
 import SystemsView from "./views/systems-view";
+import { useConversations } from "@/lib/hooks/use-conversations";
 
 interface ChatPageProps {
   user: {
@@ -14,9 +15,11 @@ interface ChatPageProps {
     email: string;
     role: string;
   };
+  // demoMode: uses mockChats, makes zero API requests. See BACKEND-PROGRESS.md § Phase 5.
+  demoMode?: boolean;
 }
 
-export default function ChatPageClient({ user }: ChatPageProps) {
+export default function ChatPageClient({ user, demoMode = false }: ChatPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -44,6 +47,13 @@ export default function ChatPageClient({ user }: ChatPageProps) {
   const [showInstallModal, setShowInstallModal] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  // Sidebar conversation list — disabled in demo mode (zero API requests)
+  const apiConversations = useConversations("", 1, 30, demoMode);
+  // Unified list: demo uses mockChats shape, real uses API data normalized to same shape
+  const sidebarChats = demoMode
+    ? mockChats
+    : apiConversations.conversations.map(c => ({ id: c.id, title: c.title, agentName: c.agentName, lastMessage: c.lastMessage, messageCount: c.messageCount, systemName: undefined as string | undefined }));
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -220,7 +230,7 @@ export default function ChatPageClient({ user }: ChatPageProps) {
                   Button: hidden → visible on hover/active/menu-open, near-black bg when menu open
                   Hover zones: has-[button:hover]:bg-transparent keeps row & button independent */}
               <div className="space-y-0.5 standalone:space-y-2 lg:space-y-0.5">
-                {mockChats.slice(0, isDesktop ? 30 : 10).map((chat) => {
+                {sidebarChats.slice(0, isDesktop ? 30 : 10).map((chat) => {
                   const isActive = activeView === "chats" && selectedChatId === chat.id;
                   const isMenuOpen = chatMenuId === chat.id;
                   return (
@@ -301,7 +311,7 @@ export default function ChatPageClient({ user }: ChatPageProps) {
               </div>
 
               {/* All Chats link */}
-              {mockChats.length > (isDesktop ? 30 : 10) && (
+              {sidebarChats.length > (isDesktop ? 30 : 10) && (
                 <button
                   onClick={handleAllChatsClick}
                   className={`w-full flex items-center gap-2 px-2 py-1.5 ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm text-[#9C9A92] hover:text-white hover:bg-[#141413] rounded-lg transition-colors`}
@@ -318,11 +328,11 @@ export default function ChatPageClient({ user }: ChatPageProps) {
         <div className={`${isStandalone ? '' : 'border-t border-[#2B2B2B]'} p-2 ${isStandalone ? 'pb-6 pl-3' : 'pb-2'} lg:pb-2 relative ${!sidebarOpen ? 'flex justify-center' : ''}`}>
           {/* div instead of button so the nested Download button is valid HTML */}
           <div
-            className={`group relative flex items-center p-1.5 ${sidebarOpen ? 'w-full justify-between gap-2' : 'justify-center'}`}
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className={`group relative flex items-center p-1.5 ${sidebarOpen ? 'w-full justify-between gap-2' : 'justify-center'} cursor-pointer`}
           >
             <div
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className={`flex items-center ${sidebarOpen ? 'gap-2' : ''} ${isStandalone && sidebarOpen ? 'w-auto max-w-[calc(100%-3rem)] px-2.5 py-1.5 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] cursor-pointer transition-colors' : 'cursor-pointer'}`}
+              className={`flex items-center ${sidebarOpen ? 'gap-2' : ''} ${isStandalone && sidebarOpen ? 'w-auto max-w-[calc(100%-3rem)] px-2.5 py-1.5 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] transition-colors' : ''}`}
             >
               <div className="w-10 h-10 bg-[#85b878] rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-base font-medium">{getInitials(user.name)}</span>
@@ -405,6 +415,7 @@ export default function ChatPageClient({ user }: ChatPageProps) {
               onNewChat={() => { setSelectedChatId(null); setActiveView("chat"); }}
               sidebarOpen={sidebarOpen}
               setSidebarOpen={setSidebarOpen}
+              demoMode={demoMode}
             />
           </div>
         )}
@@ -415,6 +426,7 @@ export default function ChatPageClient({ user }: ChatPageProps) {
               sidebarOpen={sidebarOpen}
               setSidebarOpen={setSidebarOpen}
               onBackToChat={() => setActiveView("chat")}
+              demoMode={demoMode}
             />
           </div>
         )}

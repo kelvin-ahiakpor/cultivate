@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageCircle, Search, ChevronLeft, ChevronRight, Plus, ChevronDown, Share, Pencil, Trash2, Unlink, Box, PanelLeft } from "lucide-react";
+import { MessageCircle, Search, ChevronLeft, ChevronRight, Plus, ChevronDown, Share, Pencil, Trash2, Unlink, Box, PanelLeft, Loader2 } from "lucide-react";
 import { CabbageIcon } from "@/components/send-icons";
 import GlassCircleButton from "@/components/glass-circle-button";
+import { useConversations } from "@/lib/hooks/use-conversations";
 
 interface ChatMessage {
   id: string;
@@ -82,15 +83,30 @@ interface ChatsViewProps {
   onNewChat?: () => void;
   sidebarOpen?: boolean;
   setSidebarOpen?: (value: boolean) => void;
+  demoMode?: boolean;
 }
 
-export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, onNewChat, sidebarOpen = true, setSidebarOpen }: ChatsViewProps) {
+export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, onNewChat, sidebarOpen = true, setSidebarOpen, demoMode = false }: ChatsViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [openedChat, setOpenedChat] = useState<Chat | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const itemsPerPage = 30;
+
+  // SWR — disabled in demo mode
+  const apiConversations = useConversations(searchQuery, currentPage, itemsPerPage, demoMode);
+
+  // Unified chat list
+  const allChats: Chat[] = demoMode
+    ? mockChats
+    : apiConversations.conversations.map(c => ({
+        id: c.id,
+        title: c.title,
+        agentName: c.agentName,
+        lastMessage: c.lastMessage,
+        messageCount: c.messageCount,
+      }));
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(display-mode: standalone)");
@@ -107,7 +123,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
   // Open/close chat from sidebar click
   useEffect(() => {
     if (initialChatId) {
-      const chat = mockChats.find(c => c.id === initialChatId);
+      const chat = allChats.find(c => c.id === initialChatId);
       if (chat) {
         setOpenedChat(chat);
         onChatOpened?.();
@@ -115,18 +131,24 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
     } else {
       setOpenedChat(null);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialChatId, onChatOpened]);
 
-  const filteredChats = mockChats.filter(chat =>
-    chat.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    chat.agentName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredChats = demoMode
+    ? mockChats.filter(chat =>
+        chat.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        chat.agentName.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : allChats;
 
   // Pagination
-  const totalPages = Math.ceil(filteredChats.length / itemsPerPage);
+  // For demo: paginate client-side. For real: API handles it.
+  const totalPages = demoMode
+    ? Math.ceil(filteredChats.length / itemsPerPage)
+    : apiConversations.totalPages ?? 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedChats = filteredChats.slice(startIndex, endIndex);
+  const paginatedChats = demoMode ? filteredChats.slice(startIndex, endIndex) : filteredChats;
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -355,7 +377,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
           <p className="text-sm standalone:text-base lg:text-sm text-[#9C9A92]">
             {filteredChats.length} {filteredChats.length === 1 ? 'conversation' : 'conversations'}
             {searchQuery && (
-              <span className="text-[#6B6B6B]"> &middot; filtered from {mockChats.length} total</span>
+              <span className="text-[#6B6B6B]"> &middot; filtered from {demoMode ? mockChats.length : (apiConversations.total || 0)} total</span>
             )}
           </p>
         </div>
@@ -365,35 +387,37 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
       <div className="relative flex-1 min-h-0">
         <div className="h-full overflow-y-auto pb-6 thin-scrollbar scrollbar-outset">
           <div className="mr-3">
-            {paginatedChats.map((chat, index) => (
-              <div
-                key={chat.id}
-                onClick={() => { setOpenedChat(chat); onChatSelect?.(chat.id); }}
-                className={`pl-1.5 pr-1.5 py-2.5 hover:bg-[#2B2B2B]/40 transition-colors cursor-pointer ${
-                  index < paginatedChats.length - 1
-                    ? `border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`
-                    : ''
-                }`}
-              >
-                <p className="text-sm standalone:text-base lg:text-sm text-white">{chat.title}</p>
-                <div className="flex items-center justify-between mt-1">
-                  <p className="text-xs standalone:text-sm lg:text-xs text-[#6B6B6B]">{isStandalone ? chat.lastMessage : `Last message ${chat.lastMessage}`}</p>
-                  <p className="text-xs standalone:text-sm lg:text-xs text-[#9C9A92]">{chat.agentName}</p>
-                </div>
+            {!demoMode && apiConversations.isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-5 h-5 text-[#9C9A92] animate-spin" />
               </div>
-            ))}
+            ) : paginatedChats.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <MessageCircle className="w-8 h-8 text-[#3B3B3B] mb-3" />
+                <p className="text-sm text-[#6B6B6B]">No conversations yet</p>
+              </div>
+            ) : (
+              <>
+              {paginatedChats.map((chat, index) => (
+                <div
+                  key={chat.id}
+                  onClick={() => { setOpenedChat(chat); onChatSelect?.(chat.id); }}
+                  className={`pl-1.5 pr-1.5 py-2.5 hover:bg-[#2B2B2B]/40 transition-colors cursor-pointer ${
+                    index < paginatedChats.length - 1
+                      ? `border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`
+                      : ''
+                  }`}
+                >
+                  <p className="text-sm standalone:text-base lg:text-sm text-white">{chat.title}</p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-xs standalone:text-sm lg:text-xs text-[#6B6B6B]">{isStandalone ? chat.lastMessage : `Last message ${chat.lastMessage}`}</p>
+                    <p className="text-xs standalone:text-sm lg:text-xs text-[#9C9A92]">{chat.agentName}</p>
+                  </div>
+                </div>
+              ))}
+              </>
+            )}
           </div>
-
-          {filteredChats.length === 0 && (
-            <div className="p-8 text-center">
-              <MessageCircle className="w-10 h-10 text-[#6B6B6B] mx-auto mb-3" />
-              <p className="text-sm standalone:text-base lg:text-sm text-[#6B6B6B]">
-                {searchQuery
-                  ? "No conversations match your search."
-                  : "No conversations yet. Start a new chat!"}
-              </p>
-            </div>
-          )}
 
           {/* Pagination Controls */}
           {filteredChats.length > 0 && totalPages > 1 && (
