@@ -1,152 +1,257 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown, X, AlertTriangle, PanelLeft, Eye } from "lucide-react";
+import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown, X, AlertTriangle, PanelLeft, Eye, Loader2 } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
+import { useAgents, createAgent, updateAgent, toggleAgentStatus, deleteAgent, type Agent } from "@/lib/hooks/use-agents";
 
-// Mock data - will be replaced with real API data
+// Helper to format relative time
+function formatRelativeTime(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "1 day ago";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 14) return "1 week ago";
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  return `${Math.floor(diffDays / 30)} months ago`;
+}
+
+// Mock data for demo mode (/demo/dashboard).
+// Represents what the app looks like after real usage — never fetched from the API.
+// If you need richer data, the original 7-agent set is in git commit caedbe1.
 const mockAgents = [
   {
     id: "1",
     name: "General Farm Advisor",
     systemPrompt: "You are a knowledgeable agricultural advisor specializing in farming practices in Ghana...",
+    responseStyle: "Friendly and educational",
     confidenceThreshold: 0.7,
     isActive: true,
     conversations: 24,
     knowledgeBases: 3,
-    updatedAt: "2 days ago",
+    version: 1,
+    agronomistId: "demo",
+    organizationId: "demo",
+    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    flaggedQueries: 2,
   },
   {
     id: "2",
     name: "Maize Expert",
     systemPrompt: "You specialize in maize cultivation, covering planting schedules, pest management...",
+    responseStyle: "Detailed and technical",
     confidenceThreshold: 0.8,
     isActive: true,
     conversations: 12,
     knowledgeBases: 2,
-    updatedAt: "5 days ago",
+    version: 1,
+    agronomistId: "demo",
+    organizationId: "demo",
+    createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    flaggedQueries: 1,
   },
   {
     id: "3",
-    name: "Pest Management",
-    systemPrompt: "You are an expert in identifying and managing agricultural pests common in West Africa...",
-    confidenceThreshold: 0.75,
-    isActive: false,
-    conversations: 8,
-    knowledgeBases: 1,
-    updatedAt: "1 week ago",
-  },
-  {
-    id: "4",
     name: "Cocoa Specialist",
     systemPrompt: "You are an expert in cocoa farming in Ghana, covering nursery management, fermentation, drying...",
+    responseStyle: null,
     confidenceThreshold: 0.7,
     isActive: true,
     conversations: 18,
     knowledgeBases: 4,
-    updatedAt: "1 day ago",
-  },
-  {
-    id: "5",
-    name: "Soil & Fertilizer Guide",
-    systemPrompt: "You specialize in soil health, nutrient management, and fertilizer recommendations for Ghanaian soils...",
-    confidenceThreshold: 0.65,
-    isActive: true,
-    conversations: 31,
-    knowledgeBases: 5,
-    updatedAt: "3 days ago",
-  },
-  {
-    id: "6",
-    name: "Irrigation Advisor",
-    systemPrompt: "You provide guidance on irrigation methods, water management, and dry season farming strategies...",
-    confidenceThreshold: 0.72,
-    isActive: true,
-    conversations: 9,
-    knowledgeBases: 2,
-    updatedAt: "4 days ago",
-  },
-  {
-    id: "7",
-    name: "Livestock & Poultry",
-    systemPrompt: "You advise on small-scale livestock and poultry farming, covering breeds, feeding, housing, and disease prevention...",
-    confidenceThreshold: 0.78,
-    isActive: false,
-    conversations: 5,
-    knowledgeBases: 1,
-    updatedAt: "2 weeks ago",
+    version: 2,
+    agronomistId: "demo",
+    organizationId: "demo",
+    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    flaggedQueries: 0,
   },
 ];
 
-export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpen: boolean; setSidebarOpen: (v: boolean) => void }) {
-  const [showCreateModal, setShowCreateModal] = useState(false);
+export default function AgentsView({
+  sidebarOpen,
+  setSidebarOpen,
+  demoMode = false
+}: {
+  sidebarOpen: boolean;
+  setSidebarOpen: (v: boolean) => void;
+  demoMode?: boolean;
+}) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
 
+  // Fetch agents with SWR — disabled in demo mode (passes null key to SWR, no request made)
+  const apiData = useAgents(searchQuery, currentPage, itemsPerPage, demoMode);
+
+  // Use mock data in demo mode, real data otherwise
+  const agents = demoMode
+    ? mockAgents.filter(a => a.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : apiData.agents;
+  const total = demoMode ? mockAgents.length : apiData.total;
+  const isLoading = demoMode ? false : apiData.isLoading;
+  const isError = demoMode ? false : apiData.isError;
+  const mutate = demoMode ? (() => {}) : apiData.mutate;
+
+  // UI state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
   // View, Edit, Deactivate, Delete modals
-  const [viewAgentModal, setViewAgentModal] = useState<typeof mockAgents[0] | null>(null);
-  const [editModalAgent, setEditModalAgent] = useState<typeof mockAgents[0] | null>(null);
-  const [deactivateModalAgent, setDeactivateModalAgent] = useState<typeof mockAgents[0] | null>(null);
-  const [deleteModalAgent, setDeleteModalAgent] = useState<typeof mockAgents[0] | null>(null);
+  const [viewAgentModal, setViewAgentModal] = useState<Agent | null>(null);
+  const [editModalAgent, setEditModalAgent] = useState<Agent | null>(null);
+  const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(null);
+  const [deleteModalAgent, setDeleteModalAgent] = useState<Agent | null>(null);
   const [deleteNameConfirm, setDeleteNameConfirm] = useState("");
   const [deleteReason, setDeleteReason] = useState("");
-  
-  // Slider values
+
+  // Form values
+  const [createName, setCreateName] = useState("");
+  const [createPrompt, setCreatePrompt] = useState("");
+  const [createStyle, setCreateStyle] = useState("");
   const [createThreshold, setCreateThreshold] = useState(0.7);
+
+  const [editName, setEditName] = useState("");
+  const [editPrompt, setEditPrompt] = useState("");
+  const [editStyle, setEditStyle] = useState("");
   const [editThreshold, setEditThreshold] = useState(0.7);
 
-  const handleEditAgent = (agent: typeof mockAgents[0]) => {
+  const handleEditAgent = (agent: Agent) => {
     setEditModalAgent(agent);
+    setEditName(agent.name);
+    setEditPrompt(agent.systemPrompt);
+    setEditStyle(agent.responseStyle || "");
     setEditThreshold(agent.confidenceThreshold);
     setOpenMenuId(null);
   };
 
-  const handleToggleActivation = (agent: typeof mockAgents[0]) => {
+  const handleToggleActivation = async (agent: Agent) => {
     if (agent.isActive) {
       // Deactivating - show confirmation modal
       setDeactivateModalAgent(agent);
     } else {
       // Activating - do it directly (no confirmation needed)
-      console.log('Activating agent:', agent.id);
+      try {
+        await toggleAgentStatus(agent.id, true);
+        mutate(); // Refresh list
+      } catch (error) {
+        console.error("Failed to activate agent:", error);
+        alert("Failed to activate agent. Please try again.");
+      }
     }
     setOpenMenuId(null);
   };
 
-  const handleDeactivateConfirm = () => {
-    console.log('Deactivating agent:', deactivateModalAgent?.id);
-    setDeactivateModalAgent(null);
+  const handleDeactivateConfirm = async () => {
+    if (!deactivateModalAgent) return;
+
+    try {
+      setSubmitting(true);
+      await toggleAgentStatus(deactivateModalAgent.id, false);
+      mutate(); // Refresh list
+      setDeactivateModalAgent(null);
+    } catch (error) {
+      console.error("Failed to deactivate agent:", error);
+      alert("Failed to deactivate agent. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleDeleteAgent = (agent: typeof mockAgents[0]) => {
+  const handleDeleteAgent = (agent: Agent) => {
     setDeleteModalAgent(agent);
     setDeleteNameConfirm("");
     setDeleteReason("");
     setOpenMenuId(null);
   };
 
-  const handleDeleteConfirm = () => {
-    console.log('Deleting agent:', deleteModalAgent?.id, 'Reason:', deleteReason);
-    setDeleteModalAgent(null);
-    setDeleteNameConfirm("");
-    setDeleteReason("");
+  const handleDeleteConfirm = async () => {
+    if (!deleteModalAgent) return;
+
+    try {
+      setSubmitting(true);
+      await deleteAgent(deleteModalAgent.id);
+      mutate(); // Refresh list
+      setDeleteModalAgent(null);
+      setDeleteNameConfirm("");
+      setDeleteReason("");
+    } catch (error) {
+      console.error("Failed to delete agent:", error);
+      alert("Failed to delete agent. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const filteredAgents = mockAgents.filter(agent =>
-    agent.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleCreateSubmit = async () => {
+    if (!createName.trim() || !createPrompt.trim()) {
+      alert("Please fill in all required fields");
+      return;
+    }
 
-  // Pagination
-  const totalPages = Math.ceil(filteredAgents.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedAgents = filteredAgents.slice(startIndex, endIndex);
+    try {
+      setSubmitting(true);
+      await createAgent({
+        name: createName,
+        systemPrompt: createPrompt,
+        responseStyle: createStyle || undefined,
+        confidenceThreshold: createThreshold,
+      });
+      mutate(); // Refresh list
+      setShowCreateModal(false);
+      // Reset form
+      setCreateName("");
+      setCreatePrompt("");
+      setCreateStyle("");
+      setCreateThreshold(0.7);
+    } catch (error) {
+      console.error("Failed to create agent:", error);
+      alert("Failed to create agent. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditSubmit = async () => {
+    if (!editModalAgent || !editName.trim() || !editPrompt.trim()) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await updateAgent(editModalAgent.id, {
+        name: editName,
+        systemPrompt: editPrompt,
+        responseStyle: editStyle || undefined,
+        confidenceThreshold: editThreshold,
+      });
+      mutate(); // Refresh list
+      setEditModalAgent(null);
+    } catch (error) {
+      console.error("Failed to update agent:", error);
+      alert("Failed to update agent. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     setCurrentPage(1);
   };
+
+  // Pagination
+  const totalPages = Math.ceil(total / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, total);
 
   return (
     <div className="flex flex-col h-full overflow-y-hidden overflow-x-clip">
@@ -163,7 +268,7 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
           )}
           <div className="text-center">
             <h1 className="text-2xl font-serif text-[#C2C0B6]">Agents</h1>
-            <p className="text-sm text-[#9C9A92] mt-1">{mockAgents.length} agents configured</p>
+            <p className="text-sm text-[#9C9A92] mt-1">{total} agents configured</p>
           </div>
           <div className="absolute right-0">
             <button
@@ -179,7 +284,7 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-serif text-[#C2C0B6]">Agents</h1>
-            <p className="text-sm text-[#9C9A92] mt-1">{mockAgents.length} agents configured</p>
+            <p className="text-sm text-[#9C9A92] mt-1">{total} agents configured</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -205,8 +310,24 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
 
       {/* Part 2: Scrollable card list */}
       <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar scrollbar-outset">
-        <div className="space-y-3 mr-3">
-        {paginatedAgents.map((agent) => (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 text-[#85b878] animate-spin" />
+          </div>
+        ) : isError ? (
+          <div className="bg-[#2B2B2B] rounded-xl p-8 text-center mr-3">
+            <p className="text-sm text-red-400">Failed to load agents. Please try again.</p>
+          </div>
+        ) : agents.length === 0 ? (
+          <div className="bg-[#2B2B2B] rounded-xl p-8 text-center mr-3">
+            <Bot className="w-10 h-10 text-[#6B6B6B] mx-auto mb-3" />
+            <p className="text-sm text-[#6B6B6B]">
+              {searchQuery ? "No agents match your search." : "No agents yet. Create your first agent to get started."}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3 mr-3">
+        {agents.map((agent) => (
           <div key={agent.id}>
             {/* Mobile: Simplified card with eye icon only */}
             <div className="lg:hidden bg-[#2B2B2B] rounded-xl p-4 border border-[#3B3B3B] hover:border-[#85b878]/30 transition-colors">
@@ -255,10 +376,10 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
                       {agent.systemPrompt}
                     </p>
                     <div className="flex items-center gap-4 mt-2.5">
-                      <span className="text-xs text-[#9C9A92]">{agent.conversations} chats</span>
-                      <span className="text-xs text-[#9C9A92]">{agent.knowledgeBases} docs</span>
+                      <span className="text-xs text-[#9C9A92]">{agent.conversations || 0} chats</span>
+                      <span className="text-xs text-[#9C9A92]">{agent.knowledgeBases || 0} docs</span>
                       <span className="text-xs text-[#9C9A92]">Threshold: {agent.confidenceThreshold}</span>
-                      <span className="text-xs text-[#6B6B6B]">Updated {agent.updatedAt}</span>
+                      <span className="text-xs text-[#6B6B6B]">Updated {formatRelativeTime(agent.updatedAt)}</span>
                     </div>
                   </div>
                 </div>
@@ -305,10 +426,12 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
             </div>
           </div>
         ))}
+          </div>
+        )}
       </div>
 
       {/* Pagination */}
-      {filteredAgents.length > 0 && totalPages > 1 && (
+      {!isLoading && !isError && agents.length > 0 && totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 px-5 pt-4 pb-0 mt-2">
           <button
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
@@ -318,7 +441,7 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
             Prev
           </button>
           <span className="px-3 py-1.5 text-sm text-[#6B6B6B]">
-            {startIndex + 1}–{Math.min(endIndex, filteredAgents.length)}
+            {startIndex + 1}–{endIndex} of {total}
           </span>
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
@@ -329,17 +452,6 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
           </button>
         </div>
       )}
-
-      {filteredAgents.length === 0 && (
-        <div className="bg-[#2B2B2B] rounded-xl p-8 text-center">
-          <Bot className="w-10 h-10 text-[#6B6B6B] mx-auto mb-3" />
-          <p className="text-sm text-[#6B6B6B]">
-            {searchQuery ? "No agents match your search." : "No agents yet. Create your first agent to get started."}
-          </p>
-        </div>
-      )}
-
-      </div>{/* end scrollable */}
 
       {/* View Agent Modal */}
       {viewAgentModal && (
@@ -542,7 +654,7 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
       {/* Create Agent Modal */}
       {showCreateModal && (
         <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setShowCreateModal(false)} />
+          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => !submitting && setShowCreateModal(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="bg-[#1C1C1C] rounded-xl border border-[#2B2B2B] w-full max-w-lg p-6">
               <h2 className="text-lg font-medium text-white mb-4">Create New Agent</h2>
@@ -552,8 +664,11 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
                   <label className="block text-sm text-[#9C9A92] mb-1.5">Agent Name</label>
                   <input
                     type="text"
+                    value={createName}
+                    onChange={(e) => setCreateName(e.target.value)}
                     placeholder="e.g. Maize Expert"
                     className="w-full px-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+                    disabled={submitting}
                   />
                 </div>
 
@@ -561,17 +676,23 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
                   <label className="block text-sm text-[#9C9A92] mb-1.5">System Prompt</label>
                   <textarea
                     rows={4}
+                    value={createPrompt}
+                    onChange={(e) => setCreatePrompt(e.target.value)}
                     placeholder="Describe the agent's role, expertise, and how it should respond..."
                     className="w-full px-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none"
+                    disabled={submitting}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm text-[#9C9A92] mb-1.5">Response Style</label>
+                  <label className="block text-sm text-[#9C9A92] mb-1.5">Response Style (optional)</label>
                   <input
                     type="text"
+                    value={createStyle}
+                    onChange={(e) => setCreateStyle(e.target.value)}
                     placeholder="e.g. Friendly, concise, uses local examples"
                     className="w-full px-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+                    disabled={submitting}
                   />
                 </div>
 
@@ -589,6 +710,7 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
                       style={{
                         background: `linear-gradient(to right, #5a7048 0%, #5a7048 ${createThreshold * 100}%, #3B3B3B ${createThreshold * 100}%, #3B3B3B 100%)`
                       }}
+                      disabled={submitting}
                     />
                     <span className="text-sm text-white w-10 text-right">{createThreshold.toFixed(2)}</span>
                   </div>
@@ -599,12 +721,18 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
               <div className="flex items-center justify-end gap-3 mt-6">
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors"
+                  disabled={submitting}
+                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
-                <button className="px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm">
-                  Create Agent
+                <button
+                  onClick={handleCreateSubmit}
+                  disabled={submitting || !createName.trim() || !createPrompt.trim()}
+                  className="px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {submitting ? "Creating..." : "Create Agent"}
                 </button>
               </div>
             </div>
@@ -615,7 +743,7 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
       {/* Edit Agent Modal */}
       {editModalAgent && (
         <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setEditModalAgent(null)} />
+          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => !submitting && setEditModalAgent(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="bg-[#1C1C1C] rounded-xl border border-[#2B2B2B] w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto thin-scrollbar">
               <div className="flex items-center justify-between mb-4">
@@ -623,7 +751,8 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
                 <button
                   type="button"
                   onClick={() => setEditModalAgent(null)}
-                  className="p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors"
+                  disabled={submitting}
+                  className="p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors disabled:opacity-40"
                 >
                   <X className="w-4 h-4 text-[#9C9A92]" />
                 </button>
@@ -634,9 +763,11 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
                   <label className="block text-sm text-[#9C9A92] mb-1.5">Agent Name</label>
                   <input
                     type="text"
-                    defaultValue={editModalAgent.name}
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
                     placeholder="e.g. Maize Expert"
                     className="w-full px-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+                    disabled={submitting}
                   />
                 </div>
 
@@ -644,9 +775,23 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
                   <label className="block text-sm text-[#9C9A92] mb-1.5">System Prompt</label>
                   <textarea
                     rows={5}
-                    defaultValue={editModalAgent.systemPrompt}
+                    value={editPrompt}
+                    onChange={(e) => setEditPrompt(e.target.value)}
                     placeholder="Describe the agent's role, expertise, and how it should respond..."
                     className="w-full px-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none"
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-[#9C9A92] mb-1.5">Response Style (optional)</label>
+                  <input
+                    type="text"
+                    value={editStyle}
+                    onChange={(e) => setEditStyle(e.target.value)}
+                    placeholder="e.g. Friendly, concise, uses local examples"
+                    className="w-full px-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+                    disabled={submitting}
                   />
                 </div>
 
@@ -664,6 +809,7 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
                       style={{
                         background: `linear-gradient(to right, #5a7048 0%, #5a7048 ${editThreshold * 100}%, #3B3B3B ${editThreshold * 100}%, #3B3B3B 100%)`
                       }}
+                      disabled={submitting}
                     />
                     <span className="text-sm text-white w-10 text-right">{editThreshold.toFixed(2)}</span>
                   </div>
@@ -673,7 +819,7 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
                 <div>
                   <label className="block text-sm text-[#9C9A92] mb-1.5">Knowledge Bases</label>
                   <div className="bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg p-3">
-                    <p className="text-xs text-[#6B6B6B] mb-2">{editModalAgent.knowledgeBases} knowledge bases assigned</p>
+                    <p className="text-xs text-[#6B6B6B] mb-2">{editModalAgent.knowledgeBases || 0} knowledge bases assigned</p>
                     <button className="text-xs text-[#85b878] hover:text-[#9dcf84] transition-colors">
                       Manage knowledge bases →
                     </button>
@@ -689,7 +835,7 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
                   </div>
                   <div className="flex items-center justify-between text-sm mt-2">
                     <span className="text-[#9C9A92]">Conversations</span>
-                    <span className="text-white">{editModalAgent.conversations}</span>
+                    <span className="text-white">{editModalAgent.conversations || 0}</span>
                   </div>
                 </div>
               </div>
@@ -697,12 +843,18 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
               <div className="flex items-center justify-end gap-3 mt-6">
                 <button
                   onClick={() => setEditModalAgent(null)}
-                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors"
+                  disabled={submitting}
+                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
-                <button className="px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm">
-                  Save Changes
+                <button
+                  onClick={handleEditSubmit}
+                  disabled={submitting || !editName.trim() || !editPrompt.trim()}
+                  className="px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {submitting ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </div>
@@ -737,15 +889,18 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
               <div className="flex items-center justify-end gap-3">
                 <button
                   onClick={() => setDeactivateModalAgent(null)}
-                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors"
+                  disabled={submitting}
+                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={handleDeactivateConfirm}
-                  className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm"
+                  disabled={submitting}
+                  className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  Deactivate
+                  {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {submitting ? "Deactivating..." : "Deactivate"}
                 </button>
               </div>
             </div>
@@ -811,16 +966,18 @@ export default function AgentsView({ sidebarOpen, setSidebarOpen }: { sidebarOpe
               <div className="flex items-center justify-end gap-3 mt-6">
                 <button
                   onClick={() => setDeleteModalAgent(null)}
-                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors"
+                  disabled={submitting}
+                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={handleDeleteConfirm}
-                  disabled={deleteNameConfirm !== deleteModalAgent.name || !deleteReason.trim()}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-500"
+                  disabled={submitting || deleteNameConfirm !== deleteModalAgent?.name || !deleteReason.trim()}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-500 flex items-center gap-2"
                 >
-                  Delete Permanently
+                  {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {submitting ? "Deleting..." : "Delete Permanently"}
                 </button>
               </div>
             </div>

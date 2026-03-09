@@ -77,9 +77,12 @@ export default function ChatPageClient({ user }: ChatPageProps) {
 
   const handleSignOut = async () => {
     try {
-      await signOut({ callbackUrl: `${window.location.origin}/` });
+      // Use redirect: false to bypass NextAuth's server-side redirect
+      await signOut({ redirect: false });
+      // Manually redirect on client side to preserve network IP
+      window.location.href = `${window.location.origin}/`;
     } catch {
-      window.location.assign("/api/auth/signout?callbackUrl=/");
+      window.location.href = `${window.location.origin}/`;
     }
   };
 

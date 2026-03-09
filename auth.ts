@@ -72,5 +72,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      // After login, redirect based on user role
+      // Check if this is a sign-in redirect (not signout)
+      if (url.startsWith(baseUrl)) {
+        // If already an internal URL, use it
+        return url;
+      }
+
+      // Default redirects after login based on the callback URL
+      // The actual role-based redirect is handled by middleware
+      return baseUrl;
+    },
   },
 });

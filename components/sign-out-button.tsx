@@ -3,9 +3,13 @@
 import { signOut } from "next-auth/react";
 
 export function SignOutButton() {
-  const handleSignOut = () => {
-    // Use window.location.origin so redirect works on any host (localhost, network IP, production)
-    signOut({ callbackUrl: `${window.location.origin}/` });
+  const handleSignOut = async () => {
+    try {
+      await signOut({ redirect: false });
+      window.location.href = `${window.location.origin}/`;
+    } catch {
+      window.location.href = `${window.location.origin}/`;
+    }
   };
 
   return (

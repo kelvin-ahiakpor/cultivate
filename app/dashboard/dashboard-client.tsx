@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard, Bot, BookOpen, Flag, BarChart3,
-  Plus, ChevronDown, Settings, HelpCircle, LogOut,
+  Plus, Settings, HelpCircle, LogOut,
   PanelLeft, MoreHorizontal, Upload, Eye,
   CheckCircle, Pencil, ArrowRight, MessageCircle, X, Download,
 } from "lucide-react";
@@ -21,9 +21,12 @@ interface DashboardProps {
     email: string;
     role: string;
   };
+  // demoMode: when true, all child views use local mock data and make zero API requests.
+  // Passed down from /demo/dashboard/page.tsx. See BACKEND-PROGRESS.md § Phase 5 for the pattern.
+  demoMode?: boolean;
 }
 
-export default function DashboardClient({ user }: DashboardProps) {
+export default function DashboardClient({ user, demoMode = false }: DashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -69,9 +72,12 @@ export default function DashboardClient({ user }: DashboardProps) {
 
   const handleSignOut = async () => {
     try {
-      await signOut({ callbackUrl: `${window.location.origin}/` });
+      // Use redirect: false to bypass NextAuth's server-side redirect
+      await signOut({ redirect: false });
+      // Manually redirect on client side to preserve network IP
+      window.location.href = `${window.location.origin}/`;
     } catch {
-      window.location.assign("/api/auth/signout?callbackUrl=/");
+      window.location.href = `${window.location.origin}/`;
     }
   };
   const [activeNav, setActiveNav] = useState("overview");
@@ -180,14 +186,14 @@ export default function DashboardClient({ user }: DashboardProps) {
 
         {/* User Profile — outer div, not button, to avoid nested <button> hydration error
             Click zones: avatar+name area opens menu; install button opens install modal */}
-        <div className={`border-t border-[#2B2B2B] p-2 ${isStandalone ? 'pb-6 pl-3' : 'pb-2'} lg:pb-2 relative ${!sidebarOpen ? 'flex justify-center' : ''}`}>
+        <div className={`${isStandalone ? '' : 'border-t border-[#2B2B2B]'} p-2 ${isStandalone ? 'pb-6 pl-3' : 'pb-2'} lg:pb-2 relative ${!sidebarOpen ? 'flex justify-center' : ''}`}>
           <div
-            className={`group relative flex items-center p-1.5 cursor-pointer transition-colors ${isStandalone ? 'rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1]' : 'rounded-lg hover:bg-black hover:border-black'} ${sidebarOpen ? 'w-full justify-between' : 'justify-center'}`}
+            className={`group relative flex items-center p-1.5 ${sidebarOpen ? 'w-full justify-between gap-2' : 'justify-center'}`}
           >
             {/* Avatar + name — clicking this opens the user menu */}
             <div
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className={`flex items-center flex-1 min-w-0 ${sidebarOpen ? 'gap-2' : ''}`}
+              className={`flex items-center ${sidebarOpen ? 'gap-2' : ''} ${isStandalone && sidebarOpen ? 'w-auto max-w-[calc(100%-3rem)] px-2.5 py-1.5 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] cursor-pointer transition-colors' : 'cursor-pointer'}`}
             >
               <div className="w-10 h-10 bg-[#85b878] rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-base font-medium">{getInitials(user.name)}</span>
@@ -204,18 +210,14 @@ export default function DashboardClient({ user }: DashboardProps) {
               )}
             </div>
             {sidebarOpen && (
-              <div className="flex items-center gap-0.5">
+              <div className="flex items-center">
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowInstallModal(true); }}
-                  className="p-1.5 border border-[#3B3B3B] hover:border-[#5a7048] rounded-md transition-colors text-[#9C9A92] hover:text-[#C2C0B6]"
+                  className={`${isStandalone ? 'h-10 w-10 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] flex items-center justify-center' : 'p-1.5 border border-[#3B3B3B] hover:border-[#5a7048] rounded-md'} transition-colors text-[#9C9A92] hover:text-[#C2C0B6]`}
                   title="Install app"
                 >
                   <Download className="w-4 h-4" />
                 </button>
-                <ChevronDown
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className={`w-4 h-4 text-[#C2C0B6] transition-transform cursor-pointer ${showUserMenu ? "rotate-180" : ""}`}
-                />
               </div>
             )}
             {!sidebarOpen && (
@@ -516,7 +518,9 @@ export default function DashboardClient({ user }: DashboardProps) {
           )}
 
           {activeNav === "chats" && <ChatsView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />}
-          {activeNav === "agents" && <AgentsView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />}
+          {/* demoMode disables SWR fetch — view uses local mockAgents instead */}
+          {activeNav === "agents" && <AgentsView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} demoMode={demoMode} />}
+          {/* TODO Phase 5: pass demoMode to these views once they're connected to the API */}
           {activeNav === "knowledge" && <KnowledgeView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />}
           {activeNav === "flagged" && <FlaggedView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />}
 

@@ -9,6 +9,7 @@ export default function DemoDashboardPage() {
         email: "demo@farmitecture.com",
         role: "AGRONOMIST",
       }}
+      demoMode={true}
     />
   );
 }

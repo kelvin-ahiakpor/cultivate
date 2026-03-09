@@ -9,7 +9,7 @@ import { Sprout } from "lucide-react";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const callbackUrl = searchParams.get("callbackUrl");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,7 +31,22 @@ function LoginForm() {
       if (result?.error) {
         setError("Invalid email or password");
       } else {
-        router.push(callbackUrl);
+        // If there's a specific callback URL, use it
+        if (callbackUrl) {
+          router.push(callbackUrl);
+        } else {
+          // Fetch session to get user role and redirect accordingly
+          const response = await fetch("/api/auth/session");
+          const session = await response.json();
+
+          if (session?.user?.role === "FARMER") {
+            router.push("/chat");
+          } else if (session?.user?.role === "AGRONOMIST" || session?.user?.role === "ADMIN") {
+            router.push("/dashboard");
+          } else {
+            router.push("/");
+          }
+        }
         router.refresh();
       }
     } catch (error) {

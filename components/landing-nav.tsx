@@ -12,6 +12,14 @@ interface LandingNavProps {
 
 export function LandingNav({ session }: LandingNavProps) {
   const [open, setOpen] = useState(false);
+  const handleSignOut = async () => {
+    try {
+      await signOut({ redirect: false });
+      window.location.href = `${window.location.origin}/`;
+    } catch {
+      window.location.href = `${window.location.origin}/`;
+    }
+  };
 
   return (
     <nav className="px-4 lg:px-12 pt-12 pb-4 lg:pt-6 lg:pb-6 relative">
@@ -49,7 +57,7 @@ export function LandingNav({ session }: LandingNavProps) {
                   <Link href="/dashboard" className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-t-lg transition-colors">Dashboard</Link>
                   <Link href="/profile" className="block px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors">Profile Settings</Link>
                   <button
-                    onClick={() => signOut({ callbackUrl: "/" })}
+                    onClick={handleSignOut}
                     className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-b-lg transition-colors"
                   >
                     Sign Out
@@ -120,7 +128,7 @@ export function LandingNav({ session }: LandingNavProps) {
                   Dashboard
                 </Link>
                 <button
-                  onClick={() => signOut({ callbackUrl: "/" })}
+                  onClick={handleSignOut}
                   className="flex items-center justify-center bg-gray-100 text-gray-800 py-3 rounded-xl font-medium min-h-[44px]"
                 >
                   Sign Out
