@@ -773,126 +773,139 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                       </div>
                     </div>
                   </div>
-                  <div className="flex-1 overflow-y-auto py-6 thin-scrollbar">
-                    <div className={`max-w-3xl mx-auto px-6 space-y-6 ${isStandalone ? "pb-16" : "pb-6"}`}>
-                      {messagesLoading ? (
-                        <div className="flex items-center justify-center py-12">
-                          <Loader2 className="w-5 h-5 text-[#9C9A92] animate-spin" />
-                        </div>
-                      ) : (
-                        <>
-                      {messages.map(msg => (
-                        <div key={msg.id}>
-                          {msg.role === "USER" ? (
-                            <div className="flex justify-end">
-                              <div className="max-w-[75%] bg-[#2B2B2B] rounded-2xl px-4 py-3">
-                                <p className="text-base text-white whitespace-pre-wrap">{msg.content}</p>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="prose prose-base prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                      {/* Streaming assistant message */}
-                      {isStreaming && (
-                        <div>
-                          {streamingContent ? (
-                            <div className="prose prose-base prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamingContent}</ReactMarkdown>
-                            </div>
-                          ) : (
-                            <div className="flex gap-1 items-center py-1">
-                              <span className="w-1.5 h-1.5 bg-[#85b878] rounded-full animate-bounce [animation-delay:0ms]" />
-                              <span className="w-1.5 h-1.5 bg-[#85b878] rounded-full animate-bounce [animation-delay:150ms]" />
-                              <span className="w-1.5 h-1.5 bg-[#85b878] rounded-full animate-bounce [animation-delay:300ms]" />
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      <div ref={messagesEndRef} />
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Sticky input at bottom — standalone gets glass overlay, desktop gets max-w-3xl container */}
-                  <div className={`sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-[#1E1E1E] pb-2"}`}>
-                    {isStandalone && (
-                      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent backdrop-blur-[0.5px]" />
-                    )}
-                    <div className={`${isStandalone ? "relative z-10 " : "max-w-3xl mx-auto "}mx-3.5 ${isStandalone ? "mb-3" : "mb-1"}`}>
-                      <div className="bg-[#2B2B2B] rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
-                        <textarea
-                          placeholder="Ask a follow-up..."
-                          rows={1}
-                          value={inputValue}
-                          onChange={e => setInputValue(e.target.value)}
-                          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                          className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-[#6B6B6B] bg-transparent text-sm standalone:text-base lg:text-sm"
-                        />
-                        <div className="flex items-center justify-between mt-2">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); }}
-                              className="p-1.5 hover:bg-[#3B3B3B] rounded transition-colors"
-                              title="New chat"
-                            >
-                              <Plus className="w-5 h-5 text-[#C2C0B6]" />
-                            </button>
+                  {/* Scroll container — messages + sticky input inside, just like demo */}
+                  <div className="flex-1 min-h-0 relative">
+                  <div className="h-full overflow-y-auto thin-scrollbar scrollbar-outset">
+                    <div className="max-w-3xl standalone:max-w-4xl mx-auto flex flex-col min-h-full">
+                      {/* space-y-2: gap between messages. pb-12 standalone: space after disclaimer before input */}
+                      <div className={`flex-1 px-8 standalone:px-2 lg:px-8 pt-6 ${isStandalone ? "pb-12" : "pb-6"} space-y-2`}>
+                        {messagesLoading ? (
+                          <div className="flex items-center justify-center py-12">
+                            <Loader2 className="w-5 h-5 text-[#9C9A92] animate-spin" />
                           </div>
-                          <div className="flex items-center gap-2">
-                            <div className="relative">
-                              <button
-                                onClick={() => setShowAgentMenu(!showAgentMenu)}
-                                className="flex items-center gap-1 text-[#C2C0B6] hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
-                              >
-                                <span>{selectedAgent}</span>
-                                <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
-                              </button>
-                              {showAgentMenu && (
-                                <>
-                                  <div className="fixed inset-0 z-40" onClick={() => setShowAgentMenu(false)} />
-                                  <div className="absolute bottom-full right-0 mb-2 bg-[#2B2B2B] rounded-lg shadow-lg border border-[#3B3B3B] py-2 z-50 min-w-[200px]">
-                                    {agents.map((agent) => (
-                                      <button
-                                        key={agent.id}
-                                        onClick={() => { setSelectedAgent(agent.name); setSelectedAgentId(agent.id); setShowAgentMenu(false); }}
-                                        className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors ${selectedAgent === agent.name ? "text-[#85b878]" : "text-[#C2C0B6]"}`}
-                                      >
-                                        {agent.name}
-                                      </button>
-                                    ))}
+                        ) : (
+                          <>
+                          {messages.map(msg => (
+                            <div key={msg.id}>
+                              {msg.role === "USER" ? (
+                                <div className="flex justify-end">
+                                  <div className="max-w-[75%] bg-[#2B2B2B] rounded-2xl px-4 py-3">
+                                    <p className="text-base text-white whitespace-pre-wrap">{msg.content}</p>
                                   </div>
-                                </>
+                                </div>
+                              ) : (
+                                <div className="prose prose-base prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                                </div>
                               )}
                             </div>
-                            {isStreaming ? (
-                              <div className="p-2">
-                                <Loader2 className="w-5 h-5 text-[#85b878] animate-spin" />
+                          ))}
+                          {/* Streaming assistant message */}
+                          {isStreaming && (
+                            <div>
+                              {streamingContent ? (
+                                <div className="prose prose-base prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamingContent}</ReactMarkdown>
+                                </div>
+                              ) : (
+                                <div className="flex gap-1 items-center py-1">
+                                  <span className="w-1.5 h-1.5 bg-[#85b878] rounded-full animate-bounce [animation-delay:0ms]" />
+                                  <span className="w-1.5 h-1.5 bg-[#85b878] rounded-full animate-bounce [animation-delay:150ms]" />
+                                  <span className="w-1.5 h-1.5 bg-[#85b878] rounded-full animate-bounce [animation-delay:300ms]" />
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {isStandalone && (
+                            <div className="pt-2">
+                              <p className="text-sm text-[#C2C0B6] text-right leading-snug max-w-[250px] ml-auto">
+                                AI can make mistakes.<br />Please verify important information.
+                              </p>
+                            </div>
+                          )}
+                          <div ref={messagesEndRef} />
+                          </>
+                        )}
+                      </div>
+
+                      {/* Sticky input — INSIDE scroll container so gradient overlaps messages (demo pattern) */}
+                      <div className={`sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-[#1E1E1E] pb-2"}`}>
+                        {isStandalone && (
+                          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent backdrop-blur-[0.5px]" />
+                        )}
+                        <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-3.5 mb-1"}`}>
+                          <div className="bg-[#2B2B2B] rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
+                            <textarea
+                              placeholder="Ask a follow-up..."
+                              rows={1}
+                              value={inputValue}
+                              onChange={e => setInputValue(e.target.value)}
+                              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                              className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-[#6B6B6B] bg-transparent text-sm standalone:text-base lg:text-sm"
+                            />
+                            <div className="flex items-center justify-between mt-2">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); }}
+                                  className="p-1.5 hover:bg-[#3B3B3B] rounded transition-colors"
+                                  title="New chat"
+                                >
+                                  <Plus className="w-5 h-5 text-[#C2C0B6]" />
+                                </button>
                               </div>
-                            ) : (
-                              <button
-                                onClick={() => { handleSend(); setSendIcon(s => s === "cabbage" ? "plane" : s === "plane" ? "sprout" : "cabbage"); }}
-                                disabled={!inputValue.trim()}
-                                className="p-2 bg-[#85b878] text-white rounded-xl hover:bg-[#536d3d] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                              >
-                                {sendIcon === "cabbage" && <CabbageIcon />}
-                                {sendIcon === "plane" && <PaperPlaneIcon />}
-                                {sendIcon === "sprout" && <SproutIcon />}
-                              </button>
-                            )}
+                              <div className="flex items-center gap-2">
+                                <div className="relative">
+                                  <button
+                                    onClick={() => setShowAgentMenu(!showAgentMenu)}
+                                    className="flex items-center gap-1 text-[#C2C0B6] hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
+                                  >
+                                    <span>{selectedAgent}</span>
+                                    <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
+                                  </button>
+                                  {showAgentMenu && (
+                                    <>
+                                      <div className="fixed inset-0 z-40" onClick={() => setShowAgentMenu(false)} />
+                                      <div className="absolute bottom-full right-0 mb-2 bg-[#2B2B2B] rounded-lg shadow-lg border border-[#3B3B3B] py-2 z-50 min-w-[200px]">
+                                        {agents.map((agent) => (
+                                          <button
+                                            key={agent.id}
+                                            onClick={() => { setSelectedAgent(agent.name); setSelectedAgentId(agent.id); setShowAgentMenu(false); }}
+                                            className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors ${selectedAgent === agent.name ? "text-[#85b878]" : "text-[#C2C0B6]"}`}
+                                          >
+                                            {agent.name}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                                {isStreaming ? (
+                                  <div className="p-2">
+                                    <Loader2 className="w-5 h-5 text-[#85b878] animate-spin" />
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => { handleSend(); setSendIcon(s => s === "cabbage" ? "plane" : s === "plane" ? "sprout" : "cabbage"); }}
+                                    disabled={!inputValue.trim()}
+                                    className="p-2 bg-[#85b878] text-white rounded-xl hover:bg-[#536d3d] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >
+                                    {sendIcon === "cabbage" && <CabbageIcon />}
+                                    {sendIcon === "plane" && <PaperPlaneIcon />}
+                                    {sendIcon === "sprout" && <SproutIcon />}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
                           </div>
+                          {!isStandalone && (
+                            <p className="mt-2 text-xs text-[#9C9A92] text-center leading-snug">
+                              AI can make mistakes. Please verify important information.
+                            </p>
+                          )}
                         </div>
                       </div>
-                      {!isStandalone && (
-                        <p className="mt-2 text-xs text-[#9C9A92] text-center leading-snug">
-                          AI can make mistakes. Please verify important information.
-                        </p>
-                      )}
                     </div>
+                  </div>
                   </div>
                 </div>
               )}
