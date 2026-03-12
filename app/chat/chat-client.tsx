@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Sprout, Plus, ChevronDown, ChevronLeft, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Pencil, Trash2, Share, Unlink, Download, Loader2, Box } from "lucide-react";
+import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Download, Share, Pencil, Unlink, Trash2 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { mutate as globalMutate } from "swr";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon } from "@/components/send-icons";
 import GlassCircleButton from "@/components/glass-circle-button";
+import ConversationView from "@/components/conversation-view";
 import ChatsView, { mockChats } from "./views/chats-view";
 import SystemsView from "./views/systems-view";
 import { useConversations } from "@/lib/hooks/use-conversations";
@@ -67,7 +66,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const [chatsViewOpen, setChatsViewOpen] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null); // kept for welcome-screen scroll if needed
 
   // Sidebar conversation list — disabled in demo mode (zero API requests)
   const apiConversations = useConversations("", 1, 30, demoMode);
@@ -136,10 +135,6 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agents.length]);
 
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streamingContent]);
 
   const handleSend = async () => {
     const text = inputValue.trim();
@@ -703,211 +698,34 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                   </div>
                 </div>
               ) : (
-                /* Conversation view — messages + sticky input at bottom */
-                <div className="flex flex-col h-full">
-                  {/* Conversation header
-                      Mobile: [glass back] | [title + system pill centered] | [+ new chat]
-                      Desktop: breadcrumb [system /] [title ▾] dropdown */}
-                  <div className="flex-shrink-0 bg-[#1E1E1E] pt-16 lg:pt-3 pb-3 px-3 lg:pl-4 lg:pr-3">
-                    {/* Mobile header */}
-                    <div className="lg:hidden flex items-center justify-between">
-                      <GlassCircleButton
-                        onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); setSelectedChatId(null); setActiveView("chat"); }}
-                        aria-label="Back"
-                      >
-                        <ChevronLeft className="w-5 h-5 text-white" />
-                      </GlassCircleButton>
-                      <div className="flex flex-col items-center gap-0.5 min-w-0 flex-1 mx-3">
-                        <span className="text-sm standalone:text-base font-medium text-white truncate">{conversationTitle || "New conversation"}</span>
-                        {conversationSystem && (
-                          <div className="inline-flex items-center gap-1 bg-[#2B2B2B] rounded-full px-2.5 py-0.5">
-                            <Box className="w-3 h-3 text-[#9C9A92]" />
-                            <span className="text-xs text-[#9C9A92] truncate max-w-[180px]">{conversationSystem}</span>
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); setSelectedChatId(null); setActiveView("chat"); }}
-                        className="w-11 h-11 bg-[#2B2B2B] hover:bg-[#3B3B3B] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-                      >
-                        <Plus className="w-5 h-5 text-[#85b878]" />
-                      </button>
-                    </div>
-                    {/* Desktop breadcrumb header */}
-                    <div className="hidden lg:flex items-center gap-1">
-                      {conversationSystem && (
-                        <>
-                          <span className="text-sm text-[#C2C0B6] hover:text-white truncate cursor-pointer transition-colors">{conversationSystem}</span>
-                          <span className="text-sm text-[#6B6B6B] flex-shrink-0">/</span>
-                        </>
-                      )}
-                      <div className={`inline-flex items-stretch rounded-lg overflow-hidden cursor-pointer relative ${
-                        headerMenuOpen ? 'bg-[#141413]' : 'hover:bg-[#141413]'
-                      }`}>
-                        <span className="text-sm text-[#C2C0B6] truncate max-w-[220px] py-1 pl-2 pr-1 hover:bg-[#0a0a0a] transition-colors">
-                          {conversationTitle || "New conversation"}
-                        </span>
-                        <button
-                          onClick={() => setHeaderMenuOpen(o => !o)}
-                          className={`${headerMenuOpen ? 'bg-[#0a0a0a]' : 'hover:bg-[#0a0a0a]'} transition-all px-1.5 self-stretch flex items-center`}
-                        >
-                          <ChevronDown className="w-3.5 h-3.5 text-[#9C9A92] hover:text-white transition-colors" strokeWidth={1.5} />
-                        </button>
-                        {headerMenuOpen && (
-                          <>
-                            <div className="fixed inset-0 z-40" onClick={() => setHeaderMenuOpen(false)} />
-                            <div className="absolute left-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-[#2B2B2B] py-1 z-50 min-w-[200px] whitespace-nowrap">
-                              <button onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }} className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2.5 transition-colors">
-                                <Share className="w-3.5 h-3.5" />Share
-                              </button>
-                              <button onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }} className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2.5 transition-colors">
-                                <Pencil className="w-3.5 h-3.5" />Rename
-                              </button>
-                              <div className="border-t border-[#2B2B2B] my-1 mx-3" />
-                              <button onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }} className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-[#141413] hover:text-red-300 flex items-center gap-2.5 transition-colors">
-                                <Trash2 className="w-3.5 h-3.5" />Delete
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  {/* Scroll container — messages + sticky input inside, just like demo */}
-                  <div className="flex-1 min-h-0 relative">
-                  <div className="h-full overflow-y-auto thin-scrollbar scrollbar-outset">
-                    <div className="max-w-3xl standalone:max-w-4xl mx-auto flex flex-col min-h-full">
-                      {/* space-y-2: gap between messages. pb-12 standalone: space after disclaimer before input */}
-                      <div className={`flex-1 px-8 standalone:px-2 lg:px-8 pt-6 ${isStandalone ? "pb-12" : "pb-6"} space-y-2`}>
-                        {messagesLoading ? (
-                          <div className="flex items-center justify-center py-12">
-                            <Loader2 className="w-5 h-5 text-[#9C9A92] animate-spin" />
-                          </div>
-                        ) : (
-                          <>
-                          {messages.map(msg => (
-                            <div key={msg.id}>
-                              {msg.role === "USER" ? (
-                                <div className="flex justify-end">
-                                  <div className="max-w-[75%] bg-[#2B2B2B] rounded-2xl px-4 py-3">
-                                    <p className="text-base text-white whitespace-pre-wrap">{msg.content}</p>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="prose prose-base prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
-                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                          {/* Streaming assistant message */}
-                          {isStreaming && (
-                            <div>
-                              {streamingContent ? (
-                                <div className="prose prose-base prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
-                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamingContent}</ReactMarkdown>
-                                </div>
-                              ) : (
-                                <div className="flex gap-1 items-center py-1">
-                                  <span className="w-1.5 h-1.5 bg-[#85b878] rounded-full animate-bounce [animation-delay:0ms]" />
-                                  <span className="w-1.5 h-1.5 bg-[#85b878] rounded-full animate-bounce [animation-delay:150ms]" />
-                                  <span className="w-1.5 h-1.5 bg-[#85b878] rounded-full animate-bounce [animation-delay:300ms]" />
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          {isStandalone && (
-                            <div className="pt-2">
-                              <p className="text-sm text-[#C2C0B6] text-right leading-snug max-w-[250px] ml-auto">
-                                AI can make mistakes.<br />Please verify important information.
-                              </p>
-                            </div>
-                          )}
-                          <div ref={messagesEndRef} />
-                          </>
-                        )}
-                      </div>
-
-                      {/* Sticky input — INSIDE scroll container so gradient overlaps messages (demo pattern) */}
-                      <div className={`sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-[#1E1E1E] pb-2"}`}>
-                        {isStandalone && (
-                          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent backdrop-blur-[0.5px]" />
-                        )}
-                        <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-3.5 mb-1"}`}>
-                          <div className="bg-[#2B2B2B] rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
-                            <textarea
-                              placeholder="Ask a follow-up..."
-                              rows={1}
-                              value={inputValue}
-                              onChange={e => setInputValue(e.target.value)}
-                              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                              className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-[#6B6B6B] bg-transparent text-sm standalone:text-base lg:text-sm"
-                            />
-                            <div className="flex items-center justify-between mt-2">
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); }}
-                                  className="p-1.5 hover:bg-[#3B3B3B] rounded transition-colors"
-                                  title="New chat"
-                                >
-                                  <Plus className="w-5 h-5 text-[#C2C0B6]" />
-                                </button>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <div className="relative">
-                                  <button
-                                    onClick={() => setShowAgentMenu(!showAgentMenu)}
-                                    className="flex items-center gap-1 text-[#C2C0B6] hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
-                                  >
-                                    <span>{selectedAgent}</span>
-                                    <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
-                                  </button>
-                                  {showAgentMenu && (
-                                    <>
-                                      <div className="fixed inset-0 z-40" onClick={() => setShowAgentMenu(false)} />
-                                      <div className="absolute bottom-full right-0 mb-2 bg-[#2B2B2B] rounded-lg shadow-lg border border-[#3B3B3B] py-2 z-50 min-w-[200px]">
-                                        {agents.map((agent) => (
-                                          <button
-                                            key={agent.id}
-                                            onClick={() => { setSelectedAgent(agent.name); setSelectedAgentId(agent.id); setShowAgentMenu(false); }}
-                                            className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors ${selectedAgent === agent.name ? "text-[#85b878]" : "text-[#C2C0B6]"}`}
-                                          >
-                                            {agent.name}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                                {isStreaming ? (
-                                  <div className="p-2">
-                                    <Loader2 className="w-5 h-5 text-[#85b878] animate-spin" />
-                                  </div>
-                                ) : (
-                                  <button
-                                    onClick={() => { handleSend(); setSendIcon(s => s === "cabbage" ? "plane" : s === "plane" ? "sprout" : "cabbage"); }}
-                                    disabled={!inputValue.trim()}
-                                    className="p-2 bg-[#85b878] text-white rounded-xl hover:bg-[#536d3d] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                  >
-                                    {sendIcon === "cabbage" && <CabbageIcon />}
-                                    {sendIcon === "plane" && <PaperPlaneIcon />}
-                                    {sendIcon === "sprout" && <SproutIcon />}
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          {!isStandalone && (
-                            <p className="mt-2 text-xs text-[#9C9A92] text-center leading-snug">
-                              AI can make mistakes. Please verify important information.
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  </div>
-                </div>
+                /* Conversation view — rendered by shared ConversationView component */
+                <ConversationView
+                  title={conversationTitle || ""}
+                  systemName={conversationSystem}
+                  headerMenuOpen={headerMenuOpen}
+                  setHeaderMenuOpen={setHeaderMenuOpen}
+                  onBack={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); setSelectedChatId(null); setActiveView("chat"); }}
+                  onNewChat={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); }}
+                  messages={messages}
+                  messagesLoading={messagesLoading}
+                  isStreaming={isStreaming}
+                  streamingContent={streamingContent}
+                  isStandalone={isStandalone}
+                  inputProps={{
+                    value: inputValue,
+                    onChange: setInputValue,
+                    onSend: handleSend,
+                    onNewChat: () => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); },
+                    agents,
+                    selectedAgent,
+                    onAgentSelect: (id, name) => { setSelectedAgentId(id); setSelectedAgent(name); },
+                    sendIcon,
+                    onSendIconCycle: () => setSendIcon(s => s === "cabbage" ? "plane" : s === "plane" ? "sprout" : "cabbage"),
+                    showAgentMenu,
+                    setShowAgentMenu,
+                    isStreaming,
+                  }}
+                />
               )}
             </div>
 
