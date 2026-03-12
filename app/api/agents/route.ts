@@ -16,9 +16,12 @@ export async function GET(request: NextRequest) {
   const { session, error } = await requireAuth();
   if (error) return error;
 
-  if (!hasRole(session!.user.role, "AGRONOMIST", "ADMIN")) {
+  if (!hasRole(session!.user.role, "AGRONOMIST", "ADMIN", "FARMER")) {
     return apiError("Forbidden", 403);
   }
+
+  // Farmers only see active agents (read-only, for agent selection in chat)
+  const isFarmer = session!.user.role === "FARMER";
 
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") || "";
@@ -29,6 +32,7 @@ export async function GET(request: NextRequest) {
   try {
     const where = {
       organizationId: session!.user.organizationId,
+      ...(isFarmer && { isActive: true }), // farmers only see active agents
       ...(search && {
         name: { contains: search, mode: "insensitive" as const },
       }),

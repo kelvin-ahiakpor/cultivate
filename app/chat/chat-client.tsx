@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Pencil, Trash2, Share, Unlink, Download } from "lucide-react";
+import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Pencil, Trash2, Share, Unlink, Download, Loader2 } from "lucide-react";
 import { signOut } from "next-auth/react";
+import { mutate as globalMutate } from "swr";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon } from "@/components/send-icons";
 import ChatsView, { mockChats } from "./views/chats-view";
 import SystemsView from "./views/systems-view";
 import { useConversations } from "@/lib/hooks/use-conversations";
+import { useAgents } from "@/lib/hooks/use-agents";
 
 interface ChatPageProps {
   user: {
@@ -47,6 +51,19 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
   const [showInstallModal, setShowInstallModal] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  // Chat state
+  interface ChatMessage { id: string; role: "USER" | "ASSISTANT"; content: string; }
+  const [inputValue, setInputValue] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [conversationTitle, setConversationTitle] = useState<string | null>(null);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Sidebar conversation list — disabled in demo mode (zero API requests)
   const apiConversations = useConversations("", 1, 30, demoMode);
@@ -100,19 +117,167 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
     return name[0]?.toUpperCase() || "U";
   };
 
-  // Mock agents list - will be replaced with real data from API
-  const agents = [
-    "General Farm Advisor",
-    "Maize Expert",
-    "Pest Management",
-    "Irrigation Specialist",
-  ];
+  // Real agents from API (disabled in demo mode)
+  const { agents: apiAgents } = useAgents("", 1, 10, demoMode);
+  const agents = demoMode
+    ? [{ id: "demo-1", name: "General Farm Advisor" }, { id: "demo-2", name: "Maize Expert" }, { id: "demo-3", name: "Pest Management" }, { id: "demo-4", name: "Irrigation Specialist" }]
+    : apiAgents.map(a => ({ id: a.id, name: a.name }));
+
+  // Auto-select first agent when agents load
+  useEffect(() => {
+    if (!selectedAgentId && agents.length > 0) {
+      setSelectedAgentId(agents[0].id);
+      setSelectedAgent(agents[0].name);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agents.length]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, streamingContent]);
+
+  const handleSend = async () => {
+    const text = inputValue.trim();
+    if (!text || isStreaming || demoMode) return;
+
+    const agentId = selectedAgentId || agents[0]?.id;
+    if (!agentId) return;
+
+    setInputValue("");
+    setIsStreaming(true);
+    setStreamingContent("");
+
+    // Add user message to UI immediately
+    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "USER", content: text };
+    setMessages(prev => [...prev, userMsg]);
+
+    try {
+      // Create conversation if we don't have one
+      let convId = currentConversationId;
+      if (!convId) {
+        const res = await fetch("/api/conversations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ agentId }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(`Create conversation failed: ${res.status} ${JSON.stringify(err)}`);
+        }
+        // apiSuccess returns the conversation object directly (not wrapped in { data: ... })
+        const data = await res.json();
+        convId = data.id;
+        setCurrentConversationId(convId);
+      }
+
+      // Send message — SSE stream
+      const res = await fetch(`/api/conversations/${convId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: text }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(`Send message failed: ${res.status} ${JSON.stringify(err)}`);
+      }
+
+      if (!res.body) throw new Error("No response body");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n").filter(l => l.startsWith("data: "));
+
+        for (const line of lines) {
+          try {
+            const event = JSON.parse(line.slice(6));
+            if (event.type === "text") {
+              assistantText += event.content;
+              setStreamingContent(assistantText);
+            } else if (event.type === "done") {
+              const assistantMsg: ChatMessage = {
+                id: event.message?.id || crypto.randomUUID(),
+                role: "ASSISTANT",
+                content: assistantText,
+              };
+              setMessages(prev => [...prev, assistantMsg]);
+              setStreamingContent("");
+              // Invalidate ALL conversation SWR keys so sidebar refreshes too
+              globalMutate(key => typeof key === "string" && key.startsWith("/api/conversations"));
+            } else if (event.type === "title") {
+              // Strip markdown heading prefix (e.g. "# Title" → "Title") and store
+              const cleanTitle = (event.title as string || "").replace(/^#+\s*/, "").trim();
+              setConversationTitle(cleanTitle);
+              // Refresh sidebar so it shows the new title
+              globalMutate(key => typeof key === "string" && key.startsWith("/api/conversations"));
+            } else if (event.type === "error") {
+              // Server-sent error (e.g. billing, model failure) — show as assistant message
+              setMessages(prev => [...prev, {
+                id: crypto.randomUUID(),
+                role: "ASSISTANT",
+                content: event.error || "Sorry, something went wrong. Please try again.",
+              }]);
+              setStreamingContent("");
+            }
+          } catch { /* skip malformed chunks */ }
+        }
+      }
+    } catch (err) {
+      console.error("Send failed:", err);
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: "ASSISTANT", content: `Error: ${err instanceof Error ? err.message : "Something went wrong"}` }]);
+      setStreamingContent("");
+    } finally {
+      setIsStreaming(false);
+    }
+  };
+
+  // Load an existing conversation into the main chat view (used by sidebar click + ChatsView selection)
+  const loadExistingConversation = async (chatId: string, chatTitle: string) => {
+    setCurrentConversationId(chatId);
+    setConversationTitle(chatTitle || null);
+    setMessages([]);
+    setIsStreaming(false);
+    setStreamingContent("");
+    setSelectedChatId(chatId);
+    setActiveView("chat");
+    setHeaderMenuOpen(false);
+    if (window.innerWidth < 1024) setSidebarOpen(false);
+
+    if (!demoMode) {
+      setMessagesLoading(true);
+      try {
+        const res = await fetch(`/api/conversations/${chatId}/messages`);
+        const data = await res.json();
+        if (data.messages) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          setMessages(data.messages.map((m: any) => ({ id: m.id, role: m.role, content: m.content })));
+        }
+      } catch (e) {
+        console.error("Failed to load conversation messages:", e);
+      } finally {
+        setMessagesLoading(false);
+      }
+    }
+  };
 
   const handleSidebarChatClick = (chatId: string) => {
-    setSelectedChatId(chatId);
-    setActiveView("chats");
-    // Close sidebar on mobile
-    if (window.innerWidth < 1024) setSidebarOpen(false);
+    const chat = sidebarChats.find(c => c.id === chatId);
+    if (demoMode) {
+      // Demo: use ChatsView's internal panel
+      setSelectedChatId(chatId);
+      setActiveView("chats");
+      if (window.innerWidth < 1024) setSidebarOpen(false);
+    } else {
+      loadExistingConversation(chatId, chat?.title || "");
+    }
   };
 
   const handleAllChatsClick = () => {
@@ -122,9 +287,9 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
     if (window.innerWidth < 1024) setSidebarOpen(false);
   };
 
-  // Keep selectedChatId in sync — no longer clear it so sidebar holds active state
+  // Keep selectedChatId in sync — no longer clear it so sidebar highlights the opened chat
   const handleChatOpened = () => {
-    // intentionally keep selectedChatId so sidebar highlights the opened chat
+    // intentionally kept empty
   };
 
   return (
@@ -168,7 +333,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
           <div className="space-y-0.5">
             {/* New Chat */}
             <button
-              onClick={() => { setActiveView("chat"); if (window.innerWidth < 1024) setSidebarOpen(false); }}
+              onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setStreamingContent(""); setSelectedChatId(null); setMessagesLoading(false); setHeaderMenuOpen(false); setActiveView("chat"); if (window.innerWidth < 1024) setSidebarOpen(false); }}
               className={`group relative w-full flex items-center gap-3 pl-3 pr-2 py-1 rounded-lg transition-colors ${!sidebarOpen ? 'justify-center' : ''} ${
                 activeView === "chat" ? "bg-[#141413] text-white" : "text-[#C2C0B6] hover:bg-[#141413] hover:text-white"
               }`}
@@ -231,7 +396,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                   Hover zones: has-[button:hover]:bg-transparent keeps row & button independent */}
               <div className="space-y-0.5 standalone:space-y-2 lg:space-y-0.5">
                 {sidebarChats.slice(0, isDesktop ? 30 : 10).map((chat) => {
-                  const isActive = activeView === "chats" && selectedChatId === chat.id;
+                  const isActive = selectedChatId === chat.id;
                   const isMenuOpen = chatMenuId === chat.id;
                   return (
                     <div
@@ -405,13 +570,20 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
         {/* Conversation view: full-width (header spans edge-to-edge like Claude)
             Chat list view: padded with max-w-5xl container */}
         {activeView === "chats" && (
-          <div className={`flex-1 min-h-0 overflow-hidden ${
-            selectedChatId ? '' : 'max-w-5xl w-full mx-auto px-4 sm:px-8 py-8'
-          }`}>
+          <div className="flex-1 min-h-0 overflow-hidden max-w-5xl w-full mx-auto px-4 sm:px-8 py-8">
             <ChatsView
-              initialChatId={selectedChatId}
+              initialChatId={demoMode ? selectedChatId : null}
               onChatOpened={handleChatOpened}
-              onChatSelect={(chatId) => setSelectedChatId(chatId)}
+              onChatSelect={(chatId) => {
+                if (!chatId) { setSelectedChatId(null); return; }
+                // In real mode, load into main conversation view instead of ChatsView's panel
+                if (!demoMode) {
+                  const chat = sidebarChats.find(c => c.id === chatId);
+                  loadExistingConversation(chatId, chat?.title || "");
+                } else {
+                  setSelectedChatId(chatId);
+                }
+              }}
               onNewChat={() => { setSelectedChatId(null); setActiveView("chat"); }}
               sidebarOpen={sidebarOpen}
               setSidebarOpen={setSidebarOpen}
@@ -434,110 +606,252 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
         {activeView === "chat" && (
           <>
             {/* Chat Messages Area */}
-            <div className="flex-1 overflow-y-auto flex items-center justify-center">
-              <div className="max-w-3xl w-full px-6">
-                <div className="text-center mb-8">
-                  <h1 className="text-4xl font-serif text-[#C2C0B6] mb-3 flex items-center justify-center gap-3">
-                    <Sprout className="w-10 h-10 text-[#85b878]" />
-                    Hey there, {user.name?.split(" ")[0]}
-                  </h1>
-                </div>
+            <div className="flex-1 overflow-y-auto flex flex-col">
+              {messages.length === 0 && !isStreaming && !currentConversationId && !messagesLoading ? (
+                /* Welcome screen — centered greeting + input */
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="max-w-3xl w-full px-6">
+                    <div className="text-center mb-8">
+                      <h1 className="text-4xl font-serif text-[#C2C0B6] mb-3 flex items-center justify-center gap-3">
+                        <Sprout className="w-10 h-10 text-[#85b878]" />
+                        Hey there, {user.name?.split(" ")[0]}
+                      </h1>
+                    </div>
 
-                {/* Input Area - Positioned close to greeting */}
-                <div className="mb-6">
-                  <div className="relative bg-[#2B2B2B] rounded-2xl shadow-sm p-4">
-                    <textarea
-                      placeholder="How can I help you today?"
-                      rows={1}
-                      className="w-full px-2 py-2 focus:outline-none resize-none text-white placeholder-[#C2C0B6] bg-transparent text-sm standalone:text-base lg:text-sm"
-                    />
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center gap-2">
-                        <button className="p-1.5 hover:bg-[#3B3B3B] rounded transition-colors">
-                          <Plus className="w-5 h-5 text-[#C2C0B6]" />
-                        </button>
+                    {/* Input Area - Positioned close to greeting */}
+                    <div className="mb-6">
+                      <div className="relative bg-[#2B2B2B] rounded-2xl shadow-sm p-4">
+                        <textarea
+                          placeholder="How can I help you today?"
+                          rows={1}
+                          value={inputValue}
+                          onChange={e => setInputValue(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                          className="w-full px-2 py-2 focus:outline-none resize-none text-white placeholder-[#C2C0B6] bg-transparent text-sm standalone:text-base lg:text-sm"
+                        />
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="flex items-center gap-2">
+                            <button className="p-1.5 hover:bg-[#3B3B3B] rounded transition-colors">
+                              <Plus className="w-5 h-5 text-[#C2C0B6]" />
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {/* Agent Selector */}
+                            <div className="relative">
+                              <button
+                                onClick={() => setShowAgentMenu(!showAgentMenu)}
+                                className="flex items-center gap-1 text-[#C2C0B6] hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
+                              >
+                                <span>{selectedAgent}</span>
+                                <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
+                              </button>
+                              {showAgentMenu && (
+                                <>
+                                  <div className="fixed inset-0 z-40" onClick={() => setShowAgentMenu(false)} />
+                                  <div className="absolute bottom-full right-0 mb-2 bg-[#2B2B2B] rounded-lg shadow-lg border border-[#3B3B3B] py-2 z-50 min-w-[200px]">
+                                    {agents.map((agent) => (
+                                      <button
+                                        key={agent.id}
+                                        onClick={() => { setSelectedAgent(agent.name); setSelectedAgentId(agent.id); setShowAgentMenu(false); setCurrentConversationId(null); setConversationTitle(null); setMessages([]); }}
+                                        className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors ${selectedAgent === agent.name ? "text-[#85b878]" : "text-[#C2C0B6]"}`}
+                                      >
+                                        {agent.name}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => { handleSend(); setSendIcon(s => s === "cabbage" ? "plane" : s === "plane" ? "sprout" : "cabbage"); }}
+                              disabled={isStreaming || !inputValue.trim()}
+                              className="p-2 bg-[#85b878] text-white rounded-xl hover:bg-[#536d3d] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              {sendIcon === "cabbage" && <CabbageIcon />}
+                              {sendIcon === "plane" && <PaperPlaneIcon />}
+                              {sendIcon === "sprout" && <SproutIcon />}
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {/* Agent Selector */}
-                        <div className="relative">
-                          <button
-                            onClick={() => setShowAgentMenu(!showAgentMenu)}
-                            className="flex items-center gap-1 text-[#C2C0B6] hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
-                          >
-                            <span>{selectedAgent}</span>
-                            <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
-                          </button>
+                    </div>
 
-                          {/* Agent Dropdown */}
-                          {showAgentMenu && (
-                            <>
-                              <div className="fixed inset-0 z-40" onClick={() => setShowAgentMenu(false)} />
-                              <div className="absolute bottom-full right-0 mb-2 bg-[#2B2B2B] rounded-lg shadow-lg border border-[#3B3B3B] py-2 z-50 min-w-[200px]">
-                                {agents.map((agent) => (
-                                  <button
-                                    key={agent}
-                                    onClick={() => {
-                                      setSelectedAgent(agent);
-                                      setShowAgentMenu(false);
-                                    }}
-                                    className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors ${
-                                      selectedAgent === agent ? "text-[#85b878]" : "text-[#C2C0B6]"
-                                    }`}
-                                  >
-                                    {agent}
-                                  </button>
-                                ))}
+                    {/* Action Buttons Below Input */}
+                    <div className="flex justify-center gap-2 flex-wrap">
+                      <button onClick={() => setInputValue("What are the best practices for my crops?")} className="group relative px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
+                        <Leaf className="w-4 h-4 text-[#C2C0B6]" />
+                        <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Crops</span>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2.5 bg-[#171717] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap border border-[#3B3B3B]">Best practices for your crops</div>
+                      </button>
+                      <button onClick={() => setInputValue("How do I identify and manage pests on my farm?")} className="group relative px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
+                        <Bug className="w-4 h-4 text-[#C2C0B6]" />
+                        <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Pests</span>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2.5 bg-[#171717] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap border border-[#3B3B3B]">Identify and manage pests</div>
+                      </button>
+                      <button onClick={() => setInputValue("How should I plan my farming around the weather?")} className="group relative px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
+                        <CloudRain className="w-4 h-4 text-[#C2C0B6]" />
+                        <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Weather</span>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2.5 bg-[#171717] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap border border-[#3B3B3B]">Plan based on weather</div>
+                      </button>
+                      <button onClick={() => setInputValue("When should I plant and harvest my crops?")} className="group relative px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-[#C2C0B6]" />
+                        <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Planting</span>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2.5 bg-[#171717] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap border border-[#3B3B3B]">When to plant and harvest</div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Conversation view — messages + sticky input at bottom */
+                <div className="flex flex-col h-full">
+                  {/* Conversation breadcrumb header */}
+                  <div className="flex-shrink-0 flex items-center gap-1.5 px-4 pt-3 pb-2">
+                    <div className="relative">
+                      <button
+                        onClick={() => setHeaderMenuOpen(o => !o)}
+                        className="flex items-center gap-1.5 group"
+                      >
+                        <span className="text-sm standalone:text-base lg:text-sm font-medium text-white truncate max-w-[220px]">
+                          {conversationTitle || "New conversation"}
+                        </span>
+                        <ChevronDown className="w-3.5 h-3.5 text-[#9C9A92] group-hover:text-white transition-colors flex-shrink-0" strokeWidth={1.5} />
+                      </button>
+                      {headerMenuOpen && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setHeaderMenuOpen(false)} />
+                          <div className="absolute top-full left-0 mt-1 bg-[#2B2B2B] rounded-lg shadow-lg border border-[#3B3B3B] py-1 z-50 min-w-[160px]">
+                            <button className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#C2C0B6] hover:bg-[#3B3B3B] transition-colors">
+                              <Share className="w-3.5 h-3.5" />
+                              Share
+                            </button>
+                            <button className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#C2C0B6] hover:bg-[#3B3B3B] transition-colors">
+                              <Pencil className="w-3.5 h-3.5" />
+                              Rename
+                            </button>
+                            <button className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-[#3B3B3B] transition-colors">
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Delete
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-y-auto py-6 thin-scrollbar">
+                    <div className="max-w-3xl mx-auto px-6 space-y-6">
+                      {messagesLoading ? (
+                        <div className="flex items-center justify-center py-12">
+                          <Loader2 className="w-5 h-5 text-[#9C9A92] animate-spin" />
+                        </div>
+                      ) : (
+                        <>
+                      {messages.map(msg => (
+                        <div key={msg.id}>
+                          {msg.role === "USER" ? (
+                            <div className="flex justify-end">
+                              <div className="max-w-[75%] bg-[#2B2B2B] rounded-2xl px-4 py-3">
+                                <p className="text-sm standalone:text-base lg:text-sm text-white whitespace-pre-wrap">{msg.content}</p>
                               </div>
-                            </>
+                            </div>
+                          ) : (
+                            <div className="prose prose-sm prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-sm prose-h3:text-sm prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                            </div>
                           )}
                         </div>
+                      ))}
+                      {/* Streaming assistant message */}
+                      {isStreaming && (
+                        <div>
+                          {streamingContent ? (
+                            <div className="prose prose-sm prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-sm prose-h3:text-sm prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamingContent}</ReactMarkdown>
+                            </div>
+                          ) : (
+                            <div className="flex gap-1 items-center py-1">
+                              <span className="w-1.5 h-1.5 bg-[#85b878] rounded-full animate-bounce [animation-delay:0ms]" />
+                              <span className="w-1.5 h-1.5 bg-[#85b878] rounded-full animate-bounce [animation-delay:150ms]" />
+                              <span className="w-1.5 h-1.5 bg-[#85b878] rounded-full animate-bounce [animation-delay:300ms]" />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <div ref={messagesEndRef} />
+                        </>
+                      )}
+                    </div>
+                  </div>
 
-                        {/* Cycling send icon — cycles on click; move to send handler when wired up */}
-                        <button
-                          onClick={() => setSendIcon(s => s === "cabbage" ? "plane" : s === "plane" ? "sprout" : "cabbage")}
-                          className="p-2 bg-[#85b878] text-white rounded-xl hover:bg-[#536d3d] transition-colors"
-                        >
-                          {sendIcon === "cabbage" && <CabbageIcon />}
-                          {sendIcon === "plane" && <PaperPlaneIcon />}
-                          {sendIcon === "sprout" && <SproutIcon />}
-                        </button>
+                  {/* Sticky input at bottom */}
+                  <div className="flex-shrink-0 px-4 pb-4 pt-2">
+                    <div className="max-w-3xl mx-auto">
+                      <div className="relative bg-[#2B2B2B] rounded-2xl shadow-sm p-4">
+                        <textarea
+                          placeholder="Ask a follow-up..."
+                          rows={1}
+                          value={inputValue}
+                          onChange={e => setInputValue(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                          className="w-full px-2 py-2 focus:outline-none resize-none text-white placeholder-[#C2C0B6] bg-transparent text-sm standalone:text-base lg:text-sm"
+                        />
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setStreamingContent(""); }}
+                              className="p-1.5 hover:bg-[#3B3B3B] rounded transition-colors"
+                              title="New chat"
+                            >
+                              <Plus className="w-5 h-5 text-[#C2C0B6]" />
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="relative">
+                              <button
+                                onClick={() => setShowAgentMenu(!showAgentMenu)}
+                                className="flex items-center gap-1 text-[#C2C0B6] hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
+                              >
+                                <span>{selectedAgent}</span>
+                                <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
+                              </button>
+                              {showAgentMenu && (
+                                <>
+                                  <div className="fixed inset-0 z-40" onClick={() => setShowAgentMenu(false)} />
+                                  <div className="absolute bottom-full right-0 mb-2 bg-[#2B2B2B] rounded-lg shadow-lg border border-[#3B3B3B] py-2 z-50 min-w-[200px]">
+                                    {agents.map((agent) => (
+                                      <button
+                                        key={agent.id}
+                                        onClick={() => { setSelectedAgent(agent.name); setSelectedAgentId(agent.id); setShowAgentMenu(false); }}
+                                        className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors ${selectedAgent === agent.name ? "text-[#85b878]" : "text-[#C2C0B6]"}`}
+                                      >
+                                        {agent.name}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                            {isStreaming ? (
+                              <div className="p-2">
+                                <Loader2 className="w-5 h-5 text-[#85b878] animate-spin" />
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => { handleSend(); setSendIcon(s => s === "cabbage" ? "plane" : s === "plane" ? "sprout" : "cabbage"); }}
+                                disabled={!inputValue.trim()}
+                                className="p-2 bg-[#85b878] text-white rounded-xl hover:bg-[#536d3d] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                {sendIcon === "cabbage" && <CabbageIcon />}
+                                {sendIcon === "plane" && <PaperPlaneIcon />}
+                                {sendIcon === "sprout" && <SproutIcon />}
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Action Buttons Below Input */}
-                <div className="flex justify-center gap-2 flex-wrap">
-                  <button className="group relative px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
-                    <Leaf className="w-4 h-4 text-[#C2C0B6]" />
-                    <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Crops</span>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2.5 bg-[#171717] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap border border-[#3B3B3B]">
-                      Best practices for your crops
-                    </div>
-                  </button>
-                  <button className="group relative px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
-                    <Bug className="w-4 h-4 text-[#C2C0B6]" />
-                    <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Pests</span>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2.5 bg-[#171717] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap border border-[#3B3B3B]">
-                      Identify and manage pests
-                    </div>
-                  </button>
-                  <button className="group relative px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
-                    <CloudRain className="w-4 h-4 text-[#C2C0B6]" />
-                    <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Weather</span>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2.5 bg-[#171717] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap border border-[#3B3B3B]">
-                      Plan based on weather
-                    </div>
-                  </button>
-                  <button className="group relative px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-[#C2C0B6]" />
-                    <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Planting</span>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2.5 bg-[#171717] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap border border-[#3B3B3B]">
-                      When to plant and harvest
-                    </div>
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Footer Note */}

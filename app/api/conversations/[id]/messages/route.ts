@@ -297,9 +297,16 @@ export async function POST(
             });
           }
 
+          // Surface billing/quota errors as a readable message
+          const errMsg = streamError instanceof Error ? streamError.message : String(streamError);
+          const isBillingError = errMsg.includes("credit balance") || errMsg.includes("billing");
+          const userFacingError = isBillingError
+            ? "The AI service is temporarily unavailable due to billing limits. Please contact support."
+            : "An error occurred while generating the response";
+
           controller.enqueue(
             encoder.encode(
-              `data: ${JSON.stringify({ type: "error", error: "An error occurred while generating the response" })}\n\n`
+              `data: ${JSON.stringify({ type: "error", error: userFacingError })}\n\n`
             )
           );
           controller.close();

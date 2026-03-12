@@ -49,7 +49,7 @@ function normalize(raw: {
 }): ConversationItem {
   return {
     id: raw.id,
-    title: raw.title || "Untitled conversation",
+    title: (raw.title || "Untitled conversation").replace(/^#+\s*/, ""),
     agentName: raw.agent.name,
     farmerName: raw.farmer.name,
     lastMessage: raw.lastMessage ? relativeTime(raw.lastMessage.createdAt) : "No messages",
@@ -75,11 +75,11 @@ export function useConversations(
   const key = disabled ? null : `/api/conversations?${params}`;
   const { data, isLoading, mutate } = useSWR(key, fetcher);
 
-  const raw = data?.data?.conversations ?? [];
+  const raw = data?.conversations ?? [];
   return {
     conversations: raw.map(normalize),
-    total: data?.data?.pagination?.total ?? 0,
-    totalPages: data?.data?.pagination?.totalPages ?? 1,
+    total: data?.pagination?.total ?? 0,
+    totalPages: data?.pagination?.totalPages ?? 1,
     isLoading,
     mutate,
   };

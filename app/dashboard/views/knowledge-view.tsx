@@ -5,62 +5,10 @@ import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Downl
 import GlassCircleButton from "@/components/glass-circle-button";
 import { useKnowledgeBases, uploadDocument, deleteDocument, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
 import { useAgents } from "@/lib/hooks/use-agents";
+import { DEMO_KNOWLEDGE } from "@/lib/demo-data";
 
-// Mock data - expanded for pagination
-const mockDocuments = [
-  { id: "1", title: "Maize Farming Best Practices", fileName: "maize-guide-2025.pdf", fileType: "PDF", chunkCount: 42, agentName: "General Farm Advisor", uploadedAt: "Jan 28, 2026", referencedInChats: 124 },
-  { id: "2", title: "Pest Identification Guide - West Africa", fileName: "pest-id-guide.pdf", fileType: "PDF", chunkCount: 78, agentName: "Pest Management", uploadedAt: "Jan 25, 2026", referencedInChats: 89 },
-  { id: "3", title: "Irrigation Scheduling Manual", fileName: "irrigation-manual.docx", fileType: "DOCX", chunkCount: 31, agentName: "General Farm Advisor", uploadedAt: "Jan 20, 2026", referencedInChats: 56 },
-  { id: "4", title: "Soil Health & Fertilizer Guide", fileName: "soil-health.pdf", fileType: "PDF", chunkCount: 56, agentName: "Maize Expert", uploadedAt: "Jan 15, 2026", referencedInChats: 203 },
-  { id: "5", title: "Cassava Disease Management", fileName: "cassava-diseases.pdf", fileType: "PDF", chunkCount: 64, agentName: "Pest Management", uploadedAt: "Jan 14, 2026", referencedInChats: 72 },
-  { id: "6", title: "Tomato Cultivation Guide", fileName: "tomato-guide.pdf", fileType: "PDF", chunkCount: 48, agentName: "General Farm Advisor", uploadedAt: "Jan 12, 2026", referencedInChats: 34 },
-  { id: "7", title: "Integrated Pest Management Strategies", fileName: "ipm-strategies.pdf", fileType: "PDF", chunkCount: 92, agentName: "Pest Management", uploadedAt: "Jan 10, 2026", referencedInChats: 167 },
-  { id: "8", title: "Maize Hybrid Varieties Guide", fileName: "maize-hybrids.pdf", fileType: "PDF", chunkCount: 38, agentName: "Maize Expert", uploadedAt: "Jan 8, 2026", referencedInChats: 91 },
-  { id: "9", title: "Water Conservation Techniques", fileName: "water-conservation.docx", fileType: "DOCX", chunkCount: 27, agentName: "General Farm Advisor", uploadedAt: "Jan 6, 2026", referencedInChats: 45 },
-  { id: "10", title: "Organic Fertilizer Production", fileName: "organic-fert.pdf", fileType: "PDF", chunkCount: 44, agentName: "General Farm Advisor", uploadedAt: "Jan 5, 2026", referencedInChats: 78 },
-  { id: "11", title: "Post-Harvest Handling Guide", fileName: "post-harvest.pdf", fileType: "PDF", chunkCount: 53, agentName: "General Farm Advisor", uploadedAt: "Jan 3, 2026", referencedInChats: 102 },
-  { id: "12", title: "Armyworm Control Strategies", fileName: "armyworm-control.pdf", fileType: "PDF", chunkCount: 35, agentName: "Pest Management", uploadedAt: "Dec 30, 2025", referencedInChats: 88 },
-  { id: "13", title: "Rice Production Manual", fileName: "rice-production.pdf", fileType: "PDF", chunkCount: 71, agentName: "General Farm Advisor", uploadedAt: "Dec 28, 2025", referencedInChats: 143 },
-  { id: "14", title: "Seed Selection and Storage", fileName: "seed-guide.pdf", fileType: "PDF", chunkCount: 29, agentName: "Maize Expert", uploadedAt: "Dec 26, 2025", referencedInChats: 67 },
-  { id: "15", title: "Crop Rotation Best Practices", fileName: "crop-rotation.pdf", fileType: "PDF", chunkCount: 41, agentName: "General Farm Advisor", uploadedAt: "Dec 24, 2025", referencedInChats: 112 },
-  { id: "16", title: "Greenhouse Management Guide", fileName: "greenhouse.pdf", fileType: "PDF", chunkCount: 58, agentName: "General Farm Advisor", uploadedAt: "Dec 22, 2025", referencedInChats: 54 },
-  { id: "17", title: "Fall Armyworm Identification", fileName: "faw-id.pdf", fileType: "PDF", chunkCount: 33, agentName: "Pest Management", uploadedAt: "Dec 20, 2025", referencedInChats: 134 },
-  { id: "18", title: "Maize Weeding Techniques", fileName: "maize-weeding.pdf", fileType: "PDF", chunkCount: 24, agentName: "Maize Expert", uploadedAt: "Dec 18, 2025", referencedInChats: 76 },
-  { id: "19", title: "Cocoa Farming in Ghana", fileName: "cocoa-guide.pdf", fileType: "PDF", chunkCount: 67, agentName: "General Farm Advisor", uploadedAt: "Dec 16, 2025", referencedInChats: 189 },
-  { id: "20", title: "Poultry Integration on Farms", fileName: "poultry-integration.pdf", fileType: "PDF", chunkCount: 45, agentName: "General Farm Advisor", uploadedAt: "Dec 14, 2025", referencedInChats: 62 },
-  { id: "21", title: "Soil pH Management", fileName: "soil-ph.pdf", fileType: "PDF", chunkCount: 31, agentName: "General Farm Advisor", uploadedAt: "Dec 12, 2025", referencedInChats: 95 },
-  { id: "22", title: "Biological Pest Control Methods", fileName: "bio-pest-control.pdf", fileType: "PDF", chunkCount: 54, agentName: "Pest Management", uploadedAt: "Dec 10, 2025", referencedInChats: 121 },
-  { id: "23", title: "Maize Storage and Preservation", fileName: "maize-storage.pdf", fileType: "PDF", chunkCount: 37, agentName: "Maize Expert", uploadedAt: "Dec 8, 2025", referencedInChats: 108 },
-  { id: "24", title: "Okra Production Guide", fileName: "okra-guide.pdf", fileType: "PDF", chunkCount: 28, agentName: "General Farm Advisor", uploadedAt: "Dec 6, 2025", referencedInChats: 43 },
-  { id: "25", title: "Compost Making Techniques", fileName: "compost.pdf", fileType: "PDF", chunkCount: 22, agentName: "General Farm Advisor", uploadedAt: "Dec 4, 2025", referencedInChats: 81 },
-  { id: "26", title: "Aphid Control Strategies", fileName: "aphid-control.pdf", fileType: "PDF", chunkCount: 26, agentName: "Pest Management", uploadedAt: "Dec 2, 2025", referencedInChats: 73 },
-  { id: "27", title: "Soybean Cultivation Manual", fileName: "soybean.pdf", fileType: "PDF", chunkCount: 49, agentName: "General Farm Advisor", uploadedAt: "Nov 30, 2025", referencedInChats: 97 },
-  { id: "28", title: "Maize Planting Density Guide", fileName: "planting-density.pdf", fileType: "PDF", chunkCount: 19, agentName: "Maize Expert", uploadedAt: "Nov 28, 2025", referencedInChats: 84 },
-  { id: "29", title: "Drip Irrigation Setup", fileName: "drip-irrigation.pdf", fileType: "PDF", chunkCount: 43, agentName: "General Farm Advisor", uploadedAt: "Nov 26, 2025", referencedInChats: 69 },
-  { id: "30", title: "Locust Swarm Management", fileName: "locust-management.pdf", fileType: "PDF", chunkCount: 36, agentName: "Pest Management", uploadedAt: "Nov 24, 2025", referencedInChats: 38 },
-  { id: "31", title: "Yam Production Techniques", fileName: "yam-production.pdf", fileType: "PDF", chunkCount: 52, agentName: "General Farm Advisor", uploadedAt: "Nov 22, 2025", referencedInChats: 116 },
-  { id: "32", title: "Maize Fertilizer Application Schedule", fileName: "maize-fertilizer.pdf", fileType: "PDF", chunkCount: 34, agentName: "Maize Expert", uploadedAt: "Nov 20, 2025", referencedInChats: 152 },
-  { id: "33", title: "Banana Farming Guide", fileName: "banana-guide.pdf", fileType: "PDF", chunkCount: 61, agentName: "General Farm Advisor", uploadedAt: "Nov 18, 2025", referencedInChats: 87 },
-  { id: "34", title: "Whitefly Control Methods", fileName: "whitefly-control.pdf", fileType: "PDF", chunkCount: 29, agentName: "Pest Management", uploadedAt: "Nov 16, 2025", referencedInChats: 61 },
-  { id: "35", title: "Groundnut Cultivation", fileName: "groundnut.pdf", fileType: "PDF", chunkCount: 47, agentName: "General Farm Advisor", uploadedAt: "Nov 14, 2025", referencedInChats: 94 },
-  { id: "36", title: "Maize Harvesting Guidelines", fileName: "maize-harvest.pdf", fileType: "PDF", chunkCount: 25, agentName: "Maize Expert", uploadedAt: "Nov 12, 2025", referencedInChats: 128 },
-  { id: "37", title: "Pepper Farming Best Practices", fileName: "pepper-guide.pdf", fileType: "PDF", chunkCount: 39, agentName: "General Farm Advisor", uploadedAt: "Nov 10, 2025", referencedInChats: 71 },
-  { id: "38", title: "Integrated Nutrient Management", fileName: "nutrient-mgmt.pdf", fileType: "PDF", chunkCount: 55, agentName: "General Farm Advisor", uploadedAt: "Nov 8, 2025", referencedInChats: 139 },
-  { id: "39", title: "Stem Borer Management", fileName: "stem-borer.pdf", fileType: "PDF", chunkCount: 32, agentName: "Pest Management", uploadedAt: "Nov 6, 2025", referencedInChats: 92 },
-  { id: "40", title: "Maize Drought Tolerance", fileName: "drought-tolerance.pdf", fileType: "PDF", chunkCount: 41, agentName: "Maize Expert", uploadedAt: "Nov 4, 2025", referencedInChats: 156 },
-  { id: "41", title: "Plantain Production Manual", fileName: "plantain.pdf", fileType: "PDF", chunkCount: 58, agentName: "General Farm Advisor", uploadedAt: "Nov 2, 2025", referencedInChats: 103 },
-  { id: "42", title: "Garden Egg Cultivation", fileName: "garden-egg.pdf", fileType: "PDF", chunkCount: 27, agentName: "General Farm Advisor", uploadedAt: "Oct 31, 2025", referencedInChats: 49 },
-  { id: "43", title: "Grasshopper Control Guide", fileName: "grasshopper.pdf", fileType: "PDF", chunkCount: 23, agentName: "Pest Management", uploadedAt: "Oct 29, 2025", referencedInChats: 57 },
-  { id: "44", title: "Maize Market Price Analysis", fileName: "price-analysis.pdf", fileType: "PDF", chunkCount: 44, agentName: "Maize Expert", uploadedAt: "Oct 27, 2025", referencedInChats: 214 },
-  { id: "45", title: "Cowpea Production Guide", fileName: "cowpea.pdf", fileType: "PDF", chunkCount: 36, agentName: "General Farm Advisor", uploadedAt: "Oct 25, 2025", referencedInChats: 68 },
-  { id: "46", title: "Rodent Control in Storage", fileName: "rodent-control.pdf", fileType: "PDF", chunkCount: 28, agentName: "Pest Management", uploadedAt: "Oct 23, 2025", referencedInChats: 82 },
-  { id: "47", title: "Sweet Potato Cultivation", fileName: "sweet-potato.pdf", fileType: "PDF", chunkCount: 42, agentName: "General Farm Advisor", uploadedAt: "Oct 21, 2025", referencedInChats: 75 },
-  { id: "48", title: "Maize Disease Identification", fileName: "maize-diseases.pdf", fileType: "PDF", chunkCount: 68, agentName: "Maize Expert", uploadedAt: "Oct 19, 2025", referencedInChats: 187 },
-  { id: "49", title: "Lettuce Farming Techniques", fileName: "lettuce.pdf", fileType: "PDF", chunkCount: 31, agentName: "General Farm Advisor", uploadedAt: "Oct 17, 2025", referencedInChats: 41 },
-  { id: "50", title: "Thrips Management Strategies", fileName: "thrips.pdf", fileType: "PDF", chunkCount: 25, agentName: "Pest Management", uploadedAt: "Oct 15, 2025", referencedInChats: 63 },
-  { id: "51", title: "Maize Climate Adaptation", fileName: "climate-adapt.pdf", fileType: "PDF", chunkCount: 51, agentName: "Maize Expert", uploadedAt: "Oct 13, 2025", referencedInChats: 178 },
-  { id: "52", title: "Onion Production Manual", fileName: "onion.pdf", fileType: "PDF", chunkCount: 38, agentName: "General Farm Advisor", uploadedAt: "Oct 11, 2025", referencedInChats: 52 },
-];
+// Mock data for demo mode — sourced from lib/demo-data.ts
+const mockDocuments = DEMO_KNOWLEDGE;
 
 // Demo-only hardcoded agent names for filter dropdown and upload form
 const demoAgentNames = ["All Agents", "General Farm Advisor", "Pest Management", "Maize Expert"];

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown, X, AlertTriangle, PanelLeft, Eye, Loader2 } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { useAgents, createAgent, updateAgent, toggleAgentStatus, deleteAgent, type Agent } from "@/lib/hooks/use-agents";
+import { DEMO_AGENTS } from "@/lib/demo-data";
 
 // Helper to format relative time
 function formatRelativeTime(dateString: string) {
@@ -20,59 +21,8 @@ function formatRelativeTime(dateString: string) {
   return `${Math.floor(diffDays / 30)} months ago`;
 }
 
-// Mock data for demo mode (/demo/dashboard).
-// Represents what the app looks like after real usage — never fetched from the API.
-// If you need richer data, the original 7-agent set is in git commit caedbe1.
-const mockAgents = [
-  {
-    id: "1",
-    name: "General Farm Advisor",
-    systemPrompt: "You are a knowledgeable agricultural advisor specializing in farming practices in Ghana...",
-    responseStyle: "Friendly and educational",
-    confidenceThreshold: 0.7,
-    isActive: true,
-    conversations: 24,
-    knowledgeBases: 3,
-    version: 1,
-    agronomistId: "demo",
-    organizationId: "demo",
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    flaggedQueries: 2,
-  },
-  {
-    id: "2",
-    name: "Maize Expert",
-    systemPrompt: "You specialize in maize cultivation, covering planting schedules, pest management...",
-    responseStyle: "Detailed and technical",
-    confidenceThreshold: 0.8,
-    isActive: true,
-    conversations: 12,
-    knowledgeBases: 2,
-    version: 1,
-    agronomistId: "demo",
-    organizationId: "demo",
-    createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    flaggedQueries: 1,
-  },
-  {
-    id: "3",
-    name: "Cocoa Specialist",
-    systemPrompt: "You are an expert in cocoa farming in Ghana, covering nursery management, fermentation, drying...",
-    responseStyle: null,
-    confidenceThreshold: 0.7,
-    isActive: true,
-    conversations: 18,
-    knowledgeBases: 4,
-    version: 2,
-    agronomistId: "demo",
-    organizationId: "demo",
-    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    flaggedQueries: 0,
-  },
-];
+// Demo agents sourced from lib/demo-data.ts — never fetched from the API
+const mockAgents = DEMO_AGENTS;
 
 export default function AgentsView({
   sidebarOpen,

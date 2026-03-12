@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, ChevronLeft, Loader2 } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { useSystems, type FarmerSystemItem } from "@/lib/hooks/use-systems";
+import { DEMO_SYSTEMS } from "@/lib/demo-data";
 
 interface System {
   id: string;
@@ -21,62 +22,8 @@ interface System {
   warrantyUntil?: string | null;
 }
 
-// Mock data — used only in demo mode
-const mockSystems: System[] = [
-  {
-    id: "sys-1",
-    name: "Hydroponic NFT System - Medium",
-    type: "Hydroponic System",
-    purchaseDate: "2025-11-15",
-    status: "ACTIVE",
-    description: "Nutrient Film Technique (NFT) hydroponic setup for leafy greens",
-    specifications: { size: "4m x 1.2m", capacity: "60 plant sites", material: "Food-grade PVC pipes" },
-    installationDate: "2025-11-20",
-    warrantyUntil: "2026-11-15",
-  },
-  {
-    id: "sys-2",
-    name: "Drip Irrigation Kit - 0.5 Acre",
-    type: "Irrigation System",
-    purchaseDate: "2026-01-10",
-    status: "ACTIVE",
-    description: "Complete drip irrigation system with timer and filters",
-    specifications: { capacity: "0.5 acre coverage", material: "UV-resistant polyethylene tubing" },
-    installationDate: "2026-01-15",
-    warrantyUntil: "2027-01-10",
-  },
-  {
-    id: "sys-3",
-    name: "Vertical Garden Tower",
-    type: "Vertical Farming",
-    purchaseDate: "2026-02-01",
-    status: "PENDING_SETUP",
-    description: "Stackable modular vertical garden for herbs and small vegetables",
-    specifications: { size: "1.5m height", capacity: "40 plant pockets", material: "Recycled plastic modules" },
-  },
-  {
-    id: "sys-4",
-    name: "Greenhouse Structure - 100sqm",
-    type: "Greenhouse",
-    purchaseDate: "2025-09-20",
-    status: "ACTIVE",
-    description: "UV-treated polyethylene greenhouse with ventilation",
-    specifications: { size: "10m x 10m x 3m", material: "Galvanized steel frame, 200-micron PE cover" },
-    installationDate: "2025-10-05",
-    warrantyUntil: "2027-09-20",
-  },
-  {
-    id: "sys-5",
-    name: "Solar Water Pump - 1HP",
-    type: "Water Pump",
-    purchaseDate: "2025-12-10",
-    status: "ACTIVE",
-    description: "Solar-powered submersible pump for irrigation",
-    specifications: { capacity: "30,000 liters/day", material: "Stainless steel impeller" },
-    installationDate: "2025-12-15",
-    warrantyUntil: "2027-12-10",
-  },
-];
+// Mock data — sourced from lib/demo-data.ts, used only in demo mode
+const mockSystems: System[] = DEMO_SYSTEMS as System[];
 
 function toSystem(item: FarmerSystemItem): System {
   return {

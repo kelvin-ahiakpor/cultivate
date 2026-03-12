@@ -4,45 +4,10 @@ import { useState, useEffect } from "react";
 import { MessageCircle, Search, PanelLeft, Loader2 } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { useConversations } from "@/lib/hooks/use-conversations";
+import { DEMO_DASHBOARD_CHATS } from "@/lib/demo-data";
 
-// Mock data - farmer conversations
-const mockChats = [
-  { id: "1", title: "Help with maize planting schedule", farmerName: "Kwame Asante", agentName: "Maize Expert", lastMessage: "28 minutes ago", messageCount: 12 },
-  { id: "2", title: "Tomato leaf curl disease identification", farmerName: "Ama Mensah", agentName: "Pest Management", lastMessage: "2 hours ago", messageCount: 8 },
-  { id: "3", title: "Best fertilizer for cocoa seedlings", farmerName: "Yaw Boateng", agentName: "Cocoa Specialist", lastMessage: "3 hours ago", messageCount: 15 },
-  { id: "4", title: "Irrigation timing for dry season vegetables", farmerName: "Abena Darkwa", agentName: "General Farm Advisor", lastMessage: "5 hours ago", messageCount: 6 },
-  { id: "5", title: "Armyworm outbreak on my maize farm", farmerName: "Kofi Mensah", agentName: "Pest Management", lastMessage: "6 hours ago", messageCount: 22 },
-  { id: "6", title: "Soil testing and pH adjustment", farmerName: "Akua Owusu", agentName: "Soil & Fertilizer Guide", lastMessage: "8 hours ago", messageCount: 9 },
-  { id: "7", title: "Cassava mosaic disease symptoms", farmerName: "Kwesi Appiah", agentName: "Pest Management", lastMessage: "12 hours ago", messageCount: 4 },
-  { id: "8", title: "Spacing recommendations for pepper", farmerName: "Ama Serwaa", agentName: "General Farm Advisor", lastMessage: "1 day ago", messageCount: 7 },
-  { id: "9", title: "Post-harvest storage for maize", farmerName: "Yaw Frimpong", agentName: "Maize Expert", lastMessage: "1 day ago", messageCount: 11 },
-  { id: "10", title: "Organic pest control methods", farmerName: "Adwoa Nyarko", agentName: "Pest Management", lastMessage: "1 day ago", messageCount: 18 },
-  { id: "11", title: "When to apply NPK on cocoa", farmerName: "Kwame Osei", agentName: "Cocoa Specialist", lastMessage: "2 days ago", messageCount: 5 },
-  { id: "12", title: "Drip irrigation setup for tomatoes", farmerName: "Efua Mensah", agentName: "Irrigation Advisor", lastMessage: "2 days ago", messageCount: 13 },
-  { id: "13", title: "Maize hybrid varieties for northern Ghana", farmerName: "Ibrahim Alhassan", agentName: "Maize Expert", lastMessage: "2 days ago", messageCount: 9 },
-  { id: "14", title: "Controlling aphids on cabbage", farmerName: "Fatima Mohammed", agentName: "Pest Management", lastMessage: "3 days ago", messageCount: 6 },
-  { id: "15", title: "Composting techniques for small farms", farmerName: "Esi Asante", agentName: "General Farm Advisor", lastMessage: "3 days ago", messageCount: 10 },
-  { id: "16", title: "Cocoa pod borer management", farmerName: "Nana Agyei", agentName: "Cocoa Specialist", lastMessage: "3 days ago", messageCount: 14 },
-  { id: "17", title: "Rice paddy water management", farmerName: "Abass Yakubu", agentName: "Irrigation Advisor", lastMessage: "4 days ago", messageCount: 8 },
-  { id: "18", title: "Okra planting density question", farmerName: "Grace Tetteh", agentName: "General Farm Advisor", lastMessage: "4 days ago", messageCount: 3 },
-  { id: "19", title: "Neem oil for organic pest control", farmerName: "Kweku Dadzie", agentName: "Pest Management", lastMessage: "5 days ago", messageCount: 7 },
-  { id: "20", title: "Maize stalk borer prevention", farmerName: "Adwoa Poku", agentName: "Maize Expert", lastMessage: "5 days ago", messageCount: 16 },
-  { id: "21", title: "Soil amendment for acidic soils", farmerName: "Samuel Tawiah", agentName: "Soil & Fertilizer Guide", lastMessage: "5 days ago", messageCount: 11 },
-  { id: "22", title: "Yam minisett propagation technique", farmerName: "Afia Konadu", agentName: "General Farm Advisor", lastMessage: "6 days ago", messageCount: 9 },
-  { id: "23", title: "Groundnut aflatoxin prevention", farmerName: "Mustapha Issah", agentName: "General Farm Advisor", lastMessage: "6 days ago", messageCount: 5 },
-  { id: "24", title: "Cocoa fermentation best practices", farmerName: "Yaa Asantewaa", agentName: "Cocoa Specialist", lastMessage: "1 week ago", messageCount: 20 },
-  { id: "25", title: "Banana bunchy top virus identification", farmerName: "Kofi Adu", agentName: "Pest Management", lastMessage: "1 week ago", messageCount: 4 },
-  { id: "26", title: "Cover cropping for soil fertility", farmerName: "Ama Boakye", agentName: "Soil & Fertilizer Guide", lastMessage: "1 week ago", messageCount: 8 },
-  { id: "27", title: "Pepper anthracnose treatment", farmerName: "Emmanuel Ansah", agentName: "Pest Management", lastMessage: "1 week ago", messageCount: 6 },
-  { id: "28", title: "Maize drying and grading standards", farmerName: "Akosua Mensah", agentName: "Maize Expert", lastMessage: "2 weeks ago", messageCount: 12 },
-  { id: "29", title: "Poultry manure as organic fertilizer", farmerName: "Joseph Amoah", agentName: "Soil & Fertilizer Guide", lastMessage: "2 weeks ago", messageCount: 7 },
-  { id: "30", title: "Plantain weevil borer control", farmerName: "Vida Antwi", agentName: "Pest Management", lastMessage: "2 weeks ago", messageCount: 10 },
-  { id: "31", title: "Soybean inoculation for better yields", farmerName: "Abdul-Razak Wumpini", agentName: "General Farm Advisor", lastMessage: "2 weeks ago", messageCount: 5 },
-  { id: "32", title: "Greenhouse tomato cultivation", farmerName: "Mercy Adjei", agentName: "General Farm Advisor", lastMessage: "3 weeks ago", messageCount: 15 },
-  { id: "33", title: "Maize streak virus resistant varieties", farmerName: "Daniel Kwarteng", agentName: "Maize Expert", lastMessage: "3 weeks ago", messageCount: 8 },
-  { id: "34", title: "Citrus greening disease management", farmerName: "Beatrice Quaye", agentName: "Pest Management", lastMessage: "3 weeks ago", messageCount: 11 },
-  { id: "35", title: "Mushroom cultivation on cocoa farms", farmerName: "Francis Kumi", agentName: "Cocoa Specialist", lastMessage: "3 weeks ago", messageCount: 6 },
-];
+// Mock data for demo mode — sourced from lib/demo-data.ts
+const mockChats = DEMO_DASHBOARD_CHATS;
 
 export default function ChatsView({
   sidebarOpen,
