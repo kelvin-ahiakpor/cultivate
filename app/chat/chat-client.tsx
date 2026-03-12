@@ -2,16 +2,18 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Pencil, Trash2, Share, Unlink, Download, Loader2 } from "lucide-react";
+import { Sprout, Plus, ChevronDown, ChevronLeft, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Pencil, Trash2, Share, Unlink, Download, Loader2, Box } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { mutate as globalMutate } from "swr";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon } from "@/components/send-icons";
+import GlassCircleButton from "@/components/glass-circle-button";
 import ChatsView, { mockChats } from "./views/chats-view";
 import SystemsView from "./views/systems-view";
 import { useConversations } from "@/lib/hooks/use-conversations";
 import { useAgents } from "@/lib/hooks/use-agents";
+import { DEMO_FARMER_CONVO_MESSAGES } from "@/lib/demo-data";
 
 interface ChatPageProps {
   user: {
@@ -60,8 +62,10 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
   const [streamingContent, setStreamingContent] = useState("");
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [conversationTitle, setConversationTitle] = useState<string | null>(null);
+  const [conversationSystem, setConversationSystem] = useState<string | null>(null);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [chatsViewOpen, setChatsViewOpen] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -240,9 +244,10 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
   };
 
   // Load an existing conversation into the main chat view (used by sidebar click + ChatsView selection)
-  const loadExistingConversation = async (chatId: string, chatTitle: string) => {
+  const loadExistingConversation = async (chatId: string, chatTitle: string, systemName?: string) => {
     setCurrentConversationId(chatId);
     setConversationTitle(chatTitle || null);
+    setConversationSystem(systemName || null);
     setMessages([]);
     setIsStreaming(false);
     setStreamingContent("");
@@ -251,7 +256,14 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
     setHeaderMenuOpen(false);
     if (window.innerWidth < 1024) setSidebarOpen(false);
 
-    if (!demoMode) {
+    if (demoMode) {
+      // Demo: load mock messages — same set for every chat (realistic demo)
+      setMessages(DEMO_FARMER_CONVO_MESSAGES.map(m => ({
+        id: m.id,
+        role: m.role as "USER" | "ASSISTANT",
+        content: m.content,
+      })));
+    } else {
       setMessagesLoading(true);
       try {
         const res = await fetch(`/api/conversations/${chatId}/messages`);
@@ -270,14 +282,8 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
 
   const handleSidebarChatClick = (chatId: string) => {
     const chat = sidebarChats.find(c => c.id === chatId);
-    if (demoMode) {
-      // Demo: use ChatsView's internal panel
-      setSelectedChatId(chatId);
-      setActiveView("chats");
-      if (window.innerWidth < 1024) setSidebarOpen(false);
-    } else {
-      loadExistingConversation(chatId, chat?.title || "");
-    }
+    // Both demo and real load into the main conversation view (single source of truth)
+    loadExistingConversation(chatId, chat?.title || "", (chat as { systemName?: string })?.systemName);
   };
 
   const handleAllChatsClick = () => {
@@ -299,8 +305,8 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
         className={`fixed inset-0 z-30 bg-black/50 lg:hidden transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setSidebarOpen(false)}
       />
-      {/* Mobile: button to open sidebar — hidden on Chats view (Chats header has its own glass control) */}
-      {!sidebarOpen && activeView !== "chats" && activeView !== "systems" && (
+      {/* Mobile: button to open sidebar — hidden on Chats/Systems/active chat (those views have their own glass header control) */}
+      {!sidebarOpen && activeView !== "chats" && activeView !== "systems" && !currentConversationId && (
         <button
           onClick={() => setSidebarOpen(true)}
           className="fixed top-16 left-3 z-50 lg:hidden w-9 h-9 flex items-center justify-center bg-[#2B2B2B] hover:bg-[#3B3B3B] rounded-lg transition-colors"
@@ -333,7 +339,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
           <div className="space-y-0.5">
             {/* New Chat */}
             <button
-              onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setStreamingContent(""); setSelectedChatId(null); setMessagesLoading(false); setHeaderMenuOpen(false); setActiveView("chat"); if (window.innerWidth < 1024) setSidebarOpen(false); }}
+              onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); setSelectedChatId(null); setMessagesLoading(false); setHeaderMenuOpen(false); setActiveView("chat"); if (window.innerWidth < 1024) setSidebarOpen(false); }}
               className={`group relative w-full flex items-center gap-3 pl-3 pr-2 py-1 rounded-lg transition-colors ${!sidebarOpen ? 'justify-center' : ''} ${
                 activeView === "chat" ? "bg-[#141413] text-white" : "text-[#C2C0B6] hover:bg-[#141413] hover:text-white"
               }`}
@@ -570,19 +576,14 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
         {/* Conversation view: full-width (header spans edge-to-edge like Claude)
             Chat list view: padded with max-w-5xl container */}
         {activeView === "chats" && (
-          <div className="flex-1 min-h-0 overflow-hidden max-w-5xl w-full mx-auto px-4 sm:px-8 py-8">
+          <div className="flex-1 min-h-0 overflow-hidden w-full mx-auto max-w-5xl px-4 sm:px-8 py-8">
             <ChatsView
-              initialChatId={demoMode ? selectedChatId : null}
               onChatOpened={handleChatOpened}
-              onChatSelect={(chatId) => {
+              onConversationOpen={setChatsViewOpen}
+              onChatSelect={(chatId, title, systemName) => {
                 if (!chatId) { setSelectedChatId(null); return; }
-                // In real mode, load into main conversation view instead of ChatsView's panel
-                if (!demoMode) {
-                  const chat = sidebarChats.find(c => c.id === chatId);
-                  loadExistingConversation(chatId, chat?.title || "");
-                } else {
-                  setSelectedChatId(chatId);
-                }
+                // Single source of truth: both demo and real load into main conversation view
+                loadExistingConversation(chatId, title || "", systemName);
               }}
               onNewChat={() => { setSelectedChatId(null); setActiveView("chat"); }}
               sidebarOpen={sidebarOpen}
@@ -704,41 +705,76 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
               ) : (
                 /* Conversation view — messages + sticky input at bottom */
                 <div className="flex flex-col h-full">
-                  {/* Conversation breadcrumb header */}
-                  <div className="flex-shrink-0 flex items-center gap-1.5 px-4 pt-3 pb-2">
-                    <div className="relative">
-                      <button
-                        onClick={() => setHeaderMenuOpen(o => !o)}
-                        className="flex items-center gap-1.5 group"
+                  {/* Conversation header
+                      Mobile: [glass back] | [title + system pill centered] | [+ new chat]
+                      Desktop: breadcrumb [system /] [title ▾] dropdown */}
+                  <div className="flex-shrink-0 bg-[#1E1E1E] pt-16 lg:pt-3 pb-3 px-3 lg:pl-4 lg:pr-3">
+                    {/* Mobile header */}
+                    <div className="lg:hidden flex items-center justify-between">
+                      <GlassCircleButton
+                        onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); setSelectedChatId(null); setActiveView("chat"); }}
+                        aria-label="Back"
                       >
-                        <span className="text-sm standalone:text-base lg:text-sm font-medium text-white truncate max-w-[220px]">
-                          {conversationTitle || "New conversation"}
-                        </span>
-                        <ChevronDown className="w-3.5 h-3.5 text-[#9C9A92] group-hover:text-white transition-colors flex-shrink-0" strokeWidth={1.5} />
-                      </button>
-                      {headerMenuOpen && (
-                        <>
-                          <div className="fixed inset-0 z-40" onClick={() => setHeaderMenuOpen(false)} />
-                          <div className="absolute top-full left-0 mt-1 bg-[#2B2B2B] rounded-lg shadow-lg border border-[#3B3B3B] py-1 z-50 min-w-[160px]">
-                            <button className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#C2C0B6] hover:bg-[#3B3B3B] transition-colors">
-                              <Share className="w-3.5 h-3.5" />
-                              Share
-                            </button>
-                            <button className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#C2C0B6] hover:bg-[#3B3B3B] transition-colors">
-                              <Pencil className="w-3.5 h-3.5" />
-                              Rename
-                            </button>
-                            <button className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-[#3B3B3B] transition-colors">
-                              <Trash2 className="w-3.5 h-3.5" />
-                              Delete
-                            </button>
+                        <ChevronLeft className="w-5 h-5 text-white" />
+                      </GlassCircleButton>
+                      <div className="flex flex-col items-center gap-0.5 min-w-0 flex-1 mx-3">
+                        <span className="text-sm standalone:text-base font-medium text-white truncate">{conversationTitle || "New conversation"}</span>
+                        {conversationSystem && (
+                          <div className="inline-flex items-center gap-1 bg-[#2B2B2B] rounded-full px-2.5 py-0.5">
+                            <Box className="w-3 h-3 text-[#9C9A92]" />
+                            <span className="text-xs text-[#9C9A92] truncate max-w-[180px]">{conversationSystem}</span>
                           </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); setSelectedChatId(null); setActiveView("chat"); }}
+                        className="w-11 h-11 bg-[#2B2B2B] hover:bg-[#3B3B3B] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+                      >
+                        <Plus className="w-5 h-5 text-[#85b878]" />
+                      </button>
+                    </div>
+                    {/* Desktop breadcrumb header */}
+                    <div className="hidden lg:flex items-center gap-1">
+                      {conversationSystem && (
+                        <>
+                          <span className="text-sm text-[#C2C0B6] hover:text-white truncate cursor-pointer transition-colors">{conversationSystem}</span>
+                          <span className="text-sm text-[#6B6B6B] flex-shrink-0">/</span>
                         </>
                       )}
+                      <div className={`inline-flex items-stretch rounded-lg overflow-hidden cursor-pointer relative ${
+                        headerMenuOpen ? 'bg-[#141413]' : 'hover:bg-[#141413]'
+                      }`}>
+                        <span className="text-sm text-[#C2C0B6] truncate max-w-[220px] py-1 pl-2 pr-1 hover:bg-[#0a0a0a] transition-colors">
+                          {conversationTitle || "New conversation"}
+                        </span>
+                        <button
+                          onClick={() => setHeaderMenuOpen(o => !o)}
+                          className={`${headerMenuOpen ? 'bg-[#0a0a0a]' : 'hover:bg-[#0a0a0a]'} transition-all px-1.5 self-stretch flex items-center`}
+                        >
+                          <ChevronDown className="w-3.5 h-3.5 text-[#9C9A92] hover:text-white transition-colors" strokeWidth={1.5} />
+                        </button>
+                        {headerMenuOpen && (
+                          <>
+                            <div className="fixed inset-0 z-40" onClick={() => setHeaderMenuOpen(false)} />
+                            <div className="absolute left-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-[#2B2B2B] py-1 z-50 min-w-[200px] whitespace-nowrap">
+                              <button onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }} className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2.5 transition-colors">
+                                <Share className="w-3.5 h-3.5" />Share
+                              </button>
+                              <button onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }} className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2.5 transition-colors">
+                                <Pencil className="w-3.5 h-3.5" />Rename
+                              </button>
+                              <div className="border-t border-[#2B2B2B] my-1 mx-3" />
+                              <button onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }} className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-[#141413] hover:text-red-300 flex items-center gap-2.5 transition-colors">
+                                <Trash2 className="w-3.5 h-3.5" />Delete
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex-1 overflow-y-auto py-6 thin-scrollbar">
-                    <div className="max-w-3xl mx-auto px-6 space-y-6">
+                    <div className={`max-w-3xl mx-auto px-6 space-y-6 ${isStandalone ? "pb-16" : "pb-6"}`}>
                       {messagesLoading ? (
                         <div className="flex items-center justify-center py-12">
                           <Loader2 className="w-5 h-5 text-[#9C9A92] animate-spin" />
@@ -750,11 +786,11 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                           {msg.role === "USER" ? (
                             <div className="flex justify-end">
                               <div className="max-w-[75%] bg-[#2B2B2B] rounded-2xl px-4 py-3">
-                                <p className="text-sm standalone:text-base lg:text-sm text-white whitespace-pre-wrap">{msg.content}</p>
+                                <p className="text-base text-white whitespace-pre-wrap">{msg.content}</p>
                               </div>
                             </div>
                           ) : (
-                            <div className="prose prose-sm prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-sm prose-h3:text-sm prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
+                            <div className="prose prose-base prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                             </div>
                           )}
@@ -764,7 +800,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                       {isStreaming && (
                         <div>
                           {streamingContent ? (
-                            <div className="prose prose-sm prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-sm prose-h3:text-sm prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
+                            <div className="prose prose-base prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamingContent}</ReactMarkdown>
                             </div>
                           ) : (
@@ -782,22 +818,25 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                     </div>
                   </div>
 
-                  {/* Sticky input at bottom */}
-                  <div className="flex-shrink-0 px-4 pb-4 pt-2">
-                    <div className="max-w-3xl mx-auto">
-                      <div className="relative bg-[#2B2B2B] rounded-2xl shadow-sm p-4">
+                  {/* Sticky input at bottom — standalone gets glass overlay, desktop gets max-w-3xl container */}
+                  <div className={`sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-[#1E1E1E] pb-2"}`}>
+                    {isStandalone && (
+                      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent backdrop-blur-[0.5px]" />
+                    )}
+                    <div className={`${isStandalone ? "relative z-10 " : "max-w-3xl mx-auto "}mx-3.5 ${isStandalone ? "mb-3" : "mb-1"}`}>
+                      <div className="bg-[#2B2B2B] rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
                         <textarea
                           placeholder="Ask a follow-up..."
                           rows={1}
                           value={inputValue}
                           onChange={e => setInputValue(e.target.value)}
                           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                          className="w-full px-2 py-2 focus:outline-none resize-none text-white placeholder-[#C2C0B6] bg-transparent text-sm standalone:text-base lg:text-sm"
+                          className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-[#6B6B6B] bg-transparent text-sm standalone:text-base lg:text-sm"
                         />
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setStreamingContent(""); }}
+                              onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); }}
                               className="p-1.5 hover:bg-[#3B3B3B] rounded transition-colors"
                               title="New chat"
                             >
@@ -848,6 +887,11 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                           </div>
                         </div>
                       </div>
+                      {!isStandalone && (
+                        <p className="mt-2 text-xs text-[#9C9A92] text-center leading-snug">
+                          AI can make mistakes. Please verify important information.
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -855,12 +899,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
             </div>
 
             {/* Footer Note */}
-            <div className="p-4 text-center">
-              <p className="text-xs text-[#C2C0B6]">
-                AI can make mistakes. Please verify important information.
-              </p>
-            </div>
-          </>
+                      </>
         )}
       </div>
 

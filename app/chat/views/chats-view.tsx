@@ -32,16 +32,17 @@ export const mockChats: Chat[] = DEMO_FARMER_CHATS as Chat[];
 const mockConversationMessages: ChatMessage[] = DEMO_FARMER_CONVO_MESSAGES as ChatMessage[];
 
 interface ChatsViewProps {
-  onChatSelect?: (chatId: string | null) => void;
+  onChatSelect?: (chatId: string | null, title?: string, systemName?: string) => void;
   initialChatId?: string | null;
   onChatOpened?: () => void;
+  onConversationOpen?: (isOpen: boolean) => void;
   onNewChat?: () => void;
   sidebarOpen?: boolean;
   setSidebarOpen?: (value: boolean) => void;
   demoMode?: boolean;
 }
 
-export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, onNewChat, sidebarOpen = true, setSidebarOpen, demoMode = false }: ChatsViewProps) {
+export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, onConversationOpen, onNewChat, sidebarOpen = true, setSidebarOpen, demoMode = false }: ChatsViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [openedChat, setOpenedChat] = useState<Chat | null>(null);
@@ -78,7 +79,13 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
     return () => mediaQuery.removeEventListener("change", checkStandalone);
   }, []);
 
-  // Open/close chat from sidebar click — fetch real messages when not in demo mode
+  // Notify parent when conversation open state changes (so parent can remove padding)
+  useEffect(() => {
+    onConversationOpen?.(!!openedChat);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openedChat]);
+
+
   useEffect(() => {
     if (initialChatId) {
       const chat = allChats.find(c => c.id === initialChatId);
@@ -180,7 +187,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
             <div className={`inline-flex items-stretch rounded-lg overflow-hidden cursor-pointer relative ${
               headerMenuOpen ? 'bg-[#141413]' : 'hover:bg-[#141413]'
             }`}>
-              <span className="text-sm text-[#C2C0B6] truncate py-1 pl-2 pr-1 hover:bg-[#0a0a0a] transition-colors">{openedChat.title}</span>
+              <span className="text-sm text-[#C2C0B6] truncate max-w-[220px] py-1 pl-2 pr-1 hover:bg-[#0a0a0a] transition-colors">{openedChat.title}</span>
               <button
                 onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(!headerMenuOpen); }}
                 className={`${headerMenuOpen ? 'bg-[#0a0a0a]' : 'hover:bg-[#0a0a0a]'} transition-all px-1.5 self-stretch flex items-center`}
@@ -247,11 +254,11 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
                   {message.role === "USER" ? (
                     <div className="flex justify-end">
                       <div className="max-w-[75%] bg-[#2B2B2B] rounded-2xl px-4 py-3">
-                        <p className="text-sm standalone:text-base lg:text-sm text-white whitespace-pre-wrap">{message.content}</p>
+                        <p className="text-base standalone:text-base lg:text-base text-white whitespace-pre-wrap">{message.content}</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="prose prose-sm prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-sm prose-h3:text-sm prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
+                    <div className="prose prose-base prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
                     </div>
                   )}
@@ -381,7 +388,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
               {paginatedChats.map((chat, index) => (
                 <div
                   key={chat.id}
-                  onClick={() => { setOpenedChat(chat); onChatSelect?.(chat.id); }}
+                  onClick={() => { setOpenedChat(chat); onChatSelect?.(chat.id, chat.title, chat.systemName); }}
                   className={`pl-1.5 pr-1.5 py-2.5 hover:bg-[#2B2B2B]/40 transition-colors cursor-pointer ${
                     index < paginatedChats.length - 1
                       ? `border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`
