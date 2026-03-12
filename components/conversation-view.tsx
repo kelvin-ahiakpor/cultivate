@@ -1,14 +1,45 @@
 "use client";
 
 /**
- * ConversationView — shared conversation UI for both real mode (chat-client.tsx)
- * and demo mode (chats-view.tsx). Single source of truth for all three view modes:
- *   Desktop: breadcrumb [system /] [title ▾] at top-left
- *   Mobile web: glass back button | centered title + system pill | + button
- *   Standalone (PWA): same as mobile web + gradient glass overlay on input
+ * ConversationView — Shared "Real vs Demo" component pattern
+ * ============================================================
+ * This component is the canonical example of the REAL vs DEMO pattern used in Cultivate.
  *
- * Input: pass full inputProps for real mode. In demo mode omit inputProps —
- * a static visual input is shown (no real send).
+ * ## The Pattern
+ * When a UI view exists in both /demo/* (rich mock data, zero API calls) and real routes
+ * (/chat, /dashboard), the shared rendering logic should live in ONE component.
+ * The component receives all data and callbacks as props — it has no internal opinions
+ * about where the data comes from.
+ *
+ * ### Real mode caller:
+ *   <ConversationView
+ *     messages={apiMessages}
+ *     inputProps={{ value, onChange, onSend, agents, ... }}  // full live input
+ *   />
+ *
+ * ### Demo mode caller:
+ *   <ConversationView
+ *     messages={DEMO_FARMER_CONVO_MESSAGES}
+ *     demoAgentLabel={openedChat.agentName}
+ *     // inputProps omitted → visual-only input, no real send
+ *   />
+ *
+ * ## Three View Modes (NEVER flatten these together)
+ *   Desktop     — lg: breakpoint (≥1024px): breadcrumb header, centered max-w-3xl input
+ *   Mobile web  — <1024px non-standalone: glass back button, pt-16 safe area
+ *   Standalone  — PWA/pinned: same as mobile + gradient glass overlay on input
+ *
+ * ## Applying this pattern to a new page
+ * 1. Build the UI once in a shared component under components/
+ * 2. Accept data + action callbacks as props (no internal fetches)
+ * 3. Real caller: pass API data + real handlers
+ * 4. Demo caller: pass mock data from lib/demo-data.ts, omit/stub action callbacks
+ * 5. Keep lib/demo-data.ts as the single source for all mock data
+ *
+ * ## Systems view note
+ * systems-view.tsx is simpler (list only, no conversation panel) — shared component
+ * may not be needed there unless it grows. Apply the pattern if both demo and real
+ * diverge in layout or behaviour.
  */
 
 import { useRef, useEffect } from "react";
@@ -184,9 +215,9 @@ export default function ConversationView({
       <div className="flex-1 min-h-0 relative">
         <div className="h-full overflow-y-auto thin-scrollbar">
           <div className="max-w-3xl standalone:max-w-4xl mx-auto flex flex-col min-h-full">
-            {/* space-y-2: gap between messages.
+            {/* space-y-4: gap between messages.
                 pb-12 standalone: breathing room after "AI can make mistakes" before input */}
-            <div className={`flex-1 px-8 standalone:px-2 lg:px-8 pt-6 ${isStandalone ? "pb-12" : "pb-6"} space-y-2`}>
+            <div className={`flex-1 px-8 standalone:px-2 lg:px-8 pt-6 ${isStandalone ? "pb-12" : "pb-6"} space-y-4`}>
               {messagesLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-5 h-5 text-[#9C9A92] animate-spin" />
@@ -228,7 +259,7 @@ export default function ConversationView({
 
                   {/* Disclaimer — in-flow on standalone, under input otherwise */}
                   {isStandalone && (
-                    <div className="-mt-1">
+                    <div className="mt-6 ">
                       <p className="text-sm text-[#C2C0B6] text-right leading-snug max-w-[250px] ml-auto">
                         AI can make mistakes.<br />Please verify important information.
                       </p>

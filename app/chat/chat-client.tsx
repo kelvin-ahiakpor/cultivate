@@ -136,6 +136,9 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
   }, [agents.length]);
 
 
+  // iOS Safari < 15.4 doesn't support crypto.randomUUID — use this instead
+  const genId = () => crypto.randomUUID?.() ?? (Math.random().toString(36).slice(2) + Date.now().toString(36));
+
   const handleSend = async () => {
     const text = inputValue.trim();
     if (!text || isStreaming || demoMode) return;
@@ -148,7 +151,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
     setStreamingContent("");
 
     // Add user message to UI immediately
-    const userMsg: ChatMessage = { id: crypto.randomUUID(), role: "USER", content: text };
+    const userMsg: ChatMessage = { id: genId(), role: "USER", content: text };
     setMessages(prev => [...prev, userMsg]);
 
     try {
@@ -203,7 +206,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
               setStreamingContent(assistantText);
             } else if (event.type === "done") {
               const assistantMsg: ChatMessage = {
-                id: event.message?.id || crypto.randomUUID(),
+                id: event.message?.id || genId(),
                 role: "ASSISTANT",
                 content: assistantText,
               };
@@ -220,7 +223,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
             } else if (event.type === "error") {
               // Server-sent error (e.g. billing, model failure) — show as assistant message
               setMessages(prev => [...prev, {
-                id: crypto.randomUUID(),
+                id: genId(),
                 role: "ASSISTANT",
                 content: event.error || "Sorry, something went wrong. Please try again.",
               }]);
@@ -231,7 +234,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
       }
     } catch (err) {
       console.error("Send failed:", err);
-      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: "ASSISTANT", content: `Error: ${err instanceof Error ? err.message : "Something went wrong"}` }]);
+      setMessages(prev => [...prev, { id: genId(), role: "ASSISTANT", content: `Error: ${err instanceof Error ? err.message : "Something went wrong"}` }]);
       setStreamingContent("");
     } finally {
       setIsStreaming(false);
@@ -301,7 +304,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
         onClick={() => setSidebarOpen(false)}
       />
       {/* Mobile: button to open sidebar — hidden on Chats/Systems/active chat (those views have their own glass header control) */}
-      {!sidebarOpen && activeView !== "chats" && activeView !== "systems" && !currentConversationId && (
+      {!sidebarOpen && activeView !== "chats" && activeView !== "systems" && !currentConversationId && !isStreaming && messages.length === 0 && (
         <button
           onClick={() => setSidebarOpen(true)}
           className="fixed top-16 left-3 z-50 lg:hidden w-9 h-9 flex items-center justify-center bg-[#2B2B2B] hover:bg-[#3B3B3B] rounded-lg transition-colors"
