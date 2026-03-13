@@ -66,7 +66,7 @@ export async function GET(
 
     const messages = await prisma.message.findMany({
       where: {
-        id: id,
+        conversationId: id,
         ...(before && { createdAt: { lt: (await prisma.message.findUnique({ where: { id: before } }))?.createdAt } }),
       },
       include: {
@@ -310,6 +310,16 @@ export async function POST(
           const userFacingError = isBillingError
             ? "The AI service is temporarily unavailable due to billing limits. Please contact support."
             : "An error occurred while generating the response";
+
+          // Store error message in DB so conversation history is complete when user returns
+          await prisma.message.create({
+            data: {
+              content: userFacingError,
+              role: "ASSISTANT",
+              conversationId: id,
+              senderId: user.id,
+            },
+          });
 
           controller.enqueue(
             encoder.encode(

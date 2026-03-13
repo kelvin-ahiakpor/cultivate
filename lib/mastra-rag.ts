@@ -1,10 +1,24 @@
 /**
- * Mastra RAG utilities — replaces custom lib/document-parser, lib/chunker-simple, lib/embeddings, lib/vector-db, lib/rag
+ * Mastra RAG utilities — replaces 5 custom files with battle-tested implementations
  *
- * Uses:
- * - @mastra/rag for document parsing and chunking
- * - voyage-ai-provider + ai SDK for embeddings
- * - Raw Prisma SQL for vector storage (our existing schema)
+ * ✅ MIGRATION COMPLETE (March 13, 2026)
+ * Replaced: document-parser.ts, chunker.ts, chunker-simple.ts, embeddings.ts, vector-db.ts, rag.ts
+ * With: Single file using Mastra's official utilities
+ *
+ * Tech Stack:
+ * - @mastra/rag v2.1.2 — Document parsing + recursive chunking (500 tokens, 100 overlap)
+ * - voyage-ai-provider v3.0.0 — Voyage 3.5-lite embeddings via Vercel AI SDK
+ * - ai SDK v6.0.116 — embedMany() and embed() functions
+ * - pgvector (Supabase) — 1024-dim vector storage with cosine similarity search
+ *
+ * Pipeline Flow:
+ * 1. Upload PDF → Supabase Storage
+ * 2. Extract text → pdftotext (system binary, zero Node heap cost)
+ * 3. Chunk → MDocument.chunk() recursive strategy (23 chunks from 8.8KB)
+ * 4. Embed → Voyage AI (1024-dim vectors, $0.02/1M tokens)
+ * 5. Store → pgvector via raw Prisma SQL
+ * 6. Query → Embed farmer's question → cosine similarity search → top 10 chunks
+ * 7. Inject → Claude's system prompt with knowledge context
  */
 
 import { MDocument } from "@mastra/rag";
@@ -29,6 +43,12 @@ const CHUNK_OVERLAP = 100; // token overlap between chunks
 
 /**
  * Extract text from PDF buffer using pdftotext (system binary)
+ *
+ * Why pdftotext instead of JS libraries?
+ * - pdf-parse, pdfjs-dist, unpdf all cause Turbopack OOM (4-8GB heap) in dev
+ * - pdftotext runs in separate OS process → zero Node.js heap cost
+ * - Requires: `brew install poppler` (Mac) or `poppler-utils` (Linux/Vercel)
+ *
  * MDocument doesn't have fromPDF, so we extract text first then use fromText
  */
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
@@ -42,10 +62,13 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   const tmpPath = join(tmpdir(), `cultivate-pdf-${Date.now()}.pdf`);
 
   try {
+    // Write buffer to temp file (pdftotext needs file path, not stdin)
     await writeFile(tmpPath, buffer);
+    // Run pdftotext with -layout flag to preserve formatting, output to stdout (-)
     const { stdout } = await execFileAsync("pdftotext", ["-layout", tmpPath, "-"]);
     return stdout;
   } finally {
+    // Clean up temp file (ignore errors if already deleted)
     await unlink(tmpPath).catch(() => {});
   }
 }

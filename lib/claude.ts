@@ -32,12 +32,13 @@ export interface ChatResult {
 }
 
 /**
- * Build the full system prompt by layering agent config + knowledge context.
+ * Build the full system prompt by layering agent config + knowledge context + guardrails.
  *
  * Example output:
  *   "You are a maize farming expert for Ghana...
  *    Response style: concise. Adjust your tone and format accordingly.
- *    <knowledge_context>...relevant chunks...</knowledge_context>"
+ *    <knowledge_context>...relevant chunks...</knowledge_context>
+ *    <guardrails>Only answer questions related to farming...</guardrails>"
  */
 function buildSystemPrompt(systemPrompt: string, responseStyle: string | null, knowledgeContext?: string): string {
   let prompt = systemPrompt;
@@ -49,6 +50,19 @@ function buildSystemPrompt(systemPrompt: string, responseStyle: string | null, k
   if (knowledgeContext) {
     prompt += `\n\n<knowledge_context>\n${knowledgeContext}\n</knowledge_context>\n\nUse the above knowledge context to inform your answers. If the context doesn't contain relevant information, say so honestly rather than making things up.`;
   }
+
+  // Guardrails: ensure the agent only answers farming-related questions
+  prompt += `\n\n<guardrails>
+You are an agricultural assistant. ONLY answer questions related to farming, agriculture, crops, livestock, soil, pests, irrigation, and related topics.
+
+If the user asks about anything unrelated to farming (politics, entertainment, general knowledge, math, coding, etc.), politely decline and redirect them back to farming topics.
+
+Example responses for off-topic questions:
+- "I'm here to help with farming and agriculture questions. Could I assist you with something related to your crops or livestock instead?"
+- "I don't have expertise in that area, but I'm happy to answer questions about farming practices, crop care, or agricultural challenges."
+
+If you're unsure whether something is farming-related, err on the side of caution and ask the user to clarify how it relates to their farming needs.
+</guardrails>`;
 
   return prompt;
 }

@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
 import { deleteFile } from "@/lib/supabase-storage";
-import { deleteEmbeddings } from "@/lib/vector-db";
+import { deleteEmbeddings } from "@/lib/mastra-rag"; // Fixed: use Mastra RAG utilities
 
 // GET /api/knowledge-bases/:id — Get document details
 export async function GET(

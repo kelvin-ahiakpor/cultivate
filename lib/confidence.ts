@@ -28,6 +28,11 @@ export function scoreConfidence(input: ConfidenceInput): number | null {
   // Has relevant knowledge chunks from RAG
   if (input.hasKnowledgeContext && input.knowledgeChunksUsed > 0) {
     score += 0.2;
+
+    // FUTURE ENHANCEMENT: Weight by chunk relevance scores from vector search
+    // const chunkBonus = Math.min(0.25, input.knowledgeChunksUsed * 0.05);
+    // score += chunkBonus;
+    // This would give higher confidence when more relevant chunks are found.
   }
 
   // Conversation has context (not a cold start)
@@ -59,6 +64,26 @@ export function scoreConfidence(input: ConfidenceInput): number | null {
   } else if (hedgingCount >= 2) {
     score -= 0.15;
   }
+
+  // FUTURE ENHANCEMENT: Check for softer uncertainty markers
+  // const uncertaintyMarkers = ["might", "maybe", "possibly", "could be", "perhaps"];
+  // const uncertaintyCount = uncertaintyMarkers.filter(m => lowerResponse.includes(m)).length;
+  // if (uncertaintyCount > 2) score -= 0.1;
+
+  // FUTURE ENHANCEMENT: Bonus for well-structured responses
+  // const hasListOrSteps = /\n[-•*]\s|^\d+\./m.test(input.response);
+  // if (hasListOrSteps) score += 0.05;
+  // Responses with bullet points or numbered steps tend to be more confident/complete.
+
+  // OTHER METHODS: Semantic entropy (requires logprobs from Claude API)
+  // This measures how much the model "hesitates" between different token choices.
+  // Low entropy = model is certain, high entropy = model is guessing.
+  // Implementation would require: max_tokens_to_sample with logprobs in API call.
+
+  // OTHER METHODS: LLM-as-a-judge verification
+  // Send the response + knowledge chunks to a second LLM call asking:
+  // "Is this response factually supported by the provided context?"
+  // This catches hallucinations that heuristics miss, but costs 2x API calls.
 
   // Clamp between 0 and 1
   return Math.max(0, Math.min(1, parseFloat(score.toFixed(2))));

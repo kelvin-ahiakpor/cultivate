@@ -43,11 +43,12 @@
  */
 
 import { useRef, useEffect } from "react";
-import { ChevronLeft, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, ThumbsUp, Flag, RotateCw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon } from "@/components/send-icons";
+import { Tooltip } from "@/components/tooltip";
 
 export interface ConversationMessage {
   id: string;
@@ -111,6 +112,8 @@ export default function ConversationView({
 }: ConversationViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  console.log("ConversationView render - headerMenuOpen:", headerMenuOpen);
+
   // Scroll to bottom when messages or streaming content change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -165,7 +168,11 @@ export default function ConversationView({
               {title || "Untitled conversation"}
             </span>
             <button
-              onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(!headerMenuOpen); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log("Chevron clicked! Current state:", headerMenuOpen, "Setting to:", !headerMenuOpen);
+                setHeaderMenuOpen(!headerMenuOpen);
+              }}
               className={`${headerMenuOpen ? "bg-[#0a0a0a]" : "hover:bg-[#0a0a0a]"} transition-all px-1.5 self-stretch flex items-center`}
             >
               <ChevronDown className="w-3.5 h-3.5 text-[#9C9A92] hover:text-white transition-colors" strokeWidth={1.5} />
@@ -233,8 +240,57 @@ export default function ConversationView({
                           </div>
                         </div>
                       ) : (
-                        <div className="prose prose-base prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                        <div className="group">
+                          <div className="prose prose-base prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                          </div>
+                          {/* Message actions — copy, thumbs up, flag, retry */}
+                          <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Tooltip content="Copy">
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(msg.content);
+                                  // TODO: Show toast notification "Copied to clipboard"
+                                }}
+                                className="p-1.5 hover:bg-[#141413] rounded transition-colors"
+                              >
+                                <Copy className="w-3.5 h-3.5 text-[#9C9A92] hover:text-[#C2C0B6] transition-colors" />
+                              </button>
+                            </Tooltip>
+                            <Tooltip content="Give positive feedback">
+                              <button
+                                onClick={() => {
+                                  // TODO: Implement thumbs up feedback
+                                  console.log("Thumbs up for message:", msg.id);
+                                }}
+                                className="p-1.5 hover:bg-[#141413] rounded transition-colors"
+                              >
+                                <ThumbsUp className="w-3.5 h-3.5 text-[#9C9A92] hover:text-[#C2C0B6] transition-colors" />
+                              </button>
+                            </Tooltip>
+                            <Tooltip content="Flag for review">
+                              <button
+                                onClick={() => {
+                                  // TODO: Implement flag for review
+                                  console.log("Flag message for review:", msg.id);
+                                }}
+                                className="p-1.5 hover:bg-[#141413] rounded transition-colors"
+                              >
+                                <Flag className="w-3.5 h-3.5 text-[#9C9A92] hover:text-[#C2C0B6] transition-colors" />
+                              </button>
+                            </Tooltip>
+                            <Tooltip content="Retry">
+                              <button
+                                onClick={() => {
+                                  // TODO: Implement retry (regenerate response)
+                                  console.log("Retry message:", msg.id);
+                                }}
+                                className="p-1.5 hover:bg-[#141413] rounded transition-colors"
+                              >
+                                <RotateCw className="w-3.5 h-3.5 text-[#9C9A92] hover:text-[#C2C0B6] transition-colors" />
+                              </button>
+                            </Tooltip>
+                          </div>
                         </div>
                       )}
                     </div>

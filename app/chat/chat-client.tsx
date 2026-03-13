@@ -8,6 +8,7 @@ import { mutate as globalMutate } from "swr";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon } from "@/components/send-icons";
 import GlassCircleButton from "@/components/glass-circle-button";
 import ConversationView from "@/components/conversation-view";
+import { Tooltip } from "@/components/tooltip";
 import ChatsView, { mockChats } from "./views/chats-view";
 import SystemsView from "./views/systems-view";
 import { useConversations } from "@/lib/hooks/use-conversations";
@@ -682,26 +683,30 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
 
                     {/* Action Buttons Below Input */}
                     <div className="flex justify-center gap-2 flex-wrap">
-                      <button onClick={() => setInputValue("What are the best practices for my crops?")} className="group relative px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
-                        <Leaf className="w-4 h-4 text-[#C2C0B6]" />
-                        <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Crops</span>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2.5 bg-[#171717] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap border border-[#3B3B3B]">Best practices for your crops</div>
-                      </button>
-                      <button onClick={() => setInputValue("How do I identify and manage pests on my farm?")} className="group relative px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
-                        <Bug className="w-4 h-4 text-[#C2C0B6]" />
-                        <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Pests</span>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2.5 bg-[#171717] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap border border-[#3B3B3B]">Identify and manage pests</div>
-                      </button>
-                      <button onClick={() => setInputValue("How should I plan my farming around the weather?")} className="group relative px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
-                        <CloudRain className="w-4 h-4 text-[#C2C0B6]" />
-                        <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Weather</span>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2.5 bg-[#171717] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap border border-[#3B3B3B]">Plan based on weather</div>
-                      </button>
-                      <button onClick={() => setInputValue("When should I plant and harvest my crops?")} className="group relative px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-[#C2C0B6]" />
-                        <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Planting</span>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2.5 bg-[#171717] text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap border border-[#3B3B3B]">When to plant and harvest</div>
-                      </button>
+                      <Tooltip content="Best practices for your crops">
+                        <button onClick={() => setInputValue("What are the best practices for my crops?")} className="px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
+                          <Leaf className="w-4 h-4 text-[#C2C0B6]" />
+                          <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Crops</span>
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="Identify and manage pests">
+                        <button onClick={() => setInputValue("How do I identify and manage pests on my farm?")} className="px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
+                          <Bug className="w-4 h-4 text-[#C2C0B6]" />
+                          <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Pests</span>
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="Plan based on weather">
+                        <button onClick={() => setInputValue("How should I plan my farming around the weather?")} className="px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
+                          <CloudRain className="w-4 h-4 text-[#C2C0B6]" />
+                          <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Weather</span>
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="When to plant and harvest">
+                        <button onClick={() => setInputValue("When should I plant and harvest my crops?")} className="px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-[#C2C0B6]" />
+                          <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Planting</span>
+                        </button>
+                      </Tooltip>
                     </div>
                   </div>
                 </div>
