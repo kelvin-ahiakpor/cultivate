@@ -22,13 +22,13 @@
  * doesn't wait for the full pipeline to complete.
  */
 import { NextRequest } from "next/server";
+import { spawn } from "child_process";
+import { writeFile, unlink } from "fs/promises";
+import { join } from "path";
+import { tmpdir } from "os";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
 import { uploadFile } from "@/lib/supabase-storage";
-import { extractText } from "@/lib/document-parser";
-import { chunkText } from "@/lib/chunker";
-import { embed } from "@/lib/embeddings";
-import { batchUpsertEmbeddings } from "@/lib/vector-db";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 const ALLOWED_TYPES: Record<string, string> = {
@@ -95,10 +95,35 @@ export async function POST(request: NextRequest) {
       data: { fileUrl },
     });
 
-    // 3. Process the document (extract → chunk → embed → store)
-    // This runs in the background after we return the response
-    processDocument(knowledgeBase.id, buffer, fileType).catch((err) => {
-      console.error(`Failed to process document ${knowledgeBase.id}:`, err);
+    // 3. Process the document in a separate Node process (extract → chunk → embed → store)
+    // This runs completely isolated from Turbopack's memory usage
+    const tmpPath = join(tmpdir(), `cultivate-upload-${knowledgeBase.id}.${fileType}`);
+    await writeFile(tmpPath, buffer);
+
+    const scriptPath = join(process.cwd(), "lib", "workers", "process-document-script.ts");
+    const childProcess = spawn("npx", ["tsx", scriptPath, knowledgeBase.id, tmpPath, fileType], {
+      stdio: "pipe",
+      detached: false,
+    });
+
+    // Capture output for debugging
+    childProcess.stdout.on("data", (data) => {
+      console.log(`[Document ${knowledgeBase.id}]:`, data.toString().trim());
+    });
+
+    childProcess.stderr.on("data", (data) => {
+      console.error(`[Document ${knowledgeBase.id} ERROR]:`, data.toString().trim());
+    });
+
+    childProcess.on("exit", async (code) => {
+      // Clean up temp file
+      await unlink(tmpPath).catch(() => {});
+
+      if (code === 0) {
+        console.log(`✅ Document ${knowledgeBase.id} processed successfully`);
+      } else {
+        console.error(`❌ Document processing failed with exit code ${code}`);
+      }
     });
 
     return apiSuccess(
@@ -115,59 +140,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/**
- * Background processing: extract text, chunk, embed, store vectors.
- *
- * Runs after the HTTP response is sent so the agronomist doesn't wait.
- * If this fails, the document still exists in storage and DB — it just
- * won't have embeddings until reprocessed.
- */
-async function processDocument(
-  knowledgeBaseId: string,
-  buffer: Buffer,
-  fileType: string
-): Promise<void> {
-  // 1. Extract text
-  const text = await extractText(buffer, fileType);
-
-  if (text.trim().length === 0) {
-    console.warn(`Document ${knowledgeBaseId} produced no text`);
-    return;
-  }
-
-  // 2. Chunk the text
-  const chunks = chunkText(text);
-
-  // 3. Create chunk records in DB
-  const dbChunks = await Promise.all(
-    chunks.map((chunk) =>
-      prisma.documentChunk.create({
-        data: {
-          content: chunk.content,
-          chunkIndex: chunk.chunkIndex,
-          tokenCount: chunk.tokenCount,
-          knowledgeBaseId,
-        },
-      })
-    )
-  );
-
-  // 4. Generate embeddings (batch — Voyage supports up to 128 at once)
-  const texts = chunks.map((c) => c.content);
-  const embeddings = await embed(texts);
-
-  // 5. Store embeddings in pgvector
-  const items = dbChunks.map((dbChunk, i) => ({
-    chunkId: dbChunk.id,
-    embedding: embeddings[i],
-  }));
-  await batchUpsertEmbeddings(items);
-
-  // 6. Update knowledge base with chunk count
-  await prisma.knowledgeBase.update({
-    where: { id: knowledgeBaseId },
-    data: { chunkCount: chunks.length },
-  });
-
-  console.log(`Processed document ${knowledgeBaseId}: ${chunks.length} chunks embedded`);
-}

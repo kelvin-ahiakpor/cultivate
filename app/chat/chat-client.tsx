@@ -234,7 +234,12 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
       }
     } catch (err) {
       console.error("Send failed:", err);
-      setMessages(prev => [...prev, { id: genId(), role: "ASSISTANT", content: `Error: ${err instanceof Error ? err.message : "Something went wrong"}` }]);
+      // Show friendly error message (hide technical details from user)
+      setMessages(prev => [...prev, {
+        id: genId(),
+        role: "ASSISTANT",
+        content: "Sorry, something went wrong. Please try again."
+      }]);
       setStreamingContent("");
     } finally {
       setIsStreaming(false);

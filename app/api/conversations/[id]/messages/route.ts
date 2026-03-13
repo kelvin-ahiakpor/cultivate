@@ -30,7 +30,7 @@ import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
 import { chatStream, generateTitle } from "@/lib/claude";
 import { scoreConfidence, shouldFlag } from "@/lib/confidence";
 import { calculateCost } from "@/lib/cost";
-import { retrieveContext } from "@/lib/rag";
+import { retrieveContext } from "@/lib/mastra-rag"; // NOW USES MASTRA RAG
 
 // GET /api/conversations/:id/messages — List messages (cursor-based pagination)
 export async function GET(
@@ -66,7 +66,7 @@ export async function GET(
 
     const messages = await prisma.message.findMany({
       where: {
-        conversationId: id,
+        id: id,
         ...(before && { createdAt: { lt: (await prisma.message.findUnique({ where: { id: before } }))?.createdAt } }),
       },
       include: {
@@ -170,7 +170,13 @@ export async function POST(
     // 4. Retrieve relevant knowledge context via RAG
     //    Embeds the farmer's question, searches pgvector for similar chunks,
     //    and formats them as context for Claude's system prompt.
+    console.log(`[Conversation ${id}] Step 4: Retrieving RAG context for query...`);
     const rag = await retrieveContext(trimmedContent, conversation.agent.id);
+    if (rag.hasContext) {
+      console.log(`[Conversation ${id}] ✅ Found ${rag.chunks.length} relevant chunks from knowledge bases`);
+    } else {
+      console.log(`[Conversation ${id}] No RAG context found (agent has no knowledge or no relevant chunks)`);
+    }
 
     // 5. Stream Claude response via SSE
     const { stream, getUsage } = await chatStream({
@@ -253,8 +259,9 @@ export async function POST(
             data: { updatedAt: new Date() },
           });
 
-          // 12. Auto-generate title if first message
-          if (isFirstMessage) {
+          // 12. Auto-generate title if first message OR if title generation failed before
+          const needsTitle = !conversation.title;
+          if (needsTitle) {
             const title = await generateTitle(trimmedContent);
             await prisma.conversation.update({
               where: { id },

@@ -257,14 +257,14 @@ model OrganizationQuota {
 }
 
 // Document chunks for RAG — vector embeddings stored via pgvector extension.
-// The actual `embedding` column (vector(512)) is managed via raw SQL migration
+// The actual `embedding` column (vector(1024)) is managed via raw SQL migration
 // because Prisma doesn't natively support the vector type.
 model DocumentChunk {
   id              String   @id @default(cuid())
   content         String   @db.Text   // The actual text of this chunk
   chunkIndex      Int                 // Order within the document (0, 1, 2, ...)
   tokenCount      Int      @default(0) // Approximate token count for this chunk
-  // embedding    vector(512)         -- managed via raw SQL, not in Prisma
+  // embedding    vector(1024)        -- managed via raw SQL, not in Prisma
   createdAt       DateTime @default(now())
 
   // Relations

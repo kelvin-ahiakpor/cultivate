@@ -130,7 +130,7 @@ export default function ConversationView({
           </GlassCircleButton>
           <div className="flex flex-col items-center gap-0.5 min-w-0 flex-1 mx-3">
             <span className="text-sm standalone:text-base font-medium text-white truncate">
-              {title || "New conversation"}
+              {title || "Untitled conversation"}
             </span>
             {systemName && (
               <div className="inline-flex items-center gap-1 bg-[#2B2B2B] rounded-full px-2.5 py-0.5">
@@ -162,7 +162,7 @@ export default function ConversationView({
             headerMenuOpen ? "bg-[#141413]" : "hover:bg-[#141413]"
           }`}>
             <span className="text-sm text-[#C2C0B6] truncate max-w-[220px] py-1 pl-2 pr-1 hover:bg-[#0a0a0a] transition-colors">
-              {title || "New conversation"}
+              {title || "Untitled conversation"}
             </span>
             <button
               onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(!headerMenuOpen); }}
