@@ -25,8 +25,27 @@ function getClient() {
 }
 
 /**
+ * Ensure the storage bucket exists — creates it if missing.
+ * Called before first upload so the bucket is always ready.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function ensureBucket(supabase: any) {
+  const { data: buckets } = await supabase.storage.listBuckets();
+  const exists = buckets?.some((b: { name: string }) => b.name === BUCKET);
+  if (!exists) {
+    const { error } = await supabase.storage.createBucket(BUCKET, {
+      public: true, // public URLs work without auth
+      allowedMimeTypes: ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"],
+      fileSizeLimit: 52428800, // 50MB
+    });
+    if (error && !error.message.includes("already exists")) {
+      throw new Error(`Failed to create storage bucket: ${error.message}`);
+    }
+  }
+}
+
+/**
  * Upload a file to Supabase Storage.
- * Returns the public URL of the uploaded file.
  */
 export async function uploadFile(
   file: Buffer,
@@ -36,6 +55,7 @@ export async function uploadFile(
   knowledgeBaseId: string
 ): Promise<string> {
   const supabase = getClient();
+  await ensureBucket(supabase); // create bucket if it doesn't exist yet
   const path = `${organizationId}/${knowledgeBaseId}/${fileName}`;
 
   const { error } = await supabase.storage

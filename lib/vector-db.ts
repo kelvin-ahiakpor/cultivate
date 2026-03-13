@@ -99,10 +99,8 @@ export async function searchSimilar(
  * Delete all embeddings for a knowledge base (used when deleting a document).
  * The Prisma cascade handles deleting DocumentChunk rows,
  * but this is here if we need explicit cleanup.
+ * NOTE: use prisma.deleteMany not raw SQL — column is "knowledgeBaseId" (camelCase) in Postgres.
  */
 export async function deleteEmbeddings(knowledgeBaseId: string): Promise<void> {
-  await prisma.$queryRawUnsafe(
-    `DELETE FROM document_chunks WHERE knowledge_base_id = $1`,
-    knowledgeBaseId
-  );
+  await prisma.documentChunk.deleteMany({ where: { knowledgeBaseId } });
 }

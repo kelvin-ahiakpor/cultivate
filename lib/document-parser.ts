@@ -2,24 +2,24 @@
  * Document text extraction for the RAG pipeline.
  *
  * Supports:
- *   - PDF  → uses pdf-parse to extract text from all pages
+ *   - PDF  → uses `pdftotext` (poppler) via child_process. Runs in a separate
+ *            OS process so it never touches the Node.js heap. Zero memory overhead.
+ *            Requires poppler: `brew install poppler` (Mac) / `apt install poppler-utils` (Linux/Vercel).
  *   - DOCX → uses mammoth to convert to plain text
  *   - TXT  → reads the buffer directly as UTF-8
  *
  * All functions return a single string of the full document text.
  * The chunker (lib/chunker.ts) handles splitting it into pieces.
  */
-import { PDFParse } from "pdf-parse";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import { writeFile, unlink } from "fs/promises";
+import { tmpdir } from "os";
+import { join } from "path";
 import mammoth from "mammoth";
 
-/**
- * Extract text from a file buffer based on its type.
- *
- * Example:
- *   const buffer = await downloadFile(...);
- *   const text = await extractText(buffer, "application/pdf");
- *   // text = "Chapter 1: Maize Farming in Ghana\n\nMaize is the most..."
- */
+const execFileAsync = promisify(execFile);
+
 export async function extractText(buffer: Buffer, fileType: string): Promise<string> {
   const type = fileType.toLowerCase();
 
@@ -42,12 +42,17 @@ export async function extractText(buffer: Buffer, fileType: string): Promise<str
 }
 
 async function extractFromPdf(buffer: Buffer): Promise<string> {
-  // pdf-parse v3 uses a class-based API:
-  //   new PDFParse({ data, verbosity }) → .load() → .getText()
-  const parser = new PDFParse({ data: new Uint8Array(buffer), verbosity: 0 });
-  const result = await parser.getText();
-  await parser.destroy();
-  return result.text;
+  // Write buffer to a temp file, run pdftotext on it, then clean up.
+  // pdftotext runs in its own OS process — zero impact on Node.js heap.
+  const tmpPath = join(tmpdir(), `cultivate-pdf-${Date.now()}.pdf`);
+  try {
+    await writeFile(tmpPath, buffer);
+    // "-" as output means stdout; "-layout" preserves approximate layout
+    const { stdout } = await execFileAsync("pdftotext", ["-layout", tmpPath, "-"]);
+    return stdout;
+  } finally {
+    await unlink(tmpPath).catch(() => {}); // clean up even if extraction failed
+  }
 }
 
 async function extractFromDocx(buffer: Buffer): Promise<string> {
