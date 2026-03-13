@@ -46,7 +46,7 @@ import { useRef, useEffect, useState } from "react";
 import { ChevronLeft, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import toast from "react-hot-toast";
+import { notify } from "@/lib/toast";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon } from "@/components/send-icons";
 import { Tooltip } from "@/components/tooltip";
@@ -263,30 +263,10 @@ export default function ConversationView({
         return newCache;
       });
 
-      toast.success(isUpdatingFlag ? "Flag updated" : "Message flagged for review", {
-        duration: 3000,
-        position: "top-right",
-        style: {
-          background: "#2B2B2B",
-          color: "#C2C0B6",
-          border: "1px solid #3B3B3B",
-        },
-        iconTheme: {
-          primary: "#85b878",
-          secondary: "#2B2B2B",
-        },
-      });
+      notify.success(isUpdatingFlag ? "Flag updated" : "Message flagged for review");
     } catch (err) {
       console.error("Failed to flag message:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to flag message", {
-        duration: 4000,
-        position: "top-right",
-        style: {
-          background: "#2B2B2B",
-          color: "#C2C0B6",
-          border: "1px solid #3B3B3B",
-        },
-      });
+      notify.error(err instanceof Error ? err.message : "Failed to flag message");
     } finally {
       setFlaggingInProgress(prev => {
         const next = new Set(prev);

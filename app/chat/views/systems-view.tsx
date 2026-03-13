@@ -6,7 +6,7 @@ import GlassCircleButton from "@/components/glass-circle-button";
 import CustomSelect from "@/components/custom-select";
 import { useSystems, type FarmerSystemItem } from "@/lib/hooks/use-systems";
 import { DEMO_SYSTEMS } from "@/lib/demo-data";
-import toast from "react-hot-toast";
+import { notify } from "@/lib/toast";
 
 interface System {
   id: string;
@@ -76,12 +76,12 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
 
   const handleAddSystem = async () => {
     if (!form.name.trim() || !form.type.trim() || !form.description.trim() || !form.purchaseDate) {
-      toast.error("Please fill in all required fields");
+      notify.error("Please fill in all required fields");
       return;
     }
 
     if (demoMode) {
-      toast.success("System added! (demo mode)");
+      notify.success("System added! (demo mode)");
       setShowAddModal(false);
       resetForm();
       return;
@@ -105,12 +105,12 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
         const data = await res.json();
         throw new Error(data.error || "Failed to add system");
       }
-      toast.success("System added successfully");
+      notify.success("System added successfully");
       setShowAddModal(false);
       resetForm();
       apiSystems.mutate();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to add system");
+      notify.error(err instanceof Error ? err.message : "Failed to add system");
     } finally {
       setIsSubmitting(false);
     }
