@@ -122,13 +122,14 @@ export default function ConversationView({
   const [flaggedMessages, setFlaggedMessages] = useState<Set<string>>(new Set());
   const [flaggingInProgress, setFlaggingInProgress] = useState<Set<string>>(new Set());
   const [copiedMessages, setCopiedMessages] = useState<Set<string>>(new Set());
+  const [copiedFlagMessages, setCopiedFlagMessages] = useState<Set<number>>(new Set()); // Track copied flag messages by index
   const [showFlagModal, setShowFlagModal] = useState(false);
   const [flaggingMessageId, setFlaggingMessageId] = useState<string | null>(null);
   const [flagReason, setFlagReason] = useState("");
   const [isUpdatingFlag, setIsUpdatingFlag] = useState(false);
   const [previousReason, setPreviousReason] = useState("");
   const [previousUpdates, setPreviousUpdates] = useState("");
-  // Store flag data locally so we can show it even before API reload
+  // Cache: stores flag data for instant UI updates (synced from DB via AJAX)
   const [flagDataCache, setFlagDataCache] = useState<Map<string, { reason: string; updates: string }>>(new Map());
 
   console.log("ConversationView render - headerMenuOpen:", headerMenuOpen);
@@ -139,7 +140,7 @@ export default function ConversationView({
     setFlaggedMessages(flaggedIds);
   }, [messages]);
 
-  // Initialize flag data cache from messages with flaggedQuery data
+  // Sync cache from DB (AJAX keeps this in line when messages refetch)
   useEffect(() => {
     const newCache = new Map<string, { reason: string; updates: string }>();
     messages.forEach(msg => {
@@ -172,6 +173,20 @@ export default function ConversationView({
     }, 2000);
   };
 
+  // Handle copy for flag messages with checkmark animation
+  const handleFlagCopy = (index: number, content: string) => {
+    navigator.clipboard.writeText(content);
+    setCopiedFlagMessages(prev => new Set(prev).add(index));
+    // Reset checkmark after 2 seconds
+    setTimeout(() => {
+      setCopiedFlagMessages(prev => {
+        const next = new Set(prev);
+        next.delete(index);
+        return next;
+      });
+    }, 2000);
+  };
+
   // Open flag modal - either to create or update
   const handleFlag = (msg: ConversationMessage) => {
     if (flaggingInProgress.has(msg.id)) return;
@@ -186,7 +201,7 @@ export default function ConversationView({
 
     // Check Set instead of message object (message might not have flaggedQuery data if just flagged)
     if (flaggedMessages.has(msg.id)) {
-      // Updating existing flag - check cache first, then API data
+      // Updating existing flag - use cache first (instant), fallback to DB data
       setIsUpdatingFlag(true);
       const cached = flagDataCache.get(msg.id);
       setPreviousReason(cached?.reason || msg.flaggedQuery?.farmerReason || "");
@@ -207,6 +222,8 @@ export default function ConversationView({
 
     setFlaggingInProgress(prev => new Set(prev).add(flaggingMessageId));
     setShowFlagModal(false);
+    setCopiedFlagMessages(new Set());
+    setFlagReason("");
 
     try {
       const method = isUpdatingFlag ? "PATCH" : "POST";
@@ -227,19 +244,21 @@ export default function ConversationView({
 
       setFlaggedMessages(prev => new Set(prev).add(flaggingMessageId));
 
-      // Store in cache so we can show it on next update
+      // Update cache for instant UI feedback (AJAX will sync from DB on next refetch)
       setFlagDataCache(prev => {
         const newCache = new Map(prev);
         const existing = prev.get(flaggingMessageId);
+        const timestamp = new Date().toISOString();
+
         if (isUpdatingFlag && existing) {
-          // Append update
-          const timestamp = new Date().toISOString();
+          // Append update to existing flag
           const newUpdate = `[${timestamp}] ${flagReason}`;
           const updatedText = existing.updates ? `${existing.updates}\n\n${newUpdate}` : newUpdate;
           newCache.set(flaggingMessageId, { reason: existing.reason, updates: updatedText });
         } else {
-          // New flag
-          newCache.set(flaggingMessageId, { reason: flagReason, updates: "" });
+          // New flag - store with timestamp (matches backend format)
+          const timestampedReason = flagReason ? `[${timestamp}] ${flagReason}` : `[${timestamp}] `;
+          newCache.set(flaggingMessageId, { reason: timestampedReason, updates: "" });
         }
         return newCache;
       });
@@ -613,48 +632,59 @@ export default function ConversationView({
 
       {/* Flag modal */}
       {showFlagModal && (() => {
-        // Parse previous messages and count updates
-        const allMessages: Array<{ text: string; date: string | null; isUpdate: boolean }> = [];
+        // Parse all flag messages (initial reason + updates) - both have timestamps now
+        const allMessages: Array<{ text: string; date: string }> = [];
 
+        // Debug logging
+        console.log('Flag modal - previousReason:', previousReason);
+        console.log('Flag modal - previousUpdates:', previousUpdates);
+
+        // Helper to parse timestamped message: [timestamp] text
+        const parseMessage = (msg: string) => {
+          const trimmed = msg.trim();
+          const match = trimmed.match(/^\[(.*?)\]\s*(.*)$/);
+          if (match) {
+            const timestamp = new Date(match[1]);
+            const text = match[2];
+            const formatted = timestamp.toLocaleString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            });
+            return { text, date: formatted };
+          }
+          // Fallback for messages without timestamp (shouldn't happen with new format)
+          return { text: trimmed, date: "No date" };
+        };
+
+        // Parse initial reason
         if (previousReason) {
-          allMessages.push({ text: previousReason, date: null, isUpdate: false });
+          allMessages.push(parseMessage(previousReason));
         }
 
+        // Parse updates
         if (previousUpdates) {
-          // Parse update entries: [timestamp] text
-          const updates = previousUpdates.split('\n\n').map(u => {
-            const trimmed = u.trim();
-            const match = trimmed.match(/^\[(.*?)\]\s*(.*)$/);
-            if (match) {
-              const timestamp = new Date(match[1]);
-              const text = match[2];
-              const formatted = timestamp.toLocaleString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-              });
-              return { text, date: formatted, isUpdate: true };
-            }
-            return { text: trimmed, date: null, isUpdate: true };
-          });
+          const updates = previousUpdates.split('\n\n').map(parseMessage);
           allMessages.push(...updates);
         }
 
-        const updateCount = allMessages.filter(m => m.isUpdate).length;
-        const canAddMore = updateCount < 3;
+        console.log('Flag modal - allMessages:', allMessages);
+
+        // Total count includes initial + updates (max 3: 1 initial + 2 updates)
+        const canAddMore = allMessages.length < 3;
 
         return (
           <>
-            <div className="fixed inset-0 bg-black/50 z-50" onClick={() => { setShowFlagModal(false); setFlagReason(""); }} />
+            <div className="fixed inset-0 bg-black/50 z-50" onClick={() => { setShowFlagModal(false); setFlagReason(""); setCopiedFlagMessages(new Set()); }} />
             <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#2B2B2B] rounded-lg border border-[#3B3B3B] p-5 z-50 w-[90%] max-w-md max-h-[80vh] overflow-y-auto">
               <h3 className="text-base font-semibold text-[#C2C0B6] mb-2">
                 {isUpdatingFlag ? "Update flag" : "Flag for Review"}
               </h3>
               <p className="text-xs text-[#9C9A92] mb-3">
                 {isUpdatingFlag
-                  ? `Add additional context to your flag, you have up to 3 revisions`
+                  ? `Add additional context to your flag, you have up to 2 revisions`
                   : <>This message will be sent to an agronomist for review.<br />You can optionally provide a reason:</>}
               </p>
 
@@ -662,28 +692,37 @@ export default function ConversationView({
               {isUpdatingFlag && allMessages.length > 0 && (
                 <div className="mb-3">
                   <p className="text-xs text-[#9C9A92] mb-1.5">
-                    Your flag reasons {!canAddMore ? ' (limit reached)' : ''}
+                    Your flag reasons{!canAddMore ? ' (limit reached)' : ':'}
                   </p>
                   <div className="space-y-1">
-                    {allMessages.map((msg, idx) => (
-                      <div key={idx} className="flex items-start gap-2 bg-[#1E1E1E] rounded px-2 py-1.5 group">
-                        <p className="flex-1 text-xs break-words">
-                          {msg.date && (
-                            <span className="text-[#9C9A92]">{msg.date} · </span>
-                          )}
-                          <span className={msg.isUpdate ? "font-semibold text-[#C2C0B6]" : "text-[#C2C0B6]"}>
-                            {msg.text}
-                          </span>
-                        </p>
-                        <button
-                          onClick={() => navigator.clipboard.writeText(msg.text)}
-                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[#2B2B2B] rounded transition-all flex-shrink-0"
-                          title="Copy"
-                        >
-                          <Copy className="w-3 h-3 text-[#9C9A92]" />
-                        </button>
-                      </div>
-                    ))}
+                    {allMessages.map((msg, idx) => {
+                      // Sequential numbering: 1st, 2nd, 3rd (max 3 total: 1 initial + 2 updates)
+                      const ordinals = ['1st', '2nd', '3rd'];
+                      const ordinal = ordinals[idx] || `${idx + 1}th`;
+                      const isUpdate = idx > 0; // First is initial, rest are updates
+
+                      return (
+                        <div key={idx} className="flex items-start gap-2 bg-[#1E1E1E] rounded px-2 py-1.5 group">
+                          <p className="flex-1 text-xs break-words">
+                            <span className="text-[#9C9A92]">{ordinal} · {msg.date} · </span>
+                            <span className={isUpdate ? "font-semibold text-[#C2C0B6]" : "text-[#C2C0B6]"}>
+                              {msg.text}
+                            </span>
+                          </p>
+                          <button
+                            onClick={() => handleFlagCopy(idx, msg.text)}
+                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[#2B2B2B] rounded transition-all flex-shrink-0"
+                            title="Copy"
+                          >
+                            {copiedFlagMessages.has(idx) ? (
+                              <Check className="w-3 h-3 text-[#85b878]" />
+                            ) : (
+                              <Copy className="w-3 h-3 text-[#9C9A92]" />
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -703,7 +742,7 @@ export default function ConversationView({
               />
               <div className="flex items-center gap-2 justify-end">
                 <button
-                  onClick={() => { setShowFlagModal(false); setFlagReason(""); }}
+                  onClick={() => { setShowFlagModal(false); setFlagReason(""); setCopiedFlagMessages(new Set()); }}
                   className="px-3 py-1.5 text-xs text-[#C2C0B6] hover:bg-[#3B3B3B] rounded-lg transition-colors"
                 >
                   Cancel

@@ -449,39 +449,43 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                         {isMenuOpen && (
                           <>
                             <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }} />
-                            <div className="absolute right-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-[#2B2B2B] py-1 z-50 min-w-[200px] whitespace-nowrap">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}
-                                className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2.5 transition-colors"
-                              >
-                                <Share className="w-3.5 h-3.5" />
-                                Share
-                              </button>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}
-                                className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2.5 transition-colors"
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                                Rename
-                              </button>
-                              {/* Conditional: only for chats linked to a Farmitecture system */}
-                              {chat.systemName && (
+                            <div className="absolute right-0 top-full mt-1.5 bg-[#2B2B2B] rounded-xl shadow-xl border border-[#3B3B3B] py-1.5 z-50 min-w-[180px] whitespace-nowrap">
+                              <div className="px-1.5">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}
-                                  className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2.5 transition-colors"
+                                  className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] rounded-lg flex items-center gap-2.5 transition-colors"
                                 >
-                                  <Unlink className="w-3.5 h-3.5" />
-                                  Remove from system
+                                  <Share className="w-3.5 h-3.5" />
+                                  Share
                                 </button>
-                              )}
-                              <div className="border-t border-[#2B2B2B] my-1 mx-3" />
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}
-                                className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-[#141413] hover:text-red-300 flex items-center gap-2.5 transition-colors"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                Delete
-                              </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}
+                                  className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] rounded-lg flex items-center gap-2.5 transition-colors"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                  Rename
+                                </button>
+                                {/* Conditional: only for chats linked to a Farmitecture system */}
+                                {chat.systemName && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}
+                                    className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] rounded-lg flex items-center gap-2.5 transition-colors"
+                                  >
+                                    <Unlink className="w-3.5 h-3.5" />
+                                    Remove from system
+                                  </button>
+                                )}
+                              </div>
+                              <div className="border-t border-[#3B3B3B] my-1 mx-2" />
+                              <div className="px-1.5">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}
+                                  className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-[#141413] hover:text-red-300 rounded-lg flex items-center gap-2.5 transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  Delete
+                                </button>
+                              </div>
                             </div>
                           </>
                         )}

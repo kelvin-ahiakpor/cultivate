@@ -66,12 +66,14 @@ export async function POST(
     }
 
     // Create the flagged query
+    // Store farmerReason with timestamp for consistency with updates
+    const timestampedReason = reason ? `[${new Date().toISOString()}] ${reason}` : null;
     const flaggedQuery = await prisma.flaggedQuery.create({
       data: {
         messageId,
         agentId: message.conversation.agent.id,
         agronomistId: message.conversation.agent.agronomistId,
-        farmerReason: reason || null,
+        farmerReason: timestampedReason,
       },
     });
 

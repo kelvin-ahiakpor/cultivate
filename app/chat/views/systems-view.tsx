@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, ChevronLeft, Loader2 } from "lucide-react";
+import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, ChevronLeft, ChevronDown, Check, Loader2, Plus, X } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { useSystems, type FarmerSystemItem } from "@/lib/hooks/use-systems";
 import { DEMO_SYSTEMS } from "@/lib/demo-data";
+import toast from "react-hot-toast";
 
 interface System {
   id: string;
@@ -50,16 +51,95 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
 
+  // Add system modal state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sortBy, setSortBy] = useState<"purchaseDate" | "name" | "status" | "warranty">("purchaseDate");
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+
+  const sortOptions: { value: typeof sortBy; label: string }[] = [
+    { value: "purchaseDate", label: "Purchase date" },
+    { value: "name", label: "Name" },
+    { value: "status", label: "Status" },
+    { value: "warranty", label: "Warranty" },
+  ];
+  const sortLabel = sortOptions.find(o => o.value === sortBy)?.label ?? "Purchase date";
+  const [form, setForm] = useState({
+    name: "",
+    type: "",
+    description: "",
+    purchaseDate: "",
+    installationDate: "",
+    warrantyUntil: "",
+  });
+
+  const resetForm = () => setForm({ name: "", type: "", description: "", purchaseDate: "", installationDate: "", warrantyUntil: "" });
+
+  const handleAddSystem = async () => {
+    if (!form.name.trim() || !form.type.trim() || !form.description.trim() || !form.purchaseDate) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (demoMode) {
+      toast.success("System added! (demo mode)");
+      setShowAddModal(false);
+      resetForm();
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/systems", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          type: form.type.trim(),
+          description: form.description.trim(),
+          purchaseDate: form.purchaseDate,
+          installationDate: form.installationDate || undefined,
+          warrantyUntil: form.warrantyUntil || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to add system");
+      }
+      toast.success("System added successfully");
+      setShowAddModal(false);
+      resetForm();
+      apiSystems.mutate();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to add system");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const apiSystems = useSystems(demoMode);
   const allSystems: System[] = demoMode ? mockSystems : apiSystems.systems.map(toSystem);
 
-  const filteredSystems = allSystems.filter(system => {
-    const matchesStatus = selectedStatus === "all" || system.status === selectedStatus;
-    const matchesSearch = system.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      system.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      system.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
+  const statusOrder = { ACTIVE: 0, PENDING_SETUP: 1, INACTIVE: 2 };
+  const filteredSystems = allSystems
+    .filter(system => {
+      const matchesStatus = selectedStatus === "all" || system.status === selectedStatus;
+      const matchesSearch = system.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        system.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        system.description.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesStatus && matchesSearch;
+    })
+    .sort((a, b) => {
+      if (sortBy === "name") return a.name.localeCompare(b.name);
+      if (sortBy === "status") return (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9);
+      if (sortBy === "warranty") {
+        if (!a.warrantyUntil) return 1;
+        if (!b.warrantyUntil) return -1;
+        return new Date(a.warrantyUntil).getTime() - new Date(b.warrantyUntil).getTime();
+      }
+      // default: purchaseDate newest first
+      return new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime();
+    });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -100,6 +180,11 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
             <h1 className="text-2xl font-serif text-[#C2C0B6]">Systems</h1>
             <p className="text-sm text-[#9C9A92] mt-1">{allSystems.length} Farmitecture products installed</p>
           </div>
+          <div className="absolute right-0">
+            <GlassCircleButton onClick={() => setShowAddModal(true)} aria-label="Add system">
+              <Plus className="w-5 h-5 text-white" />
+            </GlassCircleButton>
+          </div>
         </div>
 
         {/* Desktop header */}
@@ -108,54 +193,72 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
             <h1 className="text-2xl font-serif text-[#C2C0B6]">Systems</h1>
             <p className="text-sm text-[#9C9A92] mt-1">{allSystems.length} Farmitecture products installed</p>
           </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-[#5a7048] text-white text-sm rounded-lg hover:bg-[#4a5d38] transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add System
+          </button>
         </div>
 
         {/* Search and Filter */}
-        <div className="flex items-center gap-3 mb-6">
-          {/* Status Filter */}
+        {/* Row 1: full-width search bar */}
+        <div className="relative mb-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B]" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search systems..."
+            className="w-full pl-9 pr-3 py-2 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
+          />
+        </div>
+        {/* Row 2: filter pills left, sort by right */}
+        <div className="flex items-center justify-between mb-4">
           <div className="flex gap-2">
-            <button
-              onClick={() => setSelectedStatus("all")}
-              className={`px-3 py-1.5 rounded-lg text-sm standalone:text-base lg:text-sm transition-colors ${
-                selectedStatus === "all"
-                  ? "bg-[#5a7048] text-white"
-                  : "bg-[#2B2B2B] text-[#C2C0B6] hover:bg-[#3B3B3B]"
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setSelectedStatus("ACTIVE")}
-              className={`px-3 py-1.5 rounded-lg text-sm standalone:text-base lg:text-sm transition-colors ${
-                selectedStatus === "ACTIVE"
-                  ? "bg-[#5a7048] text-white"
-                  : "bg-[#2B2B2B] text-[#C2C0B6] hover:bg-[#3B3B3B]"
-              }`}
-            >
-              Active
-            </button>
-            <button
-              onClick={() => setSelectedStatus("PENDING_SETUP")}
-              className={`px-3 py-1.5 rounded-lg text-sm standalone:text-base lg:text-sm transition-colors ${
-                selectedStatus === "PENDING_SETUP"
-                  ? "bg-[#5a7048] text-white"
-                  : "bg-[#2B2B2B] text-[#C2C0B6] hover:bg-[#3B3B3B]"
-              }`}
-            >
-              Pending
-            </button>
+            {(["all", "ACTIVE", "PENDING_SETUP"] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setSelectedStatus(s)}
+                className={`px-3 py-1.5 rounded-lg text-sm standalone:text-base lg:text-sm transition-colors ${
+                  selectedStatus === s
+                    ? "bg-[#3B3B3B] text-[#C2C0B6]"
+                    : "text-[#9C9A92] hover:text-[#C2C0B6] hover:bg-[#2B2B2B]"
+                }`}
+              >
+                {s === "all" ? "All" : s === "ACTIVE" ? "Active" : "Pending"}
+              </button>
+            ))}
           </div>
-
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B]" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search systems..."
-              className="w-full pl-9 pr-3 py-2 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
-            />
+          <div className="relative flex items-center gap-2">
+            <span className="text-sm text-[#9C9A92]">Sort by</span>
+            <button
+              onClick={() => setSortDropdownOpen(o => !o)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-[#C2C0B6] border border-[#3B3B3B] hover:border-[#5a7048] transition-colors focus:outline-none"
+            >
+              {sortLabel}
+              <ChevronDown className={`w-3.5 h-3.5 text-[#9C9A92] transition-transform ${sortDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+            {sortDropdownOpen && (
+              <>
+                {/* backdrop to close */}
+                <div className="fixed inset-0 z-40" onClick={() => setSortDropdownOpen(false)} />
+                <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[160px] bg-[#2B2B2B] border border-[#3B3B3B] rounded-xl shadow-xl py-1.5">
+                  {sortOptions.map(opt => (
+                    <div key={opt.value} className="px-1.5">
+                      <button
+                        onClick={() => { setSortBy(opt.value); setSortDropdownOpen(false); }}
+                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-[#C2C0B6] hover:bg-[#141413] transition-colors focus:outline-none"
+                      >
+                        <span>{opt.label}</span>
+                        {sortBy === opt.value && <Check className="w-3.5 h-3.5 text-[#C2C0B6] shrink-0 ml-3" />}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -175,6 +278,10 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 pb-4">
+              {/* Card width is inherited from chat-client.tsx's content panel (no max-width set there).
+                  To narrow: (a) wrap this grid in max-w-2xl mx-auto, or
+                  (b) constrain the systems panel in chat-client.tsx.
+                  Sizes: max-w-lg=512px, max-w-xl=576px, max-w-2xl=672px */}
               {filteredSystems.map((system) => (
                 <div
                   key={system.id}
@@ -270,6 +377,122 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
 
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 h-8 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent lg:hidden" />
       </div>
+
+      {/* Add System Modal */}
+      {showAddModal && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => { setShowAddModal(false); resetForm(); }} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#2B2B2B] rounded-lg border border-[#3B3B3B] p-5 z-50 w-[90%] max-w-md max-h-[80vh] overflow-y-auto thin-scrollbar">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-[#C2C0B6]">Add a System</h3>
+              <button onClick={() => { setShowAddModal(false); resetForm(); }} className="text-[#6B6B6B] hover:text-[#C2C0B6] transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-[#9C9A92] mb-4">Register a Farmitecture system you&apos;ve purchased. It will appear as &quot;Pending Setup&quot; until an agronomist confirms it.</p>
+
+            <div className="space-y-3">
+              {/* Name */}
+              <div>
+                <label className="block text-xs text-[#9C9A92] mb-1">System name <span className="text-red-400">*</span></label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="e.g. Hydroponic NFT System - Medium"
+                  className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm placeholder-[#6B6B6B] border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878]"
+                />
+              </div>
+
+              {/* Type */}
+              <div>
+                <label className="block text-xs text-[#9C9A92] mb-1">Type <span className="text-red-400">*</span></label>
+                <select
+                  value={form.type}
+                  onChange={(e) => setForm(f => ({ ...f, type: e.target.value }))}
+                  className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878]"
+                >
+                  <option value="" disabled>Select type...</option>
+                  <option value="Hydroponic System">Hydroponic System</option>
+                  <option value="Irrigation System">Irrigation System</option>
+                  <option value="Vertical Farm">Vertical Farm</option>
+                  <option value="Greenhouse">Greenhouse</option>
+                  <option value="Aquaponic System">Aquaponic System</option>
+                  <option value="Composting System">Composting System</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs text-[#9C9A92] mb-1">Description <span className="text-red-400">*</span></label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => {
+                    setForm(f => ({ ...f, description: e.target.value }));
+                    e.target.style.height = "auto";
+                    e.target.style.height = e.target.scrollHeight + "px";
+                  }}
+                  placeholder="Brief description of the system..."
+                  rows={2}
+                  style={{ minHeight: "60px" }}
+                  className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm placeholder-[#6B6B6B] border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878] resize-none overflow-hidden"
+                />
+              </div>
+
+              {/* Purchase Date */}
+              <div>
+                <label className="block text-xs text-[#9C9A92] mb-1">Purchase date <span className="text-red-400">*</span></label>
+                <input
+                  type="date"
+                  value={form.purchaseDate}
+                  onChange={(e) => setForm(f => ({ ...f, purchaseDate: e.target.value }))}
+                  className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878]"
+                />
+              </div>
+
+              {/* Optional dates */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-[#9C9A92] mb-1">Installation date</label>
+                  <input
+                    type="date"
+                    value={form.installationDate}
+                    onChange={(e) => setForm(f => ({ ...f, installationDate: e.target.value }))}
+                    className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-[#9C9A92] mb-1">Warranty until</label>
+                  <input
+                    type="date"
+                    value={form.warrantyUntil}
+                    onChange={(e) => setForm(f => ({ ...f, warrantyUntil: e.target.value }))}
+                    className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 justify-end mt-4">
+              <button
+                onClick={() => { setShowAddModal(false); resetForm(); }}
+                className="px-3 py-1.5 text-xs text-[#C2C0B6] hover:bg-[#3B3B3B] rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddSystem}
+                disabled={isSubmitting}
+                className="px-4 py-1.5 bg-[#5a7048] text-white text-xs rounded-lg hover:bg-[#4a5d38] transition-colors disabled:opacity-40 flex items-center gap-2"
+              >
+                {isSubmitting && <Loader2 className="w-3 h-3 animate-spin" />}
+                Add System
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
