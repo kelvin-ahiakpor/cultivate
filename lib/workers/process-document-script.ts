@@ -17,10 +17,17 @@ import { prisma } from "@/lib/prisma";
 import { extractText, chunkText, embedTexts, batchStoreEmbeddings } from "@/lib/mastra-rag";
 
 async function main() {
-  const [knowledgeBaseId, filePath, fileType] = process.argv.slice(2);
+  const [knowledgeBaseId, filePath, fileTypeRaw] = process.argv.slice(2);
 
-  if (!knowledgeBaseId || !filePath || !fileType) {
+  if (!knowledgeBaseId || !filePath || !fileTypeRaw) {
     console.error("Usage: tsx process-document-script.ts <knowledgeBaseId> <filePath> <fileType>");
+    process.exit(1);
+  }
+
+  // Validate fileType
+  const fileType = fileTypeRaw.toLowerCase() as "pdf" | "docx" | "txt";
+  if (!["pdf", "docx", "txt"].includes(fileType)) {
+    console.error(`Invalid fileType: ${fileTypeRaw}. Must be pdf, docx, or txt.`);
     process.exit(1);
   }
 
