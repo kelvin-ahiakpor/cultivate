@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, ChevronLeft, ChevronDown, Check, Loader2, Plus, X } from "lucide-react";
+import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, ChevronLeft, Loader2, Plus, X } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
+import CustomSelect from "@/components/custom-select";
 import { useSystems, type FarmerSystemItem } from "@/lib/hooks/use-systems";
 import { DEMO_SYSTEMS } from "@/lib/demo-data";
 import toast from "react-hot-toast";
@@ -55,7 +56,6 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sortBy, setSortBy] = useState<"purchaseDate" | "name" | "status" | "warranty">("purchaseDate");
-  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
 
   const sortOptions: { value: typeof sortBy; label: string }[] = [
     { value: "purchaseDate", label: "Purchase date" },
@@ -63,7 +63,6 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
     { value: "status", label: "Status" },
     { value: "warranty", label: "Warranty" },
   ];
-  const sortLabel = sortOptions.find(o => o.value === sortBy)?.label ?? "Purchase date";
   const [form, setForm] = useState({
     name: "",
     type: "",
@@ -231,34 +230,14 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
               </button>
             ))}
           </div>
-          <div className="relative flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <span className="text-sm text-[#9C9A92]">Sort by</span>
-            <button
-              onClick={() => setSortDropdownOpen(o => !o)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-[#C2C0B6] border border-[#3B3B3B] hover:border-[#5a7048] transition-colors focus:outline-none"
-            >
-              {sortLabel}
-              <ChevronDown className={`w-3.5 h-3.5 text-[#9C9A92] transition-transform ${sortDropdownOpen ? "rotate-180" : ""}`} />
-            </button>
-            {sortDropdownOpen && (
-              <>
-                {/* backdrop to close */}
-                <div className="fixed inset-0 z-40" onClick={() => setSortDropdownOpen(false)} />
-                <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[160px] bg-[#2B2B2B] border border-[#3B3B3B] rounded-xl shadow-xl py-1.5">
-                  {sortOptions.map(opt => (
-                    <div key={opt.value} className="px-1.5">
-                      <button
-                        onClick={() => { setSortBy(opt.value); setSortDropdownOpen(false); }}
-                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-[#C2C0B6] hover:bg-[#141413] transition-colors focus:outline-none"
-                      >
-                        <span>{opt.label}</span>
-                        {sortBy === opt.value && <Check className="w-3.5 h-3.5 text-[#C2C0B6] shrink-0 ml-3" />}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
+            <CustomSelect
+              variant="pill"
+              value={sortBy}
+              onChange={(v) => setSortBy(v as typeof sortBy)}
+              options={sortOptions}
+            />
           </div>
         </div>
       </div>
@@ -394,7 +373,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
             <div className="space-y-3">
               {/* Name */}
               <div>
-                <label className="block text-xs text-[#9C9A92] mb-1">System name <span className="text-red-400">*</span></label>
+                <label className="block text-xs text-[#9C9A92] mb-1">System name <span className="text-[#9C9A92]">*</span></label>
                 <input
                   type="text"
                   value={form.name}
@@ -406,26 +385,26 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
 
               {/* Type */}
               <div>
-                <label className="block text-xs text-[#9C9A92] mb-1">Type <span className="text-red-400">*</span></label>
-                <select
+                <label className="block text-xs text-[#9C9A92] mb-1">Type <span className="text-[#9C9A92]">*</span></label>
+                <CustomSelect
                   value={form.type}
-                  onChange={(e) => setForm(f => ({ ...f, type: e.target.value }))}
-                  className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878]"
-                >
-                  <option value="" disabled>Select type...</option>
-                  <option value="Hydroponic System">Hydroponic System</option>
-                  <option value="Irrigation System">Irrigation System</option>
-                  <option value="Vertical Farm">Vertical Farm</option>
-                  <option value="Greenhouse">Greenhouse</option>
-                  <option value="Aquaponic System">Aquaponic System</option>
-                  <option value="Composting System">Composting System</option>
-                  <option value="Other">Other</option>
-                </select>
+                  onChange={(v) => setForm(f => ({ ...f, type: v }))}
+                  placeholder="Select type..."
+                  options={[
+                    { value: "Hydroponic System", label: "Hydroponic System" },
+                    { value: "Irrigation System", label: "Irrigation System" },
+                    { value: "Vertical Farm", label: "Vertical Farm" },
+                    { value: "Greenhouse", label: "Greenhouse" },
+                    { value: "Aquaponic System", label: "Aquaponic System" },
+                    { value: "Composting System", label: "Composting System" },
+                    { value: "Other", label: "Other" },
+                  ]}
+                />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-xs text-[#9C9A92] mb-1">Description <span className="text-red-400">*</span></label>
+                <label className="block text-xs text-[#9C9A92] mb-1">Description <span className="text-[#9C9A92]">*</span></label>
                 <textarea
                   value={form.description}
                   onChange={(e) => {
@@ -442,12 +421,12 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
 
               {/* Purchase Date */}
               <div>
-                <label className="block text-xs text-[#9C9A92] mb-1">Purchase date <span className="text-red-400">*</span></label>
+                <label className="block text-xs text-[#9C9A92] mb-1">Purchase date <span className="text-[#9C9A92]">*</span></label>
                 <input
                   type="date"
                   value={form.purchaseDate}
                   onChange={(e) => setForm(f => ({ ...f, purchaseDate: e.target.value }))}
-                  className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878]"
+                  className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878] [color-scheme:dark]"
                 />
               </div>
 
@@ -459,7 +438,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
                     type="date"
                     value={form.installationDate}
                     onChange={(e) => setForm(f => ({ ...f, installationDate: e.target.value }))}
-                    className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878]"
+                    className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878] [color-scheme:dark]"
                   />
                 </div>
                 <div>
@@ -468,7 +447,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
                     type="date"
                     value={form.warrantyUntil}
                     onChange={(e) => setForm(f => ({ ...f, warrantyUntil: e.target.value }))}
-                    className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878]"
+                    className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878] [color-scheme:dark]"
                   />
                 </div>
               </div>
