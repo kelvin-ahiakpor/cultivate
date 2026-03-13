@@ -71,13 +71,20 @@ export async function GET(
       },
       include: {
         sender: { select: { id: true, name: true, role: true } },
+        flaggedQuery: { select: { id: true, status: true, farmerReason: true, farmerUpdates: true } },
       },
       orderBy: { createdAt: "asc" },
       take: limit,
     });
 
+    // Transform to include isFlagged boolean
+    const messagesWithFlags = messages.map(msg => ({
+      ...msg,
+      isFlagged: !!msg.flaggedQuery,
+    }));
+
     return apiSuccess({
-      messages,
+      messages: messagesWithFlags,
       hasMore: messages.length === limit,
     });
   } catch (err) {

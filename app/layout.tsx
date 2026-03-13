@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Rubik, Playfair_Display } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
 const rubik = Rubik({
@@ -50,6 +51,7 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className={`${rubik.variable} ${playfair.variable} font-sans antialiased`} suppressHydrationWarning>
         {children}
+        <Toaster />
       </body>
     </html>
   );

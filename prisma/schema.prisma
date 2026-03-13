@@ -175,6 +175,8 @@ model KnowledgeBase {
 model FlaggedQuery {
   id                 String             @id @default(cuid())
   status             FlaggedQueryStatus @default(PENDING)
+  farmerReason       String?            @db.Text // Initial reason from farmer
+  farmerUpdates      String?            @db.Text // Subsequent updates from farmer (chronological)
   agronomistResponse String?            @db.Text
   verificationNotes  String?            @db.Text
   reviewedAt         DateTime?

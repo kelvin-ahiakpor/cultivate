@@ -42,10 +42,11 @@
  * diverge in layout or behaviour.
  */
 
-import { useRef, useEffect } from "react";
-import { ChevronLeft, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, ThumbsUp, Flag, RotateCw } from "lucide-react";
+import { useRef, useEffect, useState } from "react";
+import { ChevronLeft, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import toast from "react-hot-toast";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon } from "@/components/send-icons";
 import { Tooltip } from "@/components/tooltip";
@@ -54,6 +55,13 @@ export interface ConversationMessage {
   id: string;
   role: "USER" | "ASSISTANT";
   content: string;
+  isFlagged?: boolean;
+  flaggedQuery?: {
+    id: string;
+    status?: "PENDING" | "VERIFIED" | "CORRECTED";
+    farmerReason?: string | null;
+    farmerUpdates?: string | null;
+  };
 }
 
 /** Props for the live send input (real mode only). Omit entirely for demo. */
@@ -111,13 +119,168 @@ export default function ConversationView({
   demoAgentLabel,
 }: ConversationViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [flaggedMessages, setFlaggedMessages] = useState<Set<string>>(new Set());
+  const [flaggingInProgress, setFlaggingInProgress] = useState<Set<string>>(new Set());
+  const [copiedMessages, setCopiedMessages] = useState<Set<string>>(new Set());
+  const [showFlagModal, setShowFlagModal] = useState(false);
+  const [flaggingMessageId, setFlaggingMessageId] = useState<string | null>(null);
+  const [flagReason, setFlagReason] = useState("");
+  const [isUpdatingFlag, setIsUpdatingFlag] = useState(false);
+  const [previousReason, setPreviousReason] = useState("");
+  const [previousUpdates, setPreviousUpdates] = useState("");
+  // Store flag data locally so we can show it even before API reload
+  const [flagDataCache, setFlagDataCache] = useState<Map<string, { reason: string; updates: string }>>(new Map());
 
   console.log("ConversationView render - headerMenuOpen:", headerMenuOpen);
+
+  // Initialize flaggedMessages from messages prop
+  useEffect(() => {
+    const flaggedIds = new Set(messages.filter(m => m.isFlagged).map(m => m.id));
+    setFlaggedMessages(flaggedIds);
+  }, [messages]);
+
+  // Initialize flag data cache from messages with flaggedQuery data
+  useEffect(() => {
+    const newCache = new Map<string, { reason: string; updates: string }>();
+    messages.forEach(msg => {
+      if (msg.flaggedQuery) {
+        newCache.set(msg.id, {
+          reason: msg.flaggedQuery.farmerReason || "",
+          updates: msg.flaggedQuery.farmerUpdates || "",
+        });
+      }
+    });
+    setFlagDataCache(newCache);
+  }, [messages]);
 
   // Scroll to bottom when messages or streaming content change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingContent]);
+
+  // Handle copy with checkmark animation
+  const handleCopy = (messageId: string, content: string) => {
+    navigator.clipboard.writeText(content);
+    setCopiedMessages(prev => new Set(prev).add(messageId));
+    // Reset checkmark after 2 seconds
+    setTimeout(() => {
+      setCopiedMessages(prev => {
+        const next = new Set(prev);
+        next.delete(messageId);
+        return next;
+      });
+    }, 2000);
+  };
+
+  // Open flag modal - either to create or update
+  const handleFlag = (msg: ConversationMessage) => {
+    if (flaggingInProgress.has(msg.id)) return;
+
+    // Don't allow updates if agronomist has already resolved it
+    const status = msg.flaggedQuery?.status;
+    if (status && status !== "PENDING") {
+      return; // Already resolved, can't update
+    }
+
+    setFlaggingMessageId(msg.id);
+
+    // Check Set instead of message object (message might not have flaggedQuery data if just flagged)
+    if (flaggedMessages.has(msg.id)) {
+      // Updating existing flag - check cache first, then API data
+      setIsUpdatingFlag(true);
+      const cached = flagDataCache.get(msg.id);
+      setPreviousReason(cached?.reason || msg.flaggedQuery?.farmerReason || "");
+      setPreviousUpdates(cached?.updates || msg.flaggedQuery?.farmerUpdates || "");
+    } else {
+      // Creating new flag
+      setIsUpdatingFlag(false);
+      setPreviousReason("");
+      setPreviousUpdates("");
+    }
+
+    setShowFlagModal(true);
+  };
+
+  // Submit flag (create new or add update)
+  const submitFlag = async () => {
+    if (!flaggingMessageId) return;
+
+    setFlaggingInProgress(prev => new Set(prev).add(flaggingMessageId));
+    setShowFlagModal(false);
+
+    try {
+      const method = isUpdatingFlag ? "PATCH" : "POST";
+      const body = isUpdatingFlag
+        ? { update: flagReason }
+        : { reason: flagReason || undefined };
+
+      const response = await fetch(`/api/messages/${flaggingMessageId}/flag`, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to flag message");
+      }
+
+      setFlaggedMessages(prev => new Set(prev).add(flaggingMessageId));
+
+      // Store in cache so we can show it on next update
+      setFlagDataCache(prev => {
+        const newCache = new Map(prev);
+        const existing = prev.get(flaggingMessageId);
+        if (isUpdatingFlag && existing) {
+          // Append update
+          const timestamp = new Date().toISOString();
+          const newUpdate = `[${timestamp}] ${flagReason}`;
+          const updatedText = existing.updates ? `${existing.updates}\n\n${newUpdate}` : newUpdate;
+          newCache.set(flaggingMessageId, { reason: existing.reason, updates: updatedText });
+        } else {
+          // New flag
+          newCache.set(flaggingMessageId, { reason: flagReason, updates: "" });
+        }
+        return newCache;
+      });
+
+      toast.success(isUpdatingFlag ? "Flag updated" : "Message flagged for review", {
+        duration: 3000,
+        position: "top-right",
+        style: {
+          background: "#2B2B2B",
+          color: "#C2C0B6",
+          border: "1px solid #3B3B3B",
+        },
+        iconTheme: {
+          primary: "#85b878",
+          secondary: "#2B2B2B",
+        },
+      });
+    } catch (err) {
+      console.error("Failed to flag message:", err);
+      toast.error(err instanceof Error ? err.message : "Failed to flag message", {
+        duration: 4000,
+        position: "top-right",
+        style: {
+          background: "#2B2B2B",
+          color: "#C2C0B6",
+          border: "1px solid #3B3B3B",
+        },
+      });
+    } finally {
+      setFlaggingInProgress(prev => {
+        const next = new Set(prev);
+        next.delete(flaggingMessageId);
+        return next;
+      });
+      setFlaggingMessageId(null);
+      setFlagReason("");
+      setIsUpdatingFlag(false);
+      setPreviousReason("");
+      setPreviousUpdates("");
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -248,13 +411,14 @@ export default function ConversationView({
                           <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Tooltip content="Copy">
                               <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText(msg.content);
-                                  // TODO: Show toast notification "Copied to clipboard"
-                                }}
+                                onClick={() => handleCopy(msg.id, msg.content)}
                                 className="p-1.5 hover:bg-[#141413] rounded transition-colors"
                               >
-                                <Copy className="w-3.5 h-3.5 text-[#9C9A92] hover:text-[#C2C0B6] transition-colors" />
+                                {copiedMessages.has(msg.id) ? (
+                                  <Check className="w-3.5 h-3.5 text-[#C2C0B6] transition-colors" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5 text-[#9C9A92] hover:text-[#C2C0B6] transition-colors" />
+                                )}
                               </button>
                             </Tooltip>
                             <Tooltip content="Give positive feedback">
@@ -268,15 +432,34 @@ export default function ConversationView({
                                 <ThumbsUp className="w-3.5 h-3.5 text-[#9C9A92] hover:text-[#C2C0B6] transition-colors" />
                               </button>
                             </Tooltip>
-                            <Tooltip content="Flag for review">
+                            <Tooltip content={
+                              msg.flaggedQuery?.status === "VERIFIED" ? "Resolved by agronomist" :
+                              msg.flaggedQuery?.status === "CORRECTED" ? "Corrected by agronomist" :
+                              flaggedMessages.has(msg.id) ? "Update flag" :
+                              "Flag for review"
+                            }>
                               <button
-                                onClick={() => {
-                                  // TODO: Implement flag for review
-                                  console.log("Flag message for review:", msg.id);
-                                }}
-                                className="p-1.5 hover:bg-[#141413] rounded transition-colors"
+                                onClick={() => handleFlag(msg)}
+                                disabled={
+                                  flaggingInProgress.has(msg.id) ||
+                                  (msg.flaggedQuery?.status !== undefined && msg.flaggedQuery.status !== "PENDING")
+                                }
+                                className={`p-1.5 hover:bg-[#141413] rounded transition-colors ${
+                                  flaggingInProgress.has(msg.id)
+                                    ? "opacity-50"
+                                    : ""
+                                }`}
                               >
-                                <Flag className="w-3.5 h-3.5 text-[#9C9A92] hover:text-[#C2C0B6] transition-colors" />
+                                <Flag
+                                  fill={flaggedMessages.has(msg.id) ? "currentColor" : "none"}
+                                  className={`w-3.5 h-3.5 transition-colors ${
+                                    flaggedMessages.has(msg.id)
+                                      ? msg.flaggedQuery?.status !== "PENDING" && msg.flaggedQuery?.status !== undefined
+                                        ? "text-red-400 opacity-50"
+                                        : "text-red-400"
+                                      : "text-[#9C9A92] hover:text-[#C2C0B6]"
+                                  }`}
+                                />
                               </button>
                             </Tooltip>
                             <Tooltip content="Retry">
@@ -402,7 +585,7 @@ export default function ConversationView({
                           <button
                             onClick={() => { inputProps.onSend(); inputProps.onSendIconCycle(); }}
                             disabled={!inputProps.value.trim()}
-                            className="p-2 bg-[#85b878] text-white rounded-xl hover:bg-[#536d3d] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="p-2 bg-[#85b878] text-white rounded-xl hover:bg-[#536d3d] transition-colors disabled:opacity-40"
                           >
                             {inputProps.sendIcon === "cabbage" && <CabbageIcon />}
                             {inputProps.sendIcon === "plane" && <PaperPlaneIcon />}
@@ -427,6 +610,116 @@ export default function ConversationView({
           </div>
         </div>
       </div>
+
+      {/* Flag modal */}
+      {showFlagModal && (() => {
+        // Parse previous messages and count updates
+        const allMessages: Array<{ text: string; date: string | null; isUpdate: boolean }> = [];
+
+        if (previousReason) {
+          allMessages.push({ text: previousReason, date: null, isUpdate: false });
+        }
+
+        if (previousUpdates) {
+          // Parse update entries: [timestamp] text
+          const updates = previousUpdates.split('\n\n').map(u => {
+            const trimmed = u.trim();
+            const match = trimmed.match(/^\[(.*?)\]\s*(.*)$/);
+            if (match) {
+              const timestamp = new Date(match[1]);
+              const text = match[2];
+              const formatted = timestamp.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+              });
+              return { text, date: formatted, isUpdate: true };
+            }
+            return { text: trimmed, date: null, isUpdate: true };
+          });
+          allMessages.push(...updates);
+        }
+
+        const updateCount = allMessages.filter(m => m.isUpdate).length;
+        const canAddMore = updateCount < 3;
+
+        return (
+          <>
+            <div className="fixed inset-0 bg-black/50 z-50" onClick={() => { setShowFlagModal(false); setFlagReason(""); }} />
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#2B2B2B] rounded-lg border border-[#3B3B3B] p-5 z-50 w-[90%] max-w-md max-h-[80vh] overflow-y-auto">
+              <h3 className="text-base font-semibold text-[#C2C0B6] mb-2">
+                {isUpdatingFlag ? "Update flag" : "Flag for Review"}
+              </h3>
+              <p className="text-xs text-[#9C9A92] mb-3">
+                {isUpdatingFlag
+                  ? `Add additional context to your flag, you have up to 3 revisions`
+                  : <>This message will be sent to an agronomist for review.<br />You can optionally provide a reason:</>}
+              </p>
+
+              {/* Show previous messages if updating */}
+              {isUpdatingFlag && allMessages.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-xs text-[#9C9A92] mb-1.5">
+                    Your flag reasons {!canAddMore ? ' (limit reached)' : ''}
+                  </p>
+                  <div className="space-y-1">
+                    {allMessages.map((msg, idx) => (
+                      <div key={idx} className="flex items-start gap-2 bg-[#1E1E1E] rounded px-2 py-1.5 group">
+                        <p className="flex-1 text-xs break-words">
+                          {msg.date && (
+                            <span className="text-[#9C9A92]">{msg.date} · </span>
+                          )}
+                          <span className={msg.isUpdate ? "font-semibold text-[#C2C0B6]" : "text-[#C2C0B6]"}>
+                            {msg.text}
+                          </span>
+                        </p>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(msg.text)}
+                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[#2B2B2B] rounded transition-all flex-shrink-0"
+                          title="Copy"
+                        >
+                          <Copy className="w-3 h-3 text-[#9C9A92]" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <textarea
+                value={flagReason}
+                onChange={(e) => {
+                  setFlagReason(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = e.target.scrollHeight + "px";
+                }}
+                placeholder={isUpdatingFlag ? "Add update..." : "Why are you flagging this? (optional)"}
+                className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm placeholder-[#6B6B6B] border border-[#3B3B3B] rounded-lg resize-none focus:outline-none focus:border-[#85b878] mb-3 overflow-hidden"
+                rows={1}
+                style={{ minHeight: "36px" }}
+                disabled={isUpdatingFlag && !canAddMore}
+              />
+              <div className="flex items-center gap-2 justify-end">
+                <button
+                  onClick={() => { setShowFlagModal(false); setFlagReason(""); }}
+                  className="px-3 py-1.5 text-xs text-[#C2C0B6] hover:bg-[#3B3B3B] rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitFlag}
+                  disabled={isUpdatingFlag && !canAddMore}
+                  className="px-3 py-1.5 text-xs bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors disabled:opacity-40"
+                >
+                  {isUpdatingFlag ? "Add Update" : "Submit"}
+                </button>
+              </div>
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
 }

@@ -274,7 +274,13 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
         const data = await res.json();
         if (data.messages) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setMessages(data.messages.map((m: any) => ({ id: m.id, role: m.role, content: m.content })));
+          setMessages(data.messages.map((m: any) => ({
+            id: m.id,
+            role: m.role,
+            content: m.content,
+            isFlagged: m.isFlagged,
+            flaggedQuery: m.flaggedQuery
+          })));
         }
       } catch (e) {
         console.error("Failed to load conversation messages:", e);
