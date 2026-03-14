@@ -22,12 +22,16 @@ export interface FlaggedQueryItem {
   agronomistResponse?: string;
   verificationNotes?: string;
   conversationId: string;
+  farmerReason?: string | null;    // Farmer's initial flag reason (with timestamp)
+  farmerUpdates?: string | null;   // Farmer's flag updates (timestamped, newline-separated)
 }
 
 // Raw shape returned by the API
 interface RawFlaggedQuery {
   id: string;
   status: "PENDING" | "VERIFIED" | "CORRECTED";
+  farmerReason: string | null;
+  farmerUpdates: string | null;
   agronomistResponse: string | null;
   verificationNotes: string | null;
   reviewedAt: string | null;
@@ -78,6 +82,8 @@ function normalize(fq: RawFlaggedQuery): FlaggedQueryItem {
     agronomistResponse: fq.agronomistResponse ?? undefined,
     verificationNotes: fq.verificationNotes ?? undefined,
     conversationId: fq.message.conversation.id,
+    farmerReason: fq.farmerReason,
+    farmerUpdates: fq.farmerUpdates,
   };
 }
 

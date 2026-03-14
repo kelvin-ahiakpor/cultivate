@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Flag, Search, CheckCircle, ChevronDown, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft, Loader2 } from "lucide-react";
+import { Flag, Search, CheckCircle, ChevronDown, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft, Loader2, Copy } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { SproutIcon } from "@/components/send-icons";
 import { useFlaggedQueries, reviewFlaggedQuery, type FlaggedQueryItem as FlaggedQuery } from "@/lib/hooks/use-flagged-queries";
 import { DEMO_FLAGGED_CONVOS, DEMO_FLAGGED } from "@/lib/demo-data";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import useSWR from "swr";
 
 type FlagStatus = "all" | "PENDING" | "VERIFIED" | "CORRECTED";
 
@@ -81,6 +84,14 @@ export default function FlaggedView({
   const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
   const flaggedMessageRef = useRef<HTMLDivElement>(null);
+
+  // Fetch conversation for chat panel (disabled when panel closed or demo mode)
+  const { data: conversationData } = useSWR(
+    !demoMode && chatPanelQuery?.conversationId
+      ? `/api/conversations/${chatPanelQuery.conversationId}/messages`
+      : null,
+    (url: string) => fetch(url).then(res => res.json())
+  );
 
   // Sidebar width: w-72 = 288px when open, w-14 = 56px when collapsed
   const sidebarWidth = sidebarOpen ? 288 : 56;
@@ -411,6 +422,62 @@ export default function FlaggedView({
                   </div>
                 </div>
 
+                {/* Farmer Flag Messages (if any) */}
+                {(query.farmerReason || query.farmerUpdates) && (() => {
+                  const allFlagMessages: Array<{ text: string; date: string }> = [];
+
+                  // Helper to parse timestamped message
+                  const parseMessage = (msg: string) => {
+                    const trimmed = msg.trim();
+                    const match = trimmed.match(/^\[(.*?)\]\s*(.*)$/);
+                    if (match) {
+                      const timestamp = new Date(match[1]);
+                      const text = match[2];
+                      const formatted = timestamp.toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                      });
+                      return { text, date: formatted };
+                    }
+                    return { text: trimmed, date: "No date" };
+                  };
+
+                  // Parse initial reason
+                  if (query.farmerReason) {
+                    allFlagMessages.push(parseMessage(query.farmerReason));
+                  }
+
+                  // Parse updates
+                  if (query.farmerUpdates) {
+                    const updates = query.farmerUpdates.split('\n\n').map(parseMessage);
+                    allFlagMessages.push(...updates);
+                  }
+
+                  return (
+                    <div>
+                      <p className="text-xs text-[#e8c8ab] mb-1.5">Why Farmer Flagged This</p>
+                      <div className="bg-[#e8c8ab]/5 border border-[#e8c8ab]/10 rounded-lg p-3 space-y-2">
+                        {allFlagMessages.map((msg, idx) => {
+                          const ordinals = ['1st', '2nd', '3rd'];
+                          const ordinal = ordinals[idx] || `${idx + 1}th`;
+
+                          return (
+                            <div key={idx} className="flex items-start gap-2 text-xs">
+                              <span className="text-[#e8c8ab]/70 flex-shrink-0">{ordinal} · {msg.date} ·</span>
+                              <span className="text-[#C2C0B6]">
+                                {msg.text}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Agent's Response */}
                 <div>
                   <div className="flex items-center gap-1.5 mb-1.5">
@@ -429,7 +496,11 @@ export default function FlaggedView({
                         ? "bg-[#e8c8ab]/5 border border-[#e8c8ab]/10"
                         : "bg-[#1E1E1E]"
                   }`}>
-                    <p className="text-sm text-[#C2C0B6]">{query.agentResponse}</p>
+                    <div className="prose prose-sm prose-invert max-w-none prose-p:text-[#C2C0B6] prose-p:leading-relaxed prose-headings:text-[#C2C0B6] prose-strong:text-[#C2C0B6] prose-li:text-[#C2C0B6]">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {query.agentResponse}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 </div>
 
@@ -513,11 +584,16 @@ export default function FlaggedView({
                   <div>
                     <p className="text-xs text-[#9C9A92] mb-1.5">Your Response</p>
                     <textarea
-                      rows={3}
+                      rows={1}
                       placeholder="Provide your expert response or correction..."
                       value={responseText}
-                      onChange={(e) => setResponseText(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-[#1E1E1E] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none"
+                      onChange={(e) => {
+                        setResponseText(e.target.value);
+                        e.target.style.height = "auto";
+                        e.target.style.height = e.target.scrollHeight + "px";
+                      }}
+                      style={{ minHeight: "36px" }}
+                      className="w-full px-3 py-2.5 bg-[#1E1E1E] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none overflow-hidden"
                     />
                     <div className="flex items-center justify-between mt-2">
                       <button
@@ -718,8 +794,27 @@ export default function FlaggedView({
 
       {/* Chat Panel — Slide-out from right */}
       {chatPanelOpen && chatPanelQuery && (() => {
-        const conversation = sampleConversations[chatPanelQuery.conversationId];
-        if (!conversation) return null;
+        // Use demo data in demo mode, real API data otherwise
+        const conversation = demoMode
+          ? sampleConversations[chatPanelQuery.conversationId]
+          : conversationData
+            ? {
+                title: conversationData.conversation?.title || "Conversation",
+                messages: conversationData.messages?.map((m: any) => ({
+                  id: m.id,
+                  role: m.role,
+                  content: m.content,
+                  timestamp: m.timestamp,
+                  isFlagged: m.isFlagged,
+                })) || []
+              }
+            : null;
+
+        if (!conversation) return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <Loader2 className="w-8 h-8 text-white animate-spin" />
+          </div>
+        );
 
         return (
           <>
@@ -791,7 +886,7 @@ export default function FlaggedView({
 
               {/* Chat Messages */}
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-                {conversation.messages.map((msg) => (
+                {conversation.messages.map((msg: ChatMessage) => (
                   <div
                     key={msg.id}
                     ref={msg.isFlagged ? flaggedMessageRef : undefined}
@@ -800,7 +895,7 @@ export default function FlaggedView({
                     <div className={`max-w-[85%] ${msg.isFlagged ? "relative" : ""}`}>
                       {/* Flagged indicator ring */}
                       {msg.isFlagged && (
-                        <div className="absolute -left-2 -top-2 -right-2 -bottom-2 rounded-2xl border-2 border-[#e8c8ab]/30 pointer-events-none" />
+                        <div className="absolute -left-1 -top-2 -right-2 -bottom-2 rounded-2xl border-2 border-[#e8c8ab]/30 pointer-events-none" />
                       )}
 
                       {/* Avatar + bubble */}
@@ -824,7 +919,15 @@ export default function FlaggedView({
                               ? "bg-[#e8c8ab]/5 border border-[#e8c8ab]/20 text-[#C2C0B6]"
                               : "bg-[#1E1E1E] text-[#C2C0B6]"
                         }`}>
-                          <p className="text-sm whitespace-pre-line leading-relaxed">{msg.content}</p>
+                          {msg.role === "ASSISTANT" ? (
+                            <div className="prose prose-sm prose-invert max-w-none prose-p:text-[#C2C0B6] prose-p:leading-relaxed prose-headings:text-[#C2C0B6] prose-strong:text-[#C2C0B6] prose-li:text-[#C2C0B6] prose-p:my-1">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {msg.content}
+                              </ReactMarkdown>
+                            </div>
+                          ) : (
+                            <p className="text-sm whitespace-pre-line leading-relaxed">{msg.content}</p>
+                          )}
                           <div className={`flex items-center gap-2 mt-1.5 ${msg.role === "USER" ? "justify-end" : "justify-start"}`}>
                             <span className="text-[10px] text-[#6B6B6B]">{msg.timestamp}</span>
                             {msg.confidenceScore !== undefined && (

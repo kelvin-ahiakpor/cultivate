@@ -35,7 +35,15 @@ export async function GET(request: NextRequest) {
     const [flaggedQueries, total] = await Promise.all([
       prisma.flaggedQuery.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          status: true,
+          farmerReason: true,
+          farmerUpdates: true,
+          agronomistResponse: true,
+          verificationNotes: true,
+          reviewedAt: true,
+          createdAt: true,
           message: {
             select: {
               id: true,
