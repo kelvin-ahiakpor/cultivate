@@ -43,7 +43,7 @@
  */
 
 import { useRef, useEffect, useState } from "react";
-import { ChevronLeft, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { notify } from "@/lib/toast";
@@ -61,6 +61,8 @@ export interface ConversationMessage {
     status?: "PENDING" | "VERIFIED" | "CORRECTED";
     farmerReason?: string | null;
     farmerUpdates?: string | null;
+    agronomistResponse?: string | null;
+    verificationNotes?: string | null;
   };
 }
 
@@ -131,6 +133,8 @@ export default function ConversationView({
   const [previousUpdates, setPreviousUpdates] = useState("");
   // Cache: stores flag data for instant UI updates (synced from DB via AJAX)
   const [flagDataCache, setFlagDataCache] = useState<Map<string, { reason: string; updates: string }>>(new Map());
+  // Track current reason index for each message (for navigation)
+  const [currentReasonIndex, setCurrentReasonIndex] = useState<Map<string, number>>(new Map());
 
   console.log("ConversationView render - headerMenuOpen:", headerMenuOpen);
 
@@ -281,6 +285,44 @@ export default function ConversationView({
     }
   };
 
+  // Helper: Parse farmer flag reasons from farmerReason + farmerUpdates
+  const parseFarmerReasons = (farmerReason: string | null | undefined, farmerUpdates: string | null | undefined) => {
+    const reasons: { ordinal: string; timestamp: string; message: string }[] = [];
+
+    // Add initial reason
+    if (farmerReason) {
+      const match = farmerReason.match(/^\[(.+?)\]\s*(.*)$/);
+      if (match) {
+        reasons.push({ ordinal: "1st", timestamp: match[1], message: match[2] || "(no reason provided)" });
+      }
+    }
+
+    // Parse updates
+    if (farmerUpdates) {
+      const lines = farmerUpdates.split('\n\n');
+      lines.forEach((line, idx) => {
+        const match = line.match(/^\[(.+?)\]\s*(.*)$/);
+        if (match) {
+          const ord = idx === 0 ? "2nd" : idx === 1 ? "3rd" : `${idx + 2}th`;
+          reasons.push({ ordinal: ord, timestamp: match[1], message: match[2] || "(no reason provided)" });
+        }
+      });
+    }
+
+    return reasons;
+  };
+
+  // Helper: Format ISO timestamp to nice date
+  const formatTimestamp = (isoString: string) => {
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + ", " +
+             date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+    } catch {
+      return isoString;
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* ── Conversation Header ──────────────────────────────────────────
@@ -406,6 +448,93 @@ export default function ConversationView({
                           <div className="prose prose-base prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                           </div>
+
+                          {/* Agronomist correction (shown below message) */}
+                          {msg.role === "ASSISTANT" && msg.flaggedQuery?.status === "CORRECTED" && msg.flaggedQuery?.agronomistResponse && (
+                            <div className="mt-3 pl-4 border-l-2 border-[#85b878]/30">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="w-6 h-6 rounded-full bg-[#85b878]/20 flex items-center justify-center flex-shrink-0">
+                                  <CheckCircle className="w-3.5 h-3.5 text-[#85b878]" />
+                                </div>
+                                <span className="text-xs font-medium text-[#85b878]">Expert Correction</span>
+                              </div>
+                              <div className="prose prose-sm prose-invert max-w-none prose-p:text-[#C2C0B6] prose-p:leading-relaxed prose-headings:text-[#C2C0B6] prose-strong:text-[#C2C0B6] prose-li:text-[#C2C0B6] prose-p:my-1">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {msg.flaggedQuery.agronomistResponse}
+                                </ReactMarkdown>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Agronomist verification notes (shown below message) */}
+                          {msg.role === "ASSISTANT" && msg.flaggedQuery?.status === "VERIFIED" && msg.flaggedQuery?.verificationNotes && (
+                            <div className="mt-3 pl-4 border-l-2 border-[#85b878]/30">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="w-6 h-6 rounded-full bg-[#85b878]/20 flex items-center justify-center flex-shrink-0">
+                                  <CheckCircle className="w-3.5 h-3.5 text-[#85b878]" />
+                                </div>
+                                <span className="text-xs font-medium text-[#85b878]">Verified by Expert</span>
+                              </div>
+                              <p className="text-sm text-[#C2C0B6] leading-relaxed">
+                                {msg.flaggedQuery.verificationNotes}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Why you flagged this (shown after review, before actions) */}
+                          {msg.role === "ASSISTANT" && msg.flaggedQuery?.farmerReason && (() => {
+                            const reasons = parseFarmerReasons(msg.flaggedQuery.farmerReason, msg.flaggedQuery.farmerUpdates);
+                            const currentIdx = currentReasonIndex.get(msg.id) || 0;
+                            const currentReason = reasons[currentIdx];
+
+                            if (!currentReason) return null;
+
+                            return (
+                              <div className="mt-3 pl-4 border-l-2 border-[#9C9A92]/30">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs font-medium text-[#9C9A92]">Why You Flagged This</span>
+                                  {reasons.length > 1 && (
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() => {
+                                          setCurrentReasonIndex(prev => {
+                                            const newMap = new Map(prev);
+                                            const newIdx = currentIdx > 0 ? currentIdx - 1 : reasons.length - 1;
+                                            newMap.set(msg.id, newIdx);
+                                            return newMap;
+                                          });
+                                        }}
+                                        className="p-1 hover:bg-[#2B2B2B] rounded transition-colors"
+                                      >
+                                        <ChevronLeft className="w-3.5 h-3.5 text-[#9C9A92]" />
+                                      </button>
+                                      <span className="text-xs text-[#6B6B6B]">{currentIdx + 1}/{reasons.length}</span>
+                                      <button
+                                        onClick={() => {
+                                          setCurrentReasonIndex(prev => {
+                                            const newMap = new Map(prev);
+                                            const newIdx = currentIdx < reasons.length - 1 ? currentIdx + 1 : 0;
+                                            newMap.set(msg.id, newIdx);
+                                            return newMap;
+                                          });
+                                        }}
+                                        className="p-1 hover:bg-[#2B2B2B] rounded transition-colors"
+                                      >
+                                        <ChevronRight className="w-3.5 h-3.5 text-[#9C9A92]" />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="text-xs text-[#6B6B6B] mb-1">
+                                  {currentReason.ordinal} • {formatTimestamp(currentReason.timestamp)}
+                                </p>
+                                <p className="text-sm text-[#9C9A92] leading-relaxed">
+                                  {currentReason.message}
+                                </p>
+                              </div>
+                            );
+                          })()}
+
                           {/* Message actions — copy, thumbs up, flag, retry */}
                           <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Tooltip content="Copy">
@@ -450,13 +579,21 @@ export default function ConversationView({
                                 }`}
                               >
                                 <Flag
-                                  fill={flaggedMessages.has(msg.id) ? "currentColor" : "none"}
+                                  fill={
+                                    msg.flaggedQuery?.status === "VERIFIED"
+                                      ? "currentColor"  // filled green
+                                      : msg.flaggedQuery?.status === "CORRECTED"
+                                        ? "none"  // outline green
+                                        : flaggedMessages.has(msg.id)
+                                          ? "currentColor"  // filled red (pending)
+                                          : "none"  // not flagged
+                                  }
                                   className={`w-3.5 h-3.5 transition-colors ${
-                                    flaggedMessages.has(msg.id)
-                                      ? msg.flaggedQuery?.status !== "PENDING" && msg.flaggedQuery?.status !== undefined
-                                        ? "text-red-400 opacity-50"
-                                        : "text-red-400"
-                                      : "text-[#9C9A92] hover:text-[#C2C0B6]"
+                                    msg.flaggedQuery?.status === "VERIFIED" || msg.flaggedQuery?.status === "CORRECTED"
+                                      ? "text-[#85b878]"  // green for both verified and corrected
+                                      : flaggedMessages.has(msg.id)
+                                        ? "text-red-400"  // red for pending
+                                        : "text-[#9C9A92] hover:text-[#C2C0B6]"  // default gray
                                   }`}
                                 />
                               </button>

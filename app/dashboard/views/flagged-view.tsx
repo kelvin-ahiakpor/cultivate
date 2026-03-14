@@ -9,6 +9,7 @@ import { DEMO_FLAGGED_CONVOS, DEMO_FLAGGED } from "@/lib/demo-data";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import useSWR from "swr";
+import { notify } from "@/lib/toast";
 
 type FlagStatus = "all" | "PENDING" | "VERIFIED" | "CORRECTED";
 
@@ -74,6 +75,9 @@ export default function FlaggedView({
 
   // Revoke confirmation modal state
   const [showRevokeModal, setShowRevokeModal] = useState(false);
+
+  // Ref for scrolling to flag reasons
+  const flagReasonsRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [revokingQueryId, setRevokingQueryId] = useState<string | null>(null);
   const [revokeType, setRevokeType] = useState<"verification" | "correction">("verification");
 
@@ -231,14 +235,22 @@ export default function FlaggedView({
           : q
       ));
       setResponseText("");
+      notify.success("Correction sent");
     } else {
       setSubmitting(true);
       try {
-        await reviewFlaggedQuery(queryId, { status: "CORRECTED", agronomistResponse: responseText });
-        apiData.mutate();
+        console.log("Sending correction for query:", queryId, "Response:", responseText);
+        const result = await reviewFlaggedQuery(queryId, { status: "CORRECTED", agronomistResponse: responseText });
+        console.log("Correction API response:", result);
+        await apiData.mutate();
         setResponseText("");
-      } catch (e) { console.error("Correction failed:", e); }
-      finally { setSubmitting(false); }
+        notify.success("Correction saved successfully");
+      } catch (e) {
+        console.error("Correction failed:", e);
+        notify.error(e instanceof Error ? e.message : "Failed to save correction");
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 
@@ -272,25 +284,45 @@ export default function FlaggedView({
     setEditCorrectionText("");
   };
 
-  // --- Revoke handlers (demo only — no revoke API endpoint) ---
+  // --- Revoke handlers ---
   const handleOpenRevokeModal = (queryId: string, type: "verification" | "correction") => {
     setRevokingQueryId(queryId);
     setRevokeType(type);
     setShowRevokeModal(true);
   };
 
-  const handleConfirmRevoke = () => {
+  const handleConfirmRevoke = async () => {
     if (!revokingQueryId) return;
-    // Only works in demo mode — no PATCH back to PENDING endpoint exists
     if (demoMode) {
       setDemoQueries(prev => prev.map(q =>
         q.id === revokingQueryId
           ? { ...q, status: "PENDING" as const, verificationNotes: undefined, agronomistResponse: undefined, reviewedAt: undefined }
           : q
       ));
+      setShowRevokeModal(false);
+      setRevokingQueryId(null);
+      notify.success("Review revoked");
+    } else {
+      setSubmitting(true);
+      try {
+        const response = await fetch(`/api/flagged-queries/${revokingQueryId}/revoke`, {
+          method: "PATCH",
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to revoke review");
+        }
+        await apiData.mutate();
+        setShowRevokeModal(false);
+        setRevokingQueryId(null);
+        notify.success("Review revoked - query back to pending");
+      } catch (e) {
+        console.error("Revoke failed:", e);
+        notify.error(e instanceof Error ? e.message : "Failed to revoke review");
+      } finally {
+        setSubmitting(false);
+      }
     }
-    setShowRevokeModal(false);
-    setRevokingQueryId(null);
   };
 
   // --- Chat panel handlers ---
@@ -420,9 +452,47 @@ export default function FlaggedView({
                   <div className="bg-[#1E1E1E] rounded-lg p-3">
                     <p className="text-sm text-[#C2C0B6]">{query.farmerMessage}</p>
                   </div>
+                  {/* Link to scroll to flag reasons (if they exist) */}
+                  {(query.farmerReason || query.farmerUpdates) && (
+                    <button
+                      onClick={() => {
+                        const el = flagReasonsRefs.current.get(query.id);
+                        el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                      }}
+                      className="mt-2 text-xs text-[#e8c8ab] hover:text-[#e8c8ab]/80 transition-colors flex items-center gap-1"
+                    >
+                      Click to see why farmer flagged this →
+                    </button>
+                  )}
                 </div>
 
-                {/* Farmer Flag Messages (if any) */}
+                {/* Agent's Response - MOVED UP */}
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <p className="text-xs text-[#6B6B6B]">Agent&apos;s Response</p>
+                    {query.status === "VERIFIED" && (
+                      <CheckCircle className="w-3.5 h-3.5 text-[#85b878]" />
+                    )}
+                    {query.status === "CORRECTED" && (
+                      <X className="w-3.5 h-3.5 text-[#e8c8ab]" />
+                    )}
+                  </div>
+                  <div className={`rounded-lg p-3 ${
+                    query.status === "VERIFIED"
+                      ? "bg-[#85b878]/5 border border-[#85b878]/20"
+                      : query.status === "CORRECTED"
+                        ? "bg-[#e8c8ab]/5 border border-[#e8c8ab]/10"
+                        : "bg-[#1E1E1E]"
+                  }`}>
+                    <div className="prose prose-sm prose-invert max-w-none prose-p:text-[#C2C0B6] prose-p:leading-relaxed prose-headings:text-[#C2C0B6] prose-strong:text-[#C2C0B6] prose-li:text-[#C2C0B6]">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {query.agentResponse}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Farmer Flag Messages — ABOVE review so agronomist sees why it was flagged first */}
                 {(query.farmerReason || query.farmerUpdates) && (() => {
                   const allFlagMessages: Array<{ text: string; date: string }> = [];
 
@@ -457,7 +527,7 @@ export default function FlaggedView({
                   }
 
                   return (
-                    <div>
+                    <div ref={(el) => { if (el) flagReasonsRefs.current.set(query.id, el); }}>
                       <p className="text-xs text-[#e8c8ab] mb-1.5">Why Farmer Flagged This</p>
                       <div className="bg-[#e8c8ab]/5 border border-[#e8c8ab]/10 rounded-lg p-3 space-y-2">
                         {allFlagMessages.map((msg, idx) => {
@@ -477,32 +547,6 @@ export default function FlaggedView({
                     </div>
                   );
                 })()}
-
-                {/* Agent's Response */}
-                <div>
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <p className="text-xs text-[#6B6B6B]">Agent&apos;s Response</p>
-                    {query.status === "VERIFIED" && (
-                      <CheckCircle className="w-3.5 h-3.5 text-[#85b878]" />
-                    )}
-                    {query.status === "CORRECTED" && (
-                      <X className="w-3.5 h-3.5 text-[#e8c8ab]" />
-                    )}
-                  </div>
-                  <div className={`rounded-lg p-3 ${
-                    query.status === "VERIFIED"
-                      ? "bg-[#85b878]/5 border border-[#85b878]/20"
-                      : query.status === "CORRECTED"
-                        ? "bg-[#e8c8ab]/5 border border-[#e8c8ab]/10"
-                        : "bg-[#1E1E1E]"
-                  }`}>
-                    <div className="prose prose-sm prose-invert max-w-none prose-p:text-[#C2C0B6] prose-p:leading-relaxed prose-headings:text-[#C2C0B6] prose-strong:text-[#C2C0B6] prose-li:text-[#C2C0B6]">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {query.agentResponse}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Verified — show verification notes */}
                 {query.status === "VERIFIED" && (

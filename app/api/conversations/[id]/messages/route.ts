@@ -69,9 +69,26 @@ export async function GET(
         conversationId: id,
         ...(before && { createdAt: { lt: (await prisma.message.findUnique({ where: { id: before } }))?.createdAt } }),
       },
-      include: {
+      select: {
+        id: true,
+        role: true,
+        content: true,
+        confidenceScore: true,
+        sourcesCited: true,
+        createdAt: true,
+        conversationId: true,
+        senderId: true,
         sender: { select: { id: true, name: true, role: true } },
-        flaggedQuery: { select: { id: true, status: true, farmerReason: true, farmerUpdates: true } },
+        flaggedQuery: {
+          select: {
+            id: true,
+            status: true,
+            farmerReason: true,
+            farmerUpdates: true,
+            agronomistResponse: true,
+            verificationNotes: true,
+          }
+        },
       },
       orderBy: { createdAt: "asc" },
       take: limit,

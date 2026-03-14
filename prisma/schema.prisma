@@ -53,6 +53,7 @@ model User {
   messages       Message[]
   knowledgeBases KnowledgeBase[]
   flaggedQueries FlaggedQuery[]
+  reviewHistory  ReviewHistory[]
   feedback       Feedback[]
   accounts       Account[]
   sessions       Session[]
@@ -192,7 +193,36 @@ model FlaggedQuery {
   agronomistId String
   agronomist   User   @relation(fields: [agronomistId], references: [id], onDelete: Cascade)
 
+  reviewHistory ReviewHistory[]
+
   @@map("flagged_queries")
+}
+
+// Audit trail for flagged query reviews
+model ReviewHistory {
+  id                 String             @id @default(cuid())
+  action             ReviewAction       // VERIFIED, CORRECTED, REVOKED, EDITED
+  statusBefore       FlaggedQueryStatus // Status before this action
+  statusAfter        FlaggedQueryStatus // Status after this action
+  agronomistResponse String?            @db.Text // Snapshot of response at time of action
+  verificationNotes  String?            @db.Text // Snapshot of notes at time of action
+  createdAt          DateTime           @default(now())
+
+  // Relations
+  flaggedQueryId String
+  flaggedQuery   FlaggedQuery @relation(fields: [flaggedQueryId], references: [id], onDelete: Cascade)
+
+  agronomistId String
+  agronomist   User   @relation(fields: [agronomistId], references: [id], onDelete: Cascade)
+
+  @@map("review_history")
+}
+
+enum ReviewAction {
+  VERIFIED  // Initial verification
+  CORRECTED // Initial correction
+  EDITED    // Edited existing review
+  REVOKED   // Revoked review (back to PENDING)
 }
 
 enum FlaggedQueryStatus {

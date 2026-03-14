@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
 
-// PATCH /api/flagged-queries/:id/review — Verify or correct a flagged query
+// PATCH /api/flagged-queries/:id/revoke — Revoke a review (back to PENDING)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -28,30 +28,32 @@ export async function PATCH(
       return apiError("Forbidden", 403);
     }
 
-    const body = await request.json();
-    const { status, agronomistResponse, verificationNotes } = body;
-
-    if (!status || !["VERIFIED", "CORRECTED"].includes(status)) {
-      return apiError("Status must be VERIFIED or CORRECTED", 400);
+    // Can only revoke reviewed queries (VERIFIED or CORRECTED)
+    if (existing.status === "PENDING") {
+      return apiError("Cannot revoke a pending query", 400);
     }
 
-    // Allow editing if the new status matches the current status (e.g., editing a correction)
-    // Otherwise, only allow reviewing PENDING queries
-    if (existing.status !== "PENDING" && existing.status !== status) {
-      return apiError("This query has already been reviewed", 400);
-    }
+    // Save to audit history before revoking
+    await prisma.reviewHistory.create({
+      data: {
+        flaggedQueryId: id,
+        agronomistId: session!.user.id,
+        action: "REVOKED",
+        statusBefore: existing.status,
+        statusAfter: "PENDING",
+        agronomistResponse: existing.agronomistResponse,
+        verificationNotes: existing.verificationNotes,
+      },
+    });
 
-    if (status === "CORRECTED" && !agronomistResponse) {
-      return apiError("Corrected queries require an agronomist response", 400);
-    }
-
+    // Now clear the review and set back to PENDING
     const flaggedQuery = await prisma.flaggedQuery.update({
       where: { id },
       data: {
-        status,
-        agronomistResponse: agronomistResponse || null,
-        verificationNotes: verificationNotes || null,
-        reviewedAt: new Date(),
+        status: "PENDING",
+        agronomistResponse: null,
+        verificationNotes: null,
+        reviewedAt: null,
       },
       include: {
         message: { select: { id: true, content: true } },
@@ -61,7 +63,7 @@ export async function PATCH(
 
     return apiSuccess(flaggedQuery);
   } catch (err) {
-    console.error("PATCH /api/flagged-queries/[id]/review error:", err);
-    return apiError("Failed to review flagged query", 500);
+    console.error("PATCH /api/flagged-queries/[id]/revoke error:", err);
+    return apiError("Failed to revoke review", 500);
   }
 }
