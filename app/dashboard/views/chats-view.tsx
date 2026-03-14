@@ -20,6 +20,7 @@ export default function ChatsView({
   demoMode?: boolean;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isStandalone, setIsStandalone] = useState(false);
   const itemsPerPage = 30;
@@ -122,17 +123,21 @@ export default function ChatsView({
             {paginatedChats.map((chat, index) => (
             <div
               key={chat.id}
-              className={`pl-1.5 pr-1.5 py-2.5 hover:bg-[#2B2B2B]/40 transition-colors cursor-pointer ${
-                index < paginatedChats.length - 1
-                  ? `border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`
-                  : ''
-              }`}
+              onMouseEnter={() => setHoveredIndex(index)}
+              onMouseLeave={() => setHoveredIndex(null)}
             >
-              <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-white`}>{chat.title}</p>
-              <div className="flex items-center justify-between mt-1">
-                <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B]`}>{isStandalone ? chat.lastMessage : `Last message ${chat.lastMessage}`}</p>
-                <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#9C9A92]`}>{isStandalone ? chat.farmerName : `${chat.agentName} · ${chat.farmerName}`}</p>
+              <div className="pl-1.5 pr-1.5 py-2.5 hover:bg-[#141413] rounded-lg transition-colors cursor-pointer">
+                <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-white`}>{chat.title}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B]`}>{isStandalone ? chat.lastMessage : `Last message ${chat.lastMessage}`}</p>
+                  <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#9C9A92]`}>{isStandalone ? chat.farmerName : `${chat.agentName} · ${chat.farmerName}`}</p>
+                </div>
               </div>
+              {index < paginatedChats.length - 1 && (
+                <div className={`border-b border-[#3B3B3B] transition-opacity ${
+                  hoveredIndex === index || hoveredIndex === index + 1 ? "opacity-0" : "opacity-100"
+                }`} />
+              )}
             </div>
           ))}
           </div>
