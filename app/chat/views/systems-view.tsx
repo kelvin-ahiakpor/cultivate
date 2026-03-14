@@ -142,10 +142,10 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "ACTIVE": return "text-[#85b878]";
+      case "ACTIVE": return "text-cultivate-green-light";
       case "PENDING_SETUP": return "text-orange-400";
-      case "INACTIVE": return "text-[#6B6B6B]";
-      default: return "text-[#9C9A92]";
+      case "INACTIVE": return "text-cultivate-text-tertiary";
+      default: return "text-cultivate-text-secondary";
     }
   };
 
@@ -161,7 +161,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* PART 1: Fixed Section */}
-      <div className="flex-shrink-0 bg-[#1E1E1E] z-10 pb-4 pt-8 lg:pt-0">
+      <div className="flex-shrink-0 bg-cultivate-bg-main z-10 pb-4 pt-8 lg:pt-0">
         {/* Mobile header — chats-style glass back button + centered title */}
         <div className="relative flex items-center justify-center mb-6 lg:hidden">
           <div className="absolute left-0">
@@ -176,8 +176,8 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
             ) : null}
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-serif text-[#C2C0B6]">Systems</h1>
-            <p className="text-sm text-[#9C9A92] mt-1">{allSystems.length} Farmitecture products installed</p>
+            <h1 className="text-2xl font-serif text-cultivate-text-primary">Systems</h1>
+            <p className="text-sm text-cultivate-text-secondary mt-1">{allSystems.length} Farmitecture products installed</p>
           </div>
           <div className="absolute right-0">
             <GlassCircleButton onClick={() => setShowAddModal(true)} aria-label="Add system">
@@ -189,8 +189,8 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
         {/* Desktop header */}
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-serif text-[#C2C0B6]">Systems</h1>
-            <p className="text-sm text-[#9C9A92] mt-1">{allSystems.length} Farmitecture products installed</p>
+            <h1 className="text-2xl font-serif text-cultivate-text-primary">Systems</h1>
+            <p className="text-sm text-cultivate-text-secondary mt-1">{allSystems.length} Farmitecture products installed</p>
           </div>
           <button
             onClick={() => setShowAddModal(true)}
@@ -204,13 +204,13 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
         {/* Search and Filter */}
         {/* Row 1: full-width search bar */}
         <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search systems..."
-            className="w-full pl-9 pr-3 py-2 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
+            className="w-full pl-9 pr-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
           />
         </div>
         {/* Row 2: filter pills left, sort by right */}
@@ -222,8 +222,8 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
                 onClick={() => setSelectedStatus(s)}
                 className={`px-3 py-1.5 rounded-lg text-sm standalone:text-base lg:text-sm transition-colors ${
                   selectedStatus === s
-                    ? "bg-[#3B3B3B] text-[#C2C0B6]"
-                    : "text-[#9C9A92] hover:text-[#C2C0B6] hover:bg-[#2B2B2B]"
+                    ? "bg-[#3B3B3B] text-cultivate-text-primary"
+                    : "text-cultivate-text-secondary hover:text-cultivate-text-primary hover:bg-cultivate-bg-elevated"
                 }`}
               >
                 {s === "all" ? "All" : s === "ACTIVE" ? "Active" : "Pending"}
@@ -231,7 +231,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-[#9C9A92]">Sort by</span>
+            <span className="text-sm text-cultivate-text-secondary">Sort by</span>
             <CustomSelect
               variant="pill"
               value={sortBy}
@@ -247,13 +247,13 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
         <div className="h-full overflow-y-auto thin-scrollbar scrollbar-outset">
           {!demoMode && apiSystems.isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-5 h-5 text-[#9C9A92] animate-spin" />
+              <Loader2 className="w-5 h-5 text-cultivate-text-secondary animate-spin" />
             </div>
           ) : filteredSystems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
               <Layers className="w-16 h-16 text-[#3B3B3B] mb-4" />
-              <p className="text-[#9C9A92] text-sm">No systems found</p>
-              <p className="text-[#6B6B6B] text-xs mt-1">Contact Farmitecture to purchase farming systems</p>
+              <p className="text-cultivate-text-secondary text-sm">No systems found</p>
+              <p className="text-cultivate-text-tertiary text-xs mt-1">Contact Farmitecture to purchase farming systems</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 pb-4">
@@ -264,49 +264,49 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
               {filteredSystems.map((system) => (
                 <div
                   key={system.id}
-                  className="bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl p-5 hover:border-[#3B3B3B] transition-colors"
+                  className="bg-[#1C1C1C] border border-cultivate-border-subtle rounded-xl p-5 hover:border-cultivate-border-element transition-colors"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-start gap-3 flex-1">
-                      <div className="w-12 h-12 bg-[#2B2B2B] rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="w-12 h-12 bg-cultivate-bg-elevated rounded-lg flex items-center justify-center flex-shrink-0">
                         <Package className="w-6 h-6 text-[#5a7048]" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-base font-medium text-white mb-1">{system.name}</h3>
-                        <p className="text-sm text-[#9C9A92]">{system.type}</p>
+                        <p className="text-sm text-cultivate-text-secondary">{system.type}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`text-sm font-medium ${getStatusColor(system.status)}`}>
                         {getStatusLabel(system.status)}
                       </span>
-                      {system.status === "ACTIVE" && <CheckCircle className="w-4 h-4 text-[#85b878]" />}
+                      {system.status === "ACTIVE" && <CheckCircle className="w-4 h-4 text-cultivate-green-light" />}
                       {system.status === "PENDING_SETUP" && <Clock className="w-4 h-4 text-orange-400" />}
                     </div>
                   </div>
 
-                  <p className="text-sm text-[#C2C0B6] mb-4">{system.description}</p>
+                  <p className="text-sm text-cultivate-text-primary mb-4">{system.description}</p>
 
                   {/* Specifications */}
                   {system.specifications && (
-                    <div className="bg-[#2B2B2B] rounded-lg p-3 mb-4">
-                      <p className="text-xs text-[#9C9A92] uppercase tracking-wide mb-2">Specifications</p>
+                    <div className="bg-cultivate-bg-elevated rounded-lg p-3 mb-4">
+                      <p className="text-xs text-cultivate-text-secondary uppercase tracking-wide mb-2">Specifications</p>
                       <div className="grid grid-cols-2 gap-2">
                         {system.specifications.size && (
                           <div>
-                            <p className="text-xs text-[#6B6B6B]">Size</p>
+                            <p className="text-xs text-cultivate-text-tertiary">Size</p>
                             <p className="text-sm text-white">{system.specifications.size}</p>
                           </div>
                         )}
                         {system.specifications.capacity && (
                           <div>
-                            <p className="text-xs text-[#6B6B6B]">Capacity</p>
+                            <p className="text-xs text-cultivate-text-tertiary">Capacity</p>
                             <p className="text-sm text-white">{system.specifications.capacity}</p>
                           </div>
                         )}
                         {system.specifications.material && (
                           <div className="col-span-2">
-                            <p className="text-xs text-[#6B6B6B]">Material</p>
+                            <p className="text-xs text-cultivate-text-tertiary">Material</p>
                             <p className="text-sm text-white">{system.specifications.material}</p>
                           </div>
                         )}
@@ -315,7 +315,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
                   )}
 
                   {/* Dates */}
-                  <div className="flex items-center gap-4 text-xs text-[#9C9A92]">
+                  <div className="flex items-center gap-4 text-xs text-cultivate-text-secondary">
                     <div className="flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5" />
                       <span>Purchased: {new Date(system.purchaseDate).toLocaleDateString()}</span>
@@ -334,10 +334,10 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
                   </div>
 
                   {/* Action */}
-                  <div className="mt-4 pt-4 border-t border-[#2B2B2B] flex items-center justify-between">
+                  <div className="mt-4 pt-4 border-t border-cultivate-border-subtle flex items-center justify-between">
                     <a
                       href="#"
-                      className="text-sm text-[#5a7048] hover:text-[#85b878] transition-colors flex items-center gap-1"
+                      className="text-sm text-[#5a7048] hover:text-cultivate-green-light transition-colors flex items-center gap-1"
                     >
                       View manual
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -361,31 +361,31 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
       {showAddModal && (
         <>
           <div className="fixed inset-0 bg-black/50 z-50" onClick={() => { setShowAddModal(false); resetForm(); }} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#2B2B2B] rounded-lg border border-[#3B3B3B] p-5 z-50 w-[90%] max-w-md max-h-[80vh] overflow-y-auto thin-scrollbar">
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-cultivate-bg-elevated rounded-lg border border-cultivate-border-element p-5 z-50 w-[90%] max-w-md max-h-[80vh] overflow-y-auto thin-scrollbar">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-[#C2C0B6]">Add a System</h3>
-              <button onClick={() => { setShowAddModal(false); resetForm(); }} className="text-[#6B6B6B] hover:text-[#C2C0B6] transition-colors">
+              <h3 className="text-base font-semibold text-cultivate-text-primary">Add a System</h3>
+              <button onClick={() => { setShowAddModal(false); resetForm(); }} className="text-cultivate-text-tertiary hover:text-cultivate-text-primary transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-xs text-[#9C9A92] mb-4">Register a Farmitecture system you&apos;ve purchased. It will appear as &quot;Pending Setup&quot; until an agronomist confirms it.</p>
+            <p className="text-xs text-cultivate-text-secondary mb-4">Register a Farmitecture system you&apos;ve purchased. It will appear as &quot;Pending Setup&quot; until an agronomist confirms it.</p>
 
             <div className="space-y-3">
               {/* Name */}
               <div>
-                <label className="block text-xs text-[#9C9A92] mb-1">System name <span className="text-[#9C9A92]">*</span></label>
+                <label className="block text-xs text-cultivate-text-secondary mb-1">System name <span className="text-cultivate-text-secondary">*</span></label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="e.g. Hydroponic NFT System - Medium"
-                  className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm placeholder-[#6B6B6B] border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878]"
+                  className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm placeholder-[#6B6B6B] border border-cultivate-border-element rounded-lg focus:outline-none focus:border-[#85b878]"
                 />
               </div>
 
               {/* Type */}
               <div>
-                <label className="block text-xs text-[#9C9A92] mb-1">Type <span className="text-[#9C9A92]">*</span></label>
+                <label className="block text-xs text-cultivate-text-secondary mb-1">Type <span className="text-cultivate-text-secondary">*</span></label>
                 <CustomSelect
                   value={form.type}
                   onChange={(v) => setForm(f => ({ ...f, type: v }))}
@@ -404,7 +404,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
 
               {/* Description */}
               <div>
-                <label className="block text-xs text-[#9C9A92] mb-1">Description <span className="text-[#9C9A92]">*</span></label>
+                <label className="block text-xs text-cultivate-text-secondary mb-1">Description <span className="text-cultivate-text-secondary">*</span></label>
                 <textarea
                   value={form.description}
                   onChange={(e) => {
@@ -415,39 +415,39 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
                   placeholder="Brief description of the system..."
                   rows={2}
                   style={{ minHeight: "60px" }}
-                  className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm placeholder-[#6B6B6B] border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878] resize-none overflow-hidden"
+                  className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm placeholder-[#6B6B6B] border border-cultivate-border-element rounded-lg focus:outline-none focus:border-[#85b878] resize-none overflow-hidden"
                 />
               </div>
 
               {/* Purchase Date */}
               <div>
-                <label className="block text-xs text-[#9C9A92] mb-1">Purchase date <span className="text-[#9C9A92]">*</span></label>
+                <label className="block text-xs text-cultivate-text-secondary mb-1">Purchase date <span className="text-cultivate-text-secondary">*</span></label>
                 <input
                   type="date"
                   value={form.purchaseDate}
                   onChange={(e) => setForm(f => ({ ...f, purchaseDate: e.target.value }))}
-                  className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878] [color-scheme:dark]"
+                  className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-[#85b878] [color-scheme:dark]"
                 />
               </div>
 
               {/* Optional dates */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-[#9C9A92] mb-1">Installation date</label>
+                  <label className="block text-xs text-cultivate-text-secondary mb-1">Installation date</label>
                   <input
                     type="date"
                     value={form.installationDate}
                     onChange={(e) => setForm(f => ({ ...f, installationDate: e.target.value }))}
-                    className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878] [color-scheme:dark]"
+                    className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-[#85b878] [color-scheme:dark]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-[#9C9A92] mb-1">Warranty until</label>
+                  <label className="block text-xs text-cultivate-text-secondary mb-1">Warranty until</label>
                   <input
                     type="date"
                     value={form.warrantyUntil}
                     onChange={(e) => setForm(f => ({ ...f, warrantyUntil: e.target.value }))}
-                    className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm border border-[#3B3B3B] rounded-lg focus:outline-none focus:border-[#85b878] [color-scheme:dark]"
+                    className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-[#85b878] [color-scheme:dark]"
                   />
                 </div>
               </div>
@@ -456,7 +456,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
             <div className="flex items-center gap-2 justify-end mt-4">
               <button
                 onClick={() => { setShowAddModal(false); resetForm(); }}
-                className="px-3 py-1.5 text-xs text-[#C2C0B6] hover:bg-[#3B3B3B] rounded-lg transition-colors"
+                className="px-3 py-1.5 text-xs text-cultivate-text-primary hover:bg-[#3B3B3B] rounded-lg transition-colors"
               >
                 Cancel
               </button>

@@ -182,9 +182,9 @@ export default function FlaggedView({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "PENDING": return "bg-[#e8c8ab]/20 text-[#e8c8ab]";
-      case "VERIFIED": return "bg-[#85b878]/20 text-[#85b878]";
-      case "CORRECTED": return "bg-[#608e96]/20 text-[#608e96]";
-      default: return "bg-[#3B3B3B] text-[#6B6B6B]";
+      case "VERIFIED": return "bg-cultivate-green-light/20 text-cultivate-green-light";
+      case "CORRECTED": return "bg-cultivate-teal/20 text-cultivate-teal";
+      default: return "bg-[#3B3B3B] text-cultivate-text-tertiary";
     }
   };
 
@@ -359,7 +359,7 @@ export default function FlaggedView({
   return (
     <div className="flex flex-col h-full overflow-y-hidden overflow-x-clip">
       {/* Part 1: Fixed header + search/filter */}
-      <div className="flex-shrink-0 bg-[#1E1E1E] pt-8 lg:pt-0">
+      <div className="flex-shrink-0 bg-cultivate-bg-main pt-8 lg:pt-0">
       {/* Mobile header — glass button absolute left, title centered */}
       <div className="relative flex items-center justify-center mb-6 lg:hidden">
         {!sidebarOpen && setSidebarOpen && (
@@ -370,29 +370,29 @@ export default function FlaggedView({
           </div>
         )}
         <div className="text-center">
-          <h1 className="text-2xl font-serif text-[#C2C0B6]">Flagged Queries</h1>
-          <p className="text-sm text-[#9C9A92] mt-1">{pendingCount} pending review</p>
+          <h1 className="text-2xl font-serif text-cultivate-text-primary">Flagged Queries</h1>
+          <p className="text-sm text-cultivate-text-secondary mt-1">{pendingCount} pending review</p>
         </div>
       </div>
       {/* Desktop header */}
       <div className="hidden lg:block mb-6">
-        <h1 className="text-2xl font-serif text-[#C2C0B6]">Flagged Queries</h1>
-        <p className="text-sm text-[#9C9A92] mt-1">{pendingCount} pending review</p>
+        <h1 className="text-2xl font-serif text-cultivate-text-primary">Flagged Queries</h1>
+        <p className="text-sm text-cultivate-text-secondary mt-1">{pendingCount} pending review</p>
       </div>
 
       {/* Search + Filter */}
       <div className="flex items-center gap-3 mb-6">
         <div className="relative flex-1 max-w-[68.5%]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary" />
           <input
             type="text"
             placeholder="Search queries..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+            className="w-full pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
           />
         </div>
-        <div className="flex gap-1 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg p-1">
+        <div className="flex gap-1 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg p-1">
           {(["all", "PENDING", "VERIFIED", "CORRECTED"] as FlagStatus[]).map((status) => (
             <button
               key={status}
@@ -400,7 +400,7 @@ export default function FlaggedView({
               className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
                 statusFilter === status
                   ? 'bg-[#3B3B3B] text-white'
-                  : 'text-[#6B6B6B] hover:text-[#C2C0B6]'
+                  : 'text-cultivate-text-tertiary hover:text-cultivate-text-primary'
               }`}
             >
               {status === "all" ? "All" : status.charAt(0) + status.slice(1).toLowerCase()}
@@ -417,7 +417,7 @@ export default function FlaggedView({
         {paginatedQueries.map((query) => (
           <div
             key={query.id}
-            className="bg-[#2B2B2B] rounded-xl border border-[#3B3B3B] overflow-hidden"
+            className="bg-cultivate-bg-elevated rounded-xl border border-cultivate-border-element overflow-hidden"
           >
             {/* Query Header */}
             <button
@@ -430,27 +430,27 @@ export default function FlaggedView({
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getStatusColor(query.status)}`}>
                     {query.status.charAt(0) + query.status.slice(1).toLowerCase()}
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#3B3B3B] text-[#9C9A92]">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#3B3B3B] text-cultivate-text-secondary">
                     {(query.confidenceScore * 100).toFixed(0)}% confidence
                   </span>
                 </div>
-                <p className="text-sm text-[#C2C0B6] line-clamp-1">{query.farmerMessage}</p>
+                <p className="text-sm text-cultivate-text-primary line-clamp-1">{query.farmerMessage}</p>
                 <div className="flex items-center gap-3 mt-1.5">
-                  <span className="text-xs text-[#6B6B6B]">{query.agentName}</span>
-                  <span className="text-xs text-[#6B6B6B]">{query.createdAt}</span>
+                  <span className="text-xs text-cultivate-text-tertiary">{query.agentName}</span>
+                  <span className="text-xs text-cultivate-text-tertiary">{query.createdAt}</span>
                 </div>
               </div>
-              <ChevronDown className={`w-4 h-4 text-[#6B6B6B] flex-shrink-0 mt-1 transition-transform ${expandedId === query.id ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 text-cultivate-text-tertiary flex-shrink-0 mt-1 transition-transform ${expandedId === query.id ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Expanded Content */}
             {expandedId === query.id && (
-              <div className="px-4 pb-4 border-t border-[#3B3B3B] pt-4 space-y-4">
+              <div className="px-4 pb-4 border-t border-cultivate-border-element pt-4 space-y-4">
                 {/* Farmer's Question */}
                 <div>
-                  <p className="text-xs text-[#6B6B6B] mb-1.5">Farmer&apos;s Question</p>
-                  <div className="bg-[#1E1E1E] rounded-lg p-3">
-                    <p className="text-sm text-[#C2C0B6]">{query.farmerMessage}</p>
+                  <p className="text-xs text-cultivate-text-tertiary mb-1.5">Farmer&apos;s Question</p>
+                  <div className="bg-cultivate-bg-main rounded-lg p-3">
+                    <p className="text-sm text-cultivate-text-primary">{query.farmerMessage}</p>
                   </div>
                   {/* Link to scroll to flag reasons (if they exist) */}
                   {(query.farmerReason || query.farmerUpdates) && (
@@ -469,9 +469,9 @@ export default function FlaggedView({
                 {/* Agent's Response - MOVED UP */}
                 <div>
                   <div className="flex items-center gap-1.5 mb-1.5">
-                    <p className="text-xs text-[#6B6B6B]">Agent&apos;s Response</p>
+                    <p className="text-xs text-cultivate-text-tertiary">Agent&apos;s Response</p>
                     {query.status === "VERIFIED" && (
-                      <CheckCircle className="w-3.5 h-3.5 text-[#85b878]" />
+                      <CheckCircle className="w-3.5 h-3.5 text-cultivate-green-light" />
                     )}
                     {query.status === "CORRECTED" && (
                       <X className="w-3.5 h-3.5 text-[#e8c8ab]" />
@@ -479,12 +479,12 @@ export default function FlaggedView({
                   </div>
                   <div className={`rounded-lg p-3 ${
                     query.status === "VERIFIED"
-                      ? "bg-[#85b878]/5 border border-[#85b878]/20"
+                      ? "bg-cultivate-green-light/5 border border-[#85b878]/20"
                       : query.status === "CORRECTED"
                         ? "bg-[#e8c8ab]/5 border border-[#e8c8ab]/10"
-                        : "bg-[#1E1E1E]"
+                        : "bg-cultivate-bg-main"
                   }`}>
-                    <div className="prose prose-sm prose-invert max-w-none prose-p:text-[#C2C0B6] prose-p:leading-relaxed prose-headings:text-[#C2C0B6] prose-strong:text-[#C2C0B6] prose-li:text-[#C2C0B6]">
+                    <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {query.agentResponse}
                       </ReactMarkdown>
@@ -537,7 +537,7 @@ export default function FlaggedView({
                           return (
                             <div key={idx} className="flex items-start gap-2 text-xs">
                               <span className="text-[#e8c8ab]/70 flex-shrink-0">{ordinal} · {msg.date} ·</span>
-                              <span className="text-[#C2C0B6]">
+                              <span className="text-cultivate-text-primary">
                                 {msg.text}
                               </span>
                             </div>
@@ -553,7 +553,7 @@ export default function FlaggedView({
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-1.5">
-                        <p className="text-xs text-[#85b878]">Your Review</p>
+                        <p className="text-xs text-cultivate-green-light">Your Review</p>
                       </div>
                       <div className="flex items-center gap-1">
                         <button
@@ -561,19 +561,19 @@ export default function FlaggedView({
                           className="p-1 hover:bg-[#3B3B3B] rounded transition-colors"
                           title="Edit verification"
                         >
-                          <Pencil className="w-3 h-3 text-[#9C9A92] hover:text-white" />
+                          <Pencil className="w-3 h-3 text-cultivate-text-secondary hover:text-white" />
                         </button>
                         <button
                           onClick={() => handleOpenRevokeModal(query.id, "verification")}
                           className="p-1 hover:bg-[#3B3B3B] rounded transition-colors"
                           title="Revoke verification"
                         >
-                          <X className="w-3.5 h-3.5 text-[#9C9A92] hover:text-[#e8c8ab]" />
+                          <X className="w-3.5 h-3.5 text-cultivate-text-secondary hover:text-[#e8c8ab]" />
                         </button>
                       </div>
                     </div>
-                    <div className="bg-[#85b878]/5 border border-[#85b878]/20 rounded-lg p-3">
-                      <p className="text-sm text-[#C2C0B6]">
+                    <div className="bg-cultivate-green-light/5 border border-[#85b878]/20 rounded-lg p-3">
+                      <p className="text-sm text-cultivate-text-primary">
                         {query.verificationNotes || "Verified — no additional notes."}
                       </p>
                     </div>
@@ -585,7 +585,7 @@ export default function FlaggedView({
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-1.5">
-                        <p className="text-xs text-[#608e96]">Your Correction</p>
+                        <p className="text-xs text-cultivate-teal">Your Correction</p>
                       </div>
                       <div className="flex items-center gap-1">
                         <button
@@ -593,19 +593,19 @@ export default function FlaggedView({
                           className="p-1 hover:bg-[#3B3B3B] rounded transition-colors"
                           title="Edit correction"
                         >
-                          <Pencil className="w-3 h-3 text-[#9C9A92] hover:text-white" />
+                          <Pencil className="w-3 h-3 text-cultivate-text-secondary hover:text-white" />
                         </button>
                         <button
                           onClick={() => handleOpenRevokeModal(query.id, "correction")}
                           className="p-1 hover:bg-[#3B3B3B] rounded transition-colors"
                           title="Remove correction"
                         >
-                          <X className="w-3.5 h-3.5 text-[#9C9A92] hover:text-[#e8c8ab]" />
+                          <X className="w-3.5 h-3.5 text-cultivate-text-secondary hover:text-[#e8c8ab]" />
                         </button>
                       </div>
                     </div>
-                    <div className="bg-[#608e96]/5 border border-[#608e96]/20 rounded-lg p-3">
-                      <p className="text-sm text-[#C2C0B6]">{query.agronomistResponse}</p>
+                    <div className="bg-cultivate-teal/5 border border-[#608e96]/20 rounded-lg p-3">
+                      <p className="text-sm text-cultivate-text-primary">{query.agronomistResponse}</p>
                     </div>
                   </div>
                 )}
@@ -615,7 +615,7 @@ export default function FlaggedView({
                   <div className="flex items-center justify-end pt-1">
                     <button
                       onClick={() => handleOpenChatPanel(query)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#9C9A92] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#C2C0B6] transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-cultivate-text-secondary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
                     >
                       <ExternalLink className="w-3 h-3" />
                       View Chat
@@ -626,7 +626,7 @@ export default function FlaggedView({
                 {/* Response Input (for pending) */}
                 {query.status === "PENDING" && (
                   <div>
-                    <p className="text-xs text-[#9C9A92] mb-1.5">Your Response</p>
+                    <p className="text-xs text-cultivate-text-secondary mb-1.5">Your Response</p>
                     <textarea
                       rows={1}
                       placeholder="Provide your expert response or correction..."
@@ -637,12 +637,12 @@ export default function FlaggedView({
                         e.target.style.height = e.target.scrollHeight + "px";
                       }}
                       style={{ minHeight: "36px" }}
-                      className="w-full px-3 py-2.5 bg-[#1E1E1E] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none overflow-hidden"
+                      className="w-full px-3 py-2.5 bg-cultivate-bg-main border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none overflow-hidden"
                     />
                     <div className="flex items-center justify-between mt-2">
                       <button
                         onClick={() => handleOpenChatPanel(query)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#9C9A92] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#C2C0B6] transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-cultivate-text-secondary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
                       >
                         <ExternalLink className="w-3 h-3" />
                         View Chat
@@ -650,7 +650,7 @@ export default function FlaggedView({
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleOpenVerifyModal(query.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#85b878] transition-colors"
                         >
                           <CheckCircle className="w-3 h-3" />
                           Verify
@@ -658,7 +658,7 @@ export default function FlaggedView({
                         <button
                           onClick={() => handleSendCorrection(query.id)}
                           disabled={submitting}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#85b878] text-white rounded-lg hover:bg-[#536d3d] transition-colors text-xs disabled:opacity-50"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-cultivate-green-light text-white rounded-lg hover:bg-[#536d3d] transition-colors text-xs disabled:opacity-50"
                         >
                           {submitting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
                           {submitting ? "Saving..." : "Correct"}
@@ -679,17 +679,17 @@ export default function FlaggedView({
           <button
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Prev
           </button>
-          <span className="px-3 py-1.5 text-sm text-[#6B6B6B]">
+          <span className="px-3 py-1.5 text-sm text-cultivate-text-tertiary">
             {startIndex + 1}–{Math.min(endIndex, filteredQueries.length)}
           </span>
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Next
           </button>
@@ -697,9 +697,9 @@ export default function FlaggedView({
       )}
 
       {filteredQueries.length === 0 && (
-        <div className="bg-[#2B2B2B] rounded-xl p-8 text-center">
-          <Flag className="w-10 h-10 text-[#6B6B6B] mx-auto mb-3" />
-          <p className="text-sm text-[#6B6B6B]">
+        <div className="bg-cultivate-bg-elevated rounded-xl p-8 text-center">
+          <Flag className="w-10 h-10 text-cultivate-text-tertiary mx-auto mb-3" />
+          <p className="text-sm text-cultivate-text-tertiary">
             {searchQuery || statusFilter !== "all" ? "No queries match your filters." : "No flagged queries. Your agents are doing great!"}
           </p>
         </div>
@@ -712,38 +712,38 @@ export default function FlaggedView({
         <>
           <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setShowVerifyModal(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1C1C1C] rounded-xl border border-[#2B2B2B] w-full max-w-md p-6">
+            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
               <div className="flex items-center gap-2 mb-4">
-                <CheckCircle className="w-5 h-5 text-[#85b878]" />
+                <CheckCircle className="w-5 h-5 text-cultivate-green-light" />
                 <h2 className="text-lg font-medium text-white">Verify Agent Response</h2>
               </div>
 
-              <p className="text-sm text-[#9C9A92] mb-4">
+              <p className="text-sm text-cultivate-text-secondary mb-4">
                 Confirming that the agent&apos;s response is accurate. Add any supporting notes below.
               </p>
 
               <div>
-                <label className="block text-sm text-[#9C9A92] mb-1.5">Notes (optional)</label>
+                <label className="block text-sm text-cultivate-text-secondary mb-1.5">Notes (optional)</label>
                 <textarea
                   rows={4}
                   placeholder="Any additional context or notes supporting this verification..."
                   value={verifyNotes}
                   onChange={(e) => setVerifyNotes(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none"
+                  className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none"
                 />
               </div>
 
               <div className="flex items-center justify-end gap-3 mt-6">
                 <button
                   onClick={() => { setShowVerifyModal(false); setVerifyingQueryId(null); }}
-                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors"
+                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleConfirmVerification}
                   disabled={submitting}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-[#85b878] text-white rounded-lg hover:bg-[#536d3d] transition-colors text-sm disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-cultivate-green-light text-white rounded-lg hover:bg-[#536d3d] transition-colors text-sm disabled:opacity-50"
                 >
                   {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                   {submitting ? "Verifying..." : "Confirm Verification"}
@@ -759,32 +759,32 @@ export default function FlaggedView({
         <>
           <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setShowEditCorrectionModal(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1C1C1C] rounded-xl border border-[#2B2B2B] w-full max-w-md p-6">
+            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
               <div className="flex items-center gap-2 mb-4">
-                <Pencil className="w-5 h-5 text-[#608e96]" />
+                <Pencil className="w-5 h-5 text-cultivate-teal" />
                 <h2 className="text-lg font-medium text-white">Edit Correction</h2>
               </div>
 
               <div>
-                <label className="block text-sm text-[#9C9A92] mb-1.5">Your correction</label>
+                <label className="block text-sm text-cultivate-text-secondary mb-1.5">Your correction</label>
                 <textarea
                   rows={5}
                   value={editCorrectionText}
                   onChange={(e) => setEditCorrectionText(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none"
+                  className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none"
                 />
               </div>
 
               <div className="flex items-center justify-end gap-3 mt-6">
                 <button
                   onClick={() => { setShowEditCorrectionModal(false); setEditingCorrectionId(null); }}
-                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors"
+                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEditedCorrection}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-[#608e96] text-white rounded-lg hover:bg-[#608e96]/80 transition-colors text-sm"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-cultivate-teal text-white rounded-lg hover:bg-cultivate-teal/80 transition-colors text-sm"
                 >
                   Save Changes
                 </button>
@@ -799,7 +799,7 @@ export default function FlaggedView({
         <>
           <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setShowRevokeModal(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1C1C1C] rounded-xl border border-[#2B2B2B] w-full max-w-md p-6">
+            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
               <div className="flex items-center gap-2 mb-4">
                 <AlertTriangle className="w-5 h-5 text-[#e8c8ab]" />
                 <h2 className="text-lg font-medium text-white">
@@ -807,20 +807,20 @@ export default function FlaggedView({
                 </h2>
               </div>
 
-              <p className="text-sm text-[#9C9A92] mb-2">
+              <p className="text-sm text-cultivate-text-secondary mb-2">
                 {revokeType === "verification"
                   ? "Are you sure you want to revoke your verification? This will move the query back to pending review."
                   : "Are you sure you want to remove your correction? This will move the query back to pending review."
                 }
               </p>
-              <p className="text-xs text-[#6B6B6B]">
+              <p className="text-xs text-cultivate-text-tertiary">
                 This action can be undone by re-reviewing the query.
               </p>
 
               <div className="flex items-center justify-end gap-3 mt-6">
                 <button
                   onClick={() => { setShowRevokeModal(false); setRevokingQueryId(null); }}
-                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors"
+                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors"
                 >
                   Cancel
                 </button>
@@ -867,14 +867,14 @@ export default function FlaggedView({
               onClick={handleCloseChatPanel}
             />
             <div 
-              className={`fixed top-0 right-0 h-full bg-[#1C1C1C] border-l border-[#2B2B2B] z-50 flex flex-col shadow-2xl transition-transform duration-300 ${
+              className={`fixed top-0 right-0 h-full bg-[#1C1C1C] border-l border-cultivate-border-subtle z-50 flex flex-col shadow-2xl transition-transform duration-300 ${
                 isClosing ? 'translate-x-full' : 'translate-x-0'
               }`}
               style={{ width: isDesktop ? `${panelWidth}px` : "100vw" }}
             >
               {/* Drag handle - centered on left edge */}
               <div
-                className="hidden lg:block absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 bg-[#1C1C1C] rounded-full p-1.5 cursor-col-resize z-10 border border-[#2B2B2B] hover:border-white shadow-lg group"
+                className="hidden lg:block absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 bg-[#1C1C1C] rounded-full p-1.5 cursor-col-resize z-10 border border-cultivate-border-subtle hover:border-white shadow-lg group"
                 onMouseDown={handleResizeStart}
                 onDoubleClick={handleDoubleClickResize}
                 title="Drag to resize, double-click to reset"
@@ -882,7 +882,7 @@ export default function FlaggedView({
                 <GripVertical className="w-3.5 h-3.5 text-[#e8c8ab] group-hover:text-white transition-colors" />
               </div>
               {/* Panel Header */}
-              <div className="flex items-center justify-between px-5 pt-16 pb-3 lg:py-4 border-b border-[#2B2B2B]">
+              <div className="flex items-center justify-between px-5 pt-16 pb-3 lg:py-4 border-b border-cultivate-border-subtle">
                 <div className="flex items-center gap-3">
                   <div className="lg:hidden">
                     <GlassCircleButton
@@ -894,16 +894,16 @@ export default function FlaggedView({
                   </div>
                   <button
                     onClick={handleCloseChatPanel}
-                    className="hidden lg:flex p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors"
+                    className="hidden lg:flex p-1.5 hover:bg-cultivate-bg-elevated rounded-lg transition-colors"
                   >
-                    <ArrowLeft className="w-4 h-4 text-[#C2C0B6]" />
+                    <ArrowLeft className="w-4 h-4 text-cultivate-text-primary" />
                   </button>
                   <div>
                     <h2 className="text-sm font-medium text-white">{conversation.title}</h2>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-[#9C9A92]">{chatPanelQuery.farmerName}</span>
-                      <span className="text-xs text-[#6B6B6B]">&middot;</span>
-                      <span className="text-xs text-[#9C9A92]">{chatPanelQuery.agentName}</span>
+                      <span className="text-xs text-cultivate-text-secondary">{chatPanelQuery.farmerName}</span>
+                      <span className="text-xs text-cultivate-text-tertiary">&middot;</span>
+                      <span className="text-xs text-cultivate-text-secondary">{chatPanelQuery.agentName}</span>
                     </div>
                   </div>
                 </div>
@@ -913,9 +913,9 @@ export default function FlaggedView({
                   </span>
                   <button
                     onClick={handleCloseChatPanel}
-                      className="hidden lg:flex p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors"
+                      className="hidden lg:flex p-1.5 hover:bg-cultivate-bg-elevated rounded-lg transition-colors"
                   >
-                    <X className="w-4 h-4 text-[#9C9A92]" />
+                    <X className="w-4 h-4 text-cultivate-text-secondary" />
                   </button>
                 </div>
               </div>
@@ -946,7 +946,7 @@ export default function FlaggedView({
                       <div className={`flex gap-2.5 ${msg.role === "USER" ? "flex-row-reverse" : "flex-row"}`}>
                         {/* Avatar */}
                         <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                          msg.role === "USER" ? "bg-[#608e96]" : "bg-[#85b878]"
+                          msg.role === "USER" ? "bg-cultivate-teal" : "bg-cultivate-green-light"
                         }`}>
                           {msg.role === "USER" ? (
                             <User className="w-3.5 h-3.5 text-white" />
@@ -958,13 +958,13 @@ export default function FlaggedView({
                         {/* Message bubble */}
                         <div className={`rounded-2xl px-3.5 py-2.5 ${
                           msg.role === "USER"
-                            ? "bg-[#2B2B2B] text-[#C2C0B6]"
+                            ? "bg-cultivate-bg-elevated text-cultivate-text-primary"
                             : msg.isFlagged
-                              ? "bg-[#e8c8ab]/5 border border-[#e8c8ab]/20 text-[#C2C0B6]"
-                              : "bg-[#1E1E1E] text-[#C2C0B6]"
+                              ? "bg-[#e8c8ab]/5 border border-[#e8c8ab]/20 text-cultivate-text-primary"
+                              : "bg-cultivate-bg-main text-cultivate-text-primary"
                         }`}>
                           {msg.role === "ASSISTANT" ? (
-                            <div className="prose prose-sm prose-invert max-w-none prose-p:text-[#C2C0B6] prose-p:leading-relaxed prose-headings:text-[#C2C0B6] prose-strong:text-[#C2C0B6] prose-li:text-[#C2C0B6] prose-p:my-1">
+                            <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary prose-p:my-1">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                 {msg.content}
                               </ReactMarkdown>
@@ -973,12 +973,12 @@ export default function FlaggedView({
                             <p className="text-sm whitespace-pre-line leading-relaxed">{msg.content}</p>
                           )}
                           <div className={`flex items-center gap-2 mt-1.5 ${msg.role === "USER" ? "justify-end" : "justify-start"}`}>
-                            <span className="text-[10px] text-[#6B6B6B]">{msg.timestamp}</span>
+                            <span className="text-[10px] text-cultivate-text-tertiary">{msg.timestamp}</span>
                             {msg.confidenceScore !== undefined && (
                               <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                                 msg.confidenceScore < 0.7
                                   ? "bg-[#e8c8ab]/20 text-[#e8c8ab]"
-                                  : "bg-[#85b878]/20 text-[#85b878]"
+                                  : "bg-cultivate-green-light/20 text-cultivate-green-light"
                               }`}>
                                 {(msg.confidenceScore * 100).toFixed(0)}%
                               </span>
@@ -995,40 +995,40 @@ export default function FlaggedView({
 
                 {/* Agronomist correction shown at bottom of chat if corrected */}
                 {chatPanelQuery.status === "CORRECTED" && chatPanelQuery.agronomistResponse && (
-                  <div className="border-t border-[#3B3B3B] pt-4 mt-4">
+                  <div className="border-t border-cultivate-border-element pt-4 mt-4">
                     <div className="flex items-center gap-1.5 mb-2">
-                      <CheckCircle className="w-3.5 h-3.5 text-[#608e96]" />
-                      <span className="text-xs text-[#608e96] font-medium">Agronomist Correction</span>
+                      <CheckCircle className="w-3.5 h-3.5 text-cultivate-teal" />
+                      <span className="text-xs text-cultivate-teal font-medium">Agronomist Correction</span>
                     </div>
-                    <div className="bg-[#608e96]/5 border border-[#608e96]/20 rounded-xl px-3.5 py-2.5">
-                      <p className="text-sm text-[#C2C0B6] leading-relaxed">{chatPanelQuery.agronomistResponse}</p>
+                    <div className="bg-cultivate-teal/5 border border-[#608e96]/20 rounded-xl px-3.5 py-2.5">
+                      <p className="text-sm text-cultivate-text-primary leading-relaxed">{chatPanelQuery.agronomistResponse}</p>
                     </div>
                   </div>
                 )}
 
                 {/* Verification notes shown at bottom if verified */}
                 {chatPanelQuery.status === "VERIFIED" && chatPanelQuery.verificationNotes && (
-                  <div className="border-t border-[#3B3B3B] pt-4 mt-4">
+                  <div className="border-t border-cultivate-border-element pt-4 mt-4">
                     <div className="flex items-center gap-1.5 mb-2">
-                      <CheckCircle className="w-3.5 h-3.5 text-[#85b878]" />
-                      <span className="text-xs text-[#85b878] font-medium">Agronomist Verification</span>
+                      <CheckCircle className="w-3.5 h-3.5 text-cultivate-green-light" />
+                      <span className="text-xs text-cultivate-green-light font-medium">Agronomist Verification</span>
                     </div>
-                    <div className="bg-[#85b878]/5 border border-[#85b878]/20 rounded-xl px-3.5 py-2.5">
-                      <p className="text-sm text-[#C2C0B6] leading-relaxed">{chatPanelQuery.verificationNotes}</p>
+                    <div className="bg-cultivate-green-light/5 border border-[#85b878]/20 rounded-xl px-3.5 py-2.5">
+                      <p className="text-sm text-cultivate-text-primary leading-relaxed">{chatPanelQuery.verificationNotes}</p>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Panel Footer */}
-              <div className="px-5 py-3 border-t border-[#2B2B2B] flex items-center justify-between">
+              <div className="px-5 py-3 border-t border-cultivate-border-subtle flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <MessageCircle className="w-3.5 h-3.5 text-[#6B6B6B]" />
-                  <span className="text-xs text-[#6B6B6B]">{conversation.messages.length} messages</span>
+                  <MessageCircle className="w-3.5 h-3.5 text-cultivate-text-tertiary" />
+                  <span className="text-xs text-cultivate-text-tertiary">{conversation.messages.length} messages</span>
                 </div>
                 <button
                   onClick={handleCloseChatPanel}
-                  className="px-3 py-1.5 text-xs text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#C2C0B6] transition-colors"
+                  className="px-3 py-1.5 text-xs text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
                 >
                   Close
                 </button>

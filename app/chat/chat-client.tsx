@@ -331,7 +331,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
   };
 
   return (
-    <div className="flex h-screen bg-[#1E1E1E]">
+    <div className="flex h-screen bg-cultivate-bg-main">
       {/* Mobile sidebar backdrop — always rendered for smooth fade transition */}
       <div
         className={`fixed inset-0 z-30 bg-black/50 lg:hidden transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
@@ -341,15 +341,15 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
       {!sidebarOpen && activeView !== "chats" && activeView !== "systems" && !currentConversationId && !isStreaming && messages.length === 0 && (
         <button
           onClick={() => setSidebarOpen(true)}
-          className="fixed top-16 left-3 z-50 lg:hidden w-9 h-9 flex items-center justify-center bg-[#2B2B2B] hover:bg-[#3B3B3B] rounded-lg transition-colors"
+          className="fixed top-16 left-3 z-50 lg:hidden w-9 h-9 flex items-center justify-center bg-cultivate-bg-elevated hover:bg-[#3B3B3B] rounded-lg transition-colors"
           aria-label="Open menu"
         >
-          <PanelLeft className="w-4 h-4 text-[#C2C0B6] rotate-180" />
+          <PanelLeft className="w-4 h-4 text-cultivate-text-primary rotate-180" />
         </button>
       )}
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#1C1C1C] border-r border-[#2B2B2B] flex flex-col transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${sidebarOpen ? 'translate-x-0 shadow-[4px_0_24px_rgba(0,0,0,0.4)]' : '-translate-x-full shadow-none'} lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:shadow-none ${sidebarOpen ? 'lg:w-72' : 'lg:w-14'}`}
+        className={`fixed inset-y-0 left-0 z-40 w-72 bg-cultivate-bg-sidebar border-r border-cultivate-border-subtle flex flex-col transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${sidebarOpen ? 'translate-x-0 shadow-[4px_0_24px_rgba(0,0,0,0.4)]' : '-translate-x-full shadow-none'} lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:shadow-none ${sidebarOpen ? 'lg:w-72' : 'lg:w-14'}`}
       >
         {/* Logo — pt-16 on mobile matches conversation header safe area for Dynamic Island alignment */}
         <div className={`p-2 pt-16 lg:pt-4 min-h-[53px] flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
@@ -360,9 +360,9 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
           )}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1.5 hover:bg-[#141413] rounded transition-colors"
+            className="p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors"
           >
-            <PanelLeft className={`w-5 h-5 text-[#C2C0B6] transition-transform duration-300 ${!sidebarOpen ? 'rotate-180' : ''}`} />
+            <PanelLeft className={`w-5 h-5 text-cultivate-text-primary transition-transform duration-300 ${!sidebarOpen ? 'rotate-180' : ''}`} />
           </button>
         </div>
 
@@ -373,15 +373,15 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
             <button
               onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); setSelectedChatId(null); setMessagesLoading(false); setHeaderMenuOpen(false); setActiveView("chat"); if (window.innerWidth < 1024) setSidebarOpen(false); }}
               className={`group relative w-full flex items-center gap-3 pl-3 pr-2 py-1 rounded-lg transition-colors ${!sidebarOpen ? 'justify-center' : ''} ${
-                activeView === "chat" ? "bg-[#141413] text-white" : "text-[#C2C0B6] hover:bg-[#141413] hover:text-white"
+                activeView === "chat" ? "bg-cultivate-bg-hover text-white" : "text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white"
               }`}
             >
-              <div className="w-5 h-5 standalone:w-6 standalone:h-6 lg:w-5 lg:h-5 bg-[#2B2B2B] rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="w-5 h-5 standalone:w-6 standalone:h-6 lg:w-5 lg:h-5 bg-cultivate-bg-elevated rounded-full flex items-center justify-center flex-shrink-0">
                 <Plus className="w-4 h-4 standalone:w-[18px] standalone:h-[18px] lg:w-4 lg:h-4" />
               </div>
               {sidebarOpen && <span className={`${isStandalone ? "text-lg" : "text-sm"} lg:text-sm`}>New chat</span>}
               {!sidebarOpen && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-[#2B2B2B] text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                <div className="absolute left-full ml-2 px-2 py-1 bg-cultivate-bg-elevated text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                   New chat
                 </div>
               )}
@@ -391,13 +391,13 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
             <button
               onClick={() => { setSelectedChatId(null); setActiveView("chats"); if (window.innerWidth < 1024) setSidebarOpen(false); }}
               className={`group relative w-full flex items-center gap-3 pl-3 pr-2 py-1.5 rounded-lg transition-colors ${!sidebarOpen ? 'justify-center' : ''} ${
-                activeView === "chats" && !selectedChatId ? "bg-[#141413] text-white" : "text-[#C2C0B6] hover:bg-[#141413] hover:text-white"
+                activeView === "chats" && !selectedChatId ? "bg-cultivate-bg-hover text-white" : "text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white"
               }`}
             >
               <MessageCircle className="w-5 h-5 standalone:w-6 standalone:h-6 lg:w-5 lg:h-5 text-white flex-shrink-0" />
               {sidebarOpen && <span className={`${isStandalone ? "text-lg" : "text-sm"} lg:text-sm`}>Chats</span>}
               {!sidebarOpen && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-[#2B2B2B] text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                <div className="absolute left-full ml-2 px-2 py-1 bg-cultivate-bg-elevated text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                   Chats
                 </div>
               )}
@@ -407,13 +407,13 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
             <button
               onClick={() => { setActiveView("systems"); if (window.innerWidth < 1024) setSidebarOpen(false); }}
               className={`group relative w-full flex items-center gap-3 pl-3 pr-2 py-1.5 rounded-lg transition-colors ${!sidebarOpen ? 'justify-center' : ''} ${
-                activeView === "systems" ? "bg-[#141413] text-white" : "text-[#C2C0B6] hover:bg-[#141413] hover:text-white"
+                activeView === "systems" ? "bg-cultivate-bg-hover text-white" : "text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white"
               }`}
             >
               <Layers className="w-5 h-5 standalone:w-6 standalone:h-6 lg:w-5 lg:h-5 text-white flex-shrink-0" />
               {sidebarOpen && <span className={`${isStandalone ? "text-lg" : "text-sm"} lg:text-sm`}>Systems</span>}
               {!sidebarOpen && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-[#2B2B2B] text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                <div className="absolute left-full ml-2 px-2 py-1 bg-cultivate-bg-elevated text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                   Systems
                 </div>
               )}
@@ -424,7 +424,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
           {sidebarOpen && (
             <div className="mt-4">
               {/* Recents label — text-sm mobile (14px), text-xs desktop (12px) */}
-              <div className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#9C9A92] px-2 mb-1.5`}>
+              <div className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-secondary px-2 mb-1.5`}>
                 Recents
               </div>
               {/* Sidebar chat items — Claude-style pattern (see sidebar-chat-patterns.md)
@@ -442,10 +442,10 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                       onClick={() => handleSidebarChatClick(chat.id)}
                       className={`group flex items-stretch rounded-lg transition-colors cursor-pointer ${
                         isActive
-                          ? 'bg-[#141413]'
+                          ? 'bg-cultivate-bg-hover'
                           : isMenuOpen
                             ? '' /* menu open on non-active: no row bg, only button gets bg */
-                            : 'hover:bg-[#141413] has-[button:hover]:bg-transparent'
+                            : 'hover:bg-cultivate-bg-hover has-[button:hover]:bg-transparent'
                       }`}
                     >
                       {/* Text label — min-w-0 is critical for flex child truncation */}
@@ -453,7 +453,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                         className={`flex-1 min-w-0 ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm py-1.5 pl-2 overflow-hidden whitespace-nowrap ${
                           isActive
                             ? 'text-white [mask-image:linear-gradient(to_right,black_75%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_right,black_75%,transparent_100%)]'
-                            : 'text-[#C2C0B6] group-hover:text-white truncate group-hover:[text-overflow:clip] group-hover:[mask-image:linear-gradient(to_right,black_75%,transparent_100%)] group-hover:[-webkit-mask-image:linear-gradient(to_right,black_75%,transparent_100%)]'
+                            : 'text-cultivate-text-primary group-hover:text-white truncate group-hover:[text-overflow:clip] group-hover:[mask-image:linear-gradient(to_right,black_75%,transparent_100%)] group-hover:[-webkit-mask-image:linear-gradient(to_right,black_75%,transparent_100%)]'
                         }`}
                       >
                         {chat.title}
@@ -462,27 +462,27 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                       <div className="relative flex-shrink-0 flex items-center">
                         <button
                           onClick={(e) => { e.stopPropagation(); setChatMenuId(isMenuOpen ? null : chat.id); }}
-                          className={`${isActive || isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} ${isMenuOpen ? 'bg-[#0a0a0a]' : 'hover:bg-[#141413]'} transition-all px-2 self-stretch rounded-lg flex items-center`}
+                          className={`${isActive || isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} ${isMenuOpen ? 'bg-[#0a0a0a]' : 'hover:bg-cultivate-bg-hover'} transition-all px-2 self-stretch rounded-lg flex items-center`}
                         >
-                          <MoreHorizontal className="w-4 h-4 text-[#9C9A92] hover:text-white transition-colors" strokeWidth={2.5} />
+                          <MoreHorizontal className="w-4 h-4 text-cultivate-text-secondary hover:text-white transition-colors" strokeWidth={2.5} />
                         </button>
 
                         {/* Dropdown: Share, Rename, [Remove from system], Delete */}
                         {isMenuOpen && (
                           <>
                             <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }} />
-                            <div className="absolute right-0 top-full mt-1.5 bg-[#2B2B2B] rounded-xl shadow-xl border border-[#3B3B3B] py-1.5 z-50 min-w-[180px] whitespace-nowrap">
+                            <div className="absolute right-0 top-full mt-1.5 bg-cultivate-bg-elevated rounded-xl shadow-xl border border-cultivate-border-element py-1.5 z-50 min-w-[180px] whitespace-nowrap">
                               <div className="px-1.5">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}
-                                  className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] rounded-lg flex items-center gap-2.5 transition-colors"
+                                  className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
                                 >
                                   <Share className="w-3.5 h-3.5" />
                                   Share
                                 </button>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}
-                                  className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] rounded-lg flex items-center gap-2.5 transition-colors"
+                                  className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
                                   Rename
@@ -491,18 +491,18 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                                 {chat.systemName && (
                                   <button
                                     onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}
-                                    className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] rounded-lg flex items-center gap-2.5 transition-colors"
+                                    className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
                                   >
                                     <Unlink className="w-3.5 h-3.5" />
                                     Remove from system
                                   </button>
                                 )}
                               </div>
-                              <div className="border-t border-[#3B3B3B] my-1 mx-2" />
+                              <div className="border-t border-cultivate-border-element my-1 mx-2" />
                               <div className="px-1.5">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}
-                                  className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-[#141413] hover:text-red-300 rounded-lg flex items-center gap-2.5 transition-colors"
+                                  className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-cultivate-bg-hover hover:text-red-300 rounded-lg flex items-center gap-2.5 transition-colors"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                   Delete
@@ -521,7 +521,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
               {sidebarChats.length > (isDesktop ? 30 : 10) && (
                 <button
                   onClick={handleAllChatsClick}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm text-[#9C9A92] hover:text-white hover:bg-[#141413] rounded-lg transition-colors`}
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm text-cultivate-text-secondary hover:text-white hover:bg-cultivate-bg-hover rounded-lg transition-colors`}
                 >
                   <CircleEllipsis className="w-4 h-4 flex-shrink-0" />
                   All chats
@@ -532,7 +532,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
         </div>
 
         {/* User Profile */}
-        <div className={`${isStandalone ? '' : 'border-t border-[#2B2B2B]'} p-2 ${isStandalone ? 'pb-6 pl-3' : 'pb-2'} lg:pb-2 relative ${!sidebarOpen ? 'flex justify-center' : ''}`}>
+        <div className={`${isStandalone ? '' : 'border-t border-cultivate-border-subtle'} p-2 ${isStandalone ? 'pb-6 pl-3' : 'pb-2'} lg:pb-2 relative ${!sidebarOpen ? 'flex justify-center' : ''}`}>
           {/* div instead of button so the nested Download button is valid HTML */}
           <div
             onClick={() => setShowUserMenu(!showUserMenu)}
@@ -541,15 +541,15 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
             <div
               className={`flex items-center ${sidebarOpen ? 'gap-2' : ''} ${isStandalone && sidebarOpen ? 'w-auto max-w-[calc(100%-3rem)] px-2.5 py-1.5 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] transition-colors' : ''}`}
             >
-              <div className="w-10 h-10 bg-[#85b878] rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-cultivate-green-light rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-base font-medium">{getInitials(user.name)}</span>
               </div>
               {sidebarOpen && (
                 <div className="flex-1 min-w-0 text-left">
-                  <p className="text-sm font-medium text-[#C2C0B6] truncate">
+                  <p className="text-sm font-medium text-cultivate-text-primary truncate">
                     {user.name?.split(" ")[0]}
                   </p>
-                  <p className="text-xs text-[#9C9A92] truncate">
+                  <p className="text-xs text-cultivate-text-secondary truncate">
                     {user.role === "ADMIN" ? "Admin" : user.role === "AGRONOMIST" ? "Agronomist" : "Farmer"}
                   </p>
                 </div>
@@ -559,7 +559,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
               <div className="flex items-center">
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowInstallModal(true); }}
-                  className={`${isStandalone ? 'h-10 w-10 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] flex items-center justify-center' : 'p-1.5 border border-[#3B3B3B] hover:border-[#5a7048] rounded-md'} transition-colors text-[#9C9A92] hover:text-[#C2C0B6]`}
+                  className={`${isStandalone ? 'h-10 w-10 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] flex items-center justify-center' : 'p-1.5 border border-cultivate-border-element hover:border-[#5a7048] rounded-md'} transition-colors text-cultivate-text-secondary hover:text-cultivate-text-primary`}
                   title="Install app"
                 >
                   <Download className="w-4 h-4" />
@@ -568,7 +568,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
             )}
             {/* Tooltip when collapsed */}
             {!sidebarOpen && (
-              <div className="absolute left-full ml-2 px-2 py-1 bg-[#2B2B2B] text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+              <div className="absolute left-full ml-2 px-2 py-1 bg-cultivate-bg-elevated text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                 {user.name?.split(" ")[0]}
               </div>
             )}
@@ -578,22 +578,22 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
           {showUserMenu && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
-              <div className={`absolute bottom-full mb-2 bg-[#1C1C1C] rounded-lg shadow-lg border border-[#2B2B2B] py-2 z-50 ${sidebarOpen ? 'left-3 right-3' : 'left-0 min-w-[200px]'}`}>
+              <div className={`absolute bottom-full mb-2 bg-cultivate-bg-sidebar rounded-lg shadow-lg border border-cultivate-border-subtle py-2 z-50 ${sidebarOpen ? 'left-3 right-3' : 'left-0 min-w-[200px]'}`}>
                 <div className="px-3 py-2 mb-1">
-                  <p className="text-xs text-[#9C9A92] truncate">{user.email}</p>
+                  <p className="text-xs text-cultivate-text-secondary truncate">{user.email}</p>
                 </div>
-                <button className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors rounded">
+                <button className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors rounded">
                   <Settings className="w-4 h-4" />
                   Settings
                 </button>
-                <button className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors rounded">
+                <button className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors rounded">
                   <HelpCircle className="w-4 h-4" />
                   Help
                 </button>
-                <div className="border-t border-[#2B2B2B] mt-1 pt-1">
+                <div className="border-t border-cultivate-border-subtle mt-1 pt-1">
                   <button
                     onClick={handleSignOut}
-                    className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors rounded"
+                    className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors rounded"
                   >
                     <LogOut className="w-4 h-4" />
                     Sign out
@@ -649,15 +649,15 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                 <div className="flex-1 flex items-center justify-center">
                   <div className="max-w-3xl w-full px-6">
                     <div className="text-center mb-8">
-                      <h1 className="text-4xl font-serif text-[#C2C0B6] mb-3 flex items-center justify-center gap-3">
-                        <Sprout className="w-10 h-10 text-[#85b878]" />
+                      <h1 className="text-4xl font-serif text-cultivate-text-primary mb-3 flex items-center justify-center gap-3">
+                        <Sprout className="w-10 h-10 text-cultivate-green-light" />
                         Hey there, {user.name?.split(" ")[0]}
                       </h1>
                     </div>
 
                     {/* Input Area - Positioned close to greeting */}
                     <div className="mb-6">
-                      <div className="relative bg-[#2B2B2B] rounded-2xl shadow-sm p-4">
+                      <div className="relative bg-cultivate-bg-elevated rounded-2xl shadow-sm p-4">
                         <textarea
                           placeholder="How can I help you today?"
                           rows={1}
@@ -669,7 +669,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center gap-2">
                             <button className="p-1.5 hover:bg-[#3B3B3B] rounded transition-colors">
-                              <Plus className="w-5 h-5 text-[#C2C0B6]" />
+                              <Plus className="w-5 h-5 text-cultivate-text-primary" />
                             </button>
                           </div>
                           <div className="flex items-center gap-2">
@@ -677,7 +677,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                             <div className="relative">
                               <button
                                 onClick={() => setShowAgentMenu(!showAgentMenu)}
-                                className="flex items-center gap-1 text-[#C2C0B6] hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
+                                className="flex items-center gap-1 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
                               >
                                 <span>{selectedAgent}</span>
                                 <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
@@ -685,12 +685,12 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                               {showAgentMenu && (
                                 <>
                                   <div className="fixed inset-0 z-40" onClick={() => setShowAgentMenu(false)} />
-                                  <div className="absolute bottom-full right-0 mb-2 bg-[#2B2B2B] rounded-lg shadow-lg border border-[#3B3B3B] py-2 z-50 min-w-[200px]">
+                                  <div className="absolute bottom-full right-0 mb-2 bg-cultivate-bg-elevated rounded-lg shadow-lg border border-cultivate-border-element py-2 z-50 min-w-[200px]">
                                     {agents.map((agent) => (
                                       <button
                                         key={agent.id}
                                         onClick={() => { setSelectedAgent(agent.name); setSelectedAgentId(agent.id); setShowAgentMenu(false); setCurrentConversationId(null); setConversationTitle(null); setMessages([]); }}
-                                        className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors ${selectedAgent === agent.name ? "text-[#85b878]" : "text-[#C2C0B6]"}`}
+                                        className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors ${selectedAgent === agent.name ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
                                       >
                                         {agent.name}
                                       </button>
@@ -702,7 +702,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                             <button
                               onClick={() => { handleSend(); setSendIcon(s => s === "cabbage" ? "plane" : s === "plane" ? "sprout" : "cabbage"); }}
                               disabled={isStreaming || !inputValue.trim()}
-                              className="p-2 bg-[#85b878] text-white rounded-xl hover:bg-[#536d3d] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-[#536d3d] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               {sendIcon === "cabbage" && <CabbageIcon />}
                               {sendIcon === "plane" && <PaperPlaneIcon />}
@@ -716,27 +716,27 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                     {/* Action Buttons Below Input */}
                     <div className="flex justify-center gap-2 flex-wrap">
                       <Tooltip content="Best practices for your crops">
-                        <button onClick={() => setInputValue("What are the best practices for my crops?")} className="px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
-                          <Leaf className="w-4 h-4 text-[#C2C0B6]" />
-                          <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Crops</span>
+                        <button onClick={() => setInputValue("What are the best practices for my crops?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-[#141413] transition-colors flex items-center gap-2">
+                          <Leaf className="w-4 h-4 text-cultivate-text-primary" />
+                          <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-primary">Crops</span>
                         </button>
                       </Tooltip>
                       <Tooltip content="Identify and manage pests">
-                        <button onClick={() => setInputValue("How do I identify and manage pests on my farm?")} className="px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
-                          <Bug className="w-4 h-4 text-[#C2C0B6]" />
-                          <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Pests</span>
+                        <button onClick={() => setInputValue("How do I identify and manage pests on my farm?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-[#141413] transition-colors flex items-center gap-2">
+                          <Bug className="w-4 h-4 text-cultivate-text-primary" />
+                          <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-primary">Pests</span>
                         </button>
                       </Tooltip>
                       <Tooltip content="Plan based on weather">
-                        <button onClick={() => setInputValue("How should I plan my farming around the weather?")} className="px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
-                          <CloudRain className="w-4 h-4 text-[#C2C0B6]" />
-                          <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Weather</span>
+                        <button onClick={() => setInputValue("How should I plan my farming around the weather?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-[#141413] transition-colors flex items-center gap-2">
+                          <CloudRain className="w-4 h-4 text-cultivate-text-primary" />
+                          <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-primary">Weather</span>
                         </button>
                       </Tooltip>
                       <Tooltip content="When to plant and harvest">
-                        <button onClick={() => setInputValue("When should I plant and harvest my crops?")} className="px-3 py-[7px] border-[0.5px] border-[#3B3B3B] bg-[#1E1E1E] rounded-lg hover:bg-[#141413] hover:border-[#141413] transition-colors flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-[#C2C0B6]" />
-                          <span className="text-sm standalone:text-base lg:text-sm text-[#C2C0B6]">Planting</span>
+                        <button onClick={() => setInputValue("When should I plant and harvest my crops?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-[#141413] transition-colors flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-cultivate-text-primary" />
+                          <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-primary">Planting</span>
                         </button>
                       </Tooltip>
                     </div>
@@ -783,23 +783,23 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
       {showInstallModal && (
         <>
           <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowInstallModal(false)} />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl p-6 w-80 shadow-xl">
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-80 shadow-xl">
             <div className="mb-4">
               <div className="w-10 h-10 bg-[#5a7048] rounded-full flex items-center justify-center mb-3">
                 <Download className="w-5 h-5 text-white" />
               </div>
               <h2 className="text-white font-semibold text-base mb-1.5">Install Cultivate</h2>
-              <p className="text-[#9C9A92] text-sm leading-relaxed">
+              <p className="text-cultivate-text-secondary text-sm leading-relaxed">
                 Add Cultivate to your home screen for quick access and offline support.
               </p>
-              <p className="text-[#6B6B6B] text-xs mt-2 leading-relaxed">
+              <p className="text-cultivate-text-tertiary text-xs mt-2 leading-relaxed">
                 On iOS: tap the Share button in Safari, then &ldquo;Add to Home Screen&rdquo;.
               </p>
             </div>
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setShowInstallModal(false)}
-                className="px-4 py-2 text-sm text-[#9C9A92] hover:text-white transition-colors rounded-lg"
+                className="px-4 py-2 text-sm text-cultivate-text-secondary hover:text-white transition-colors rounded-lg"
               >
                 Not now
               </button>

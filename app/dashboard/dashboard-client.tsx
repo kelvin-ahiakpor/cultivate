@@ -32,20 +32,20 @@ interface DashboardProps {
 /** Maps an API activity type to its icon + color. Used in the real-mode activity feed. */
 function ActivityRow({ item, isStandalone }: { item: ActivityItem; isStandalone: boolean }) {
   const config: Record<ActivityItem["type"], { icon: React.ReactNode; color: string; accent: string }> = {
-    flagged_created:     { icon: <Flag className="w-4 h-4 text-[#e8c8ab]" />,        color: "bg-[#e8c8ab]/20", accent: "text-[#e8c8ab]" },
-    flagged_verified:    { icon: <CheckCircle className="w-4 h-4 text-[#85b878]" />, color: "bg-[#85b878]/20", accent: "text-[#85b878]" },
-    flagged_corrected:   { icon: <Pencil className="w-4 h-4 text-[#608e96]" />,      color: "bg-[#608e96]/20", accent: "text-[#608e96]" },
-    conversation_started:{ icon: <MessageCircle className="w-4 h-4 text-[#608e96]" />, color: "bg-[#608e96]/20", accent: "text-[#608e96]" },
-    agent_created:       { icon: <Bot className="w-4 h-4 text-[#85b878]" />,         color: "bg-[#85b878]/20", accent: "text-[#85b878]" },
-    knowledge_uploaded:  { icon: <BookOpen className="w-4 h-4 text-[#608e96]" />,    color: "bg-[#608e96]/20", accent: "text-[#608e96]" },
+    flagged_created:     { icon: <Flag className="w-4 h-4 text-cultivate-beige" />,        color: "bg-cultivate-beige/20", accent: "text-cultivate-beige" },
+    flagged_verified:    { icon: <CheckCircle className="w-4 h-4 text-cultivate-green-light" />, color: "bg-cultivate-green-light/20", accent: "text-cultivate-green-light" },
+    flagged_corrected:   { icon: <Pencil className="w-4 h-4 text-cultivate-teal" />,      color: "bg-cultivate-teal/20", accent: "text-cultivate-teal" },
+    conversation_started:{ icon: <MessageCircle className="w-4 h-4 text-cultivate-teal" />, color: "bg-cultivate-teal/20", accent: "text-cultivate-teal" },
+    agent_created:       { icon: <Bot className="w-4 h-4 text-cultivate-green-light" />,         color: "bg-cultivate-green-light/20", accent: "text-cultivate-green-light" },
+    knowledge_uploaded:  { icon: <BookOpen className="w-4 h-4 text-cultivate-teal" />,    color: "bg-cultivate-teal/20", accent: "text-cultivate-teal" },
   };
   const { icon, color } = config[item.type] ?? config.conversation_started;
   return (
-    <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
+    <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
       <div className={`w-8 h-8 ${color} rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5`}>{icon}</div>
       <div className="flex-1 min-w-0">
-        <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#C2C0B6]`}>{item.description}</p>
-        <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>
+        <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-primary`}>{item.description}</p>
+        <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary mt-0.5`}>
           {item.agentName && <>{item.agentName} &middot; </>}{relativeTime(item.timestamp)}
         </p>
       </div>
@@ -164,7 +164,7 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
   ];
 
   return (
-    <div className="flex h-screen bg-[#1E1E1E]">
+    <div className="flex h-screen bg-cultivate-bg-main">
       {/* Mobile sidebar backdrop — always rendered for smooth opacity fade transition */}
       <div
         className={`fixed inset-0 z-30 bg-black/50 lg:hidden transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
@@ -173,7 +173,7 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
 
       {/* Sidebar — slide-over paper effect matches chat sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#1C1C1C] border-r border-[#2B2B2B] flex flex-col transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${sidebarOpen ? 'translate-x-0 shadow-[4px_0_24px_rgba(0,0,0,0.4)]' : '-translate-x-full shadow-none'} lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:shadow-none ${sidebarOpen ? 'lg:w-72' : 'lg:w-14'}`}
+        className={`fixed inset-y-0 left-0 z-40 w-72 bg-cultivate-bg-sidebar border-r border-cultivate-border-subtle flex flex-col transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${sidebarOpen ? 'translate-x-0 shadow-[4px_0_24px_rgba(0,0,0,0.4)]' : '-translate-x-full shadow-none'} lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:shadow-none ${sidebarOpen ? 'lg:w-72' : 'lg:w-14'}`}
       >
         {/* Logo — pt-16 on mobile aligns with conversation header / nav button safe area */}
         <div className={`p-2 pt-16 lg:pt-4 min-h-[53px] flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
@@ -184,9 +184,9 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
           )}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1.5 hover:bg-[#141413] rounded transition-colors"
+            className="p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors"
           >
-            <PanelLeft className={`w-5 h-5 text-[#C2C0B6] transition-transform duration-300 ${!sidebarOpen ? 'rotate-180' : ''}`} />
+            <PanelLeft className={`w-5 h-5 text-cultivate-text-primary transition-transform duration-300 ${!sidebarOpen ? 'rotate-180' : ''}`} />
           </button>
         </div>
 
@@ -201,14 +201,14 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                   !sidebarOpen ? 'justify-center' : ''
                 } ${
                   activeNav === item.id
-                    ? 'bg-[#141413] text-white'
-                    : 'text-[#C2C0B6] hover:bg-[#141413] hover:text-white'
+                    ? 'bg-cultivate-bg-hover text-white'
+                    : 'text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white'
                 }`}
               >
                 <item.icon className="w-5 h-5 standalone:w-6 standalone:h-6 lg:w-5 lg:h-5 flex-shrink-0" />
                 {sidebarOpen && <span className={`${isStandalone ? "text-lg" : "text-sm"} lg:text-sm`}>{item.label}</span>}
                 {!sidebarOpen && (
-                  <div className="absolute left-full ml-2 px-2 py-1 bg-[#2B2B2B] text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                  <div className="absolute left-full ml-2 px-2 py-1 bg-cultivate-bg-elevated text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                     {item.label}
                   </div>
                 )}
@@ -220,18 +220,18 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
           {sidebarOpen && (
             <div className="mt-4">
               {/* Recent Agents label — text-sm mobile (14px), text-[11px] desktop */}
-              <div className="text-[11px] standalone:text-sm lg:text-[11px] text-[#9C9A92] px-2 mb-1.5">
+              <div className="text-[11px] standalone:text-sm lg:text-[11px] text-cultivate-text-secondary px-2 mb-1.5">
                 Recent Agents
               </div>
               {/* space-y-2 on mobile for breathing room, tight on desktop */}
               <div className="space-y-0.5 standalone:space-y-2 lg:space-y-0.5">
                 {recentAgents.map((agent) => (
-                  <div key={agent} className="group flex items-stretch rounded-lg hover:bg-[#141413] has-[button:hover]:bg-transparent transition-colors cursor-pointer">
-                    <span className={`flex-1 truncate ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm text-[#C2C0B6] group-hover:text-white flex items-center pl-2 py-2`}>
+                  <div key={agent} className="group flex items-stretch rounded-lg hover:bg-cultivate-bg-hover has-[button:hover]:bg-transparent transition-colors cursor-pointer">
+                    <span className={`flex-1 truncate ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm text-cultivate-text-primary group-hover:text-white flex items-center pl-2 py-2`}>
                       {agent}
                     </span>
-                    <button className="opacity-0 group-hover:opacity-100 transition-opacity px-2.5 py-2 hover:bg-[#141413] rounded-lg flex items-center">
-                      <MoreHorizontal className="w-4 h-4 text-[#C2C0B6]" strokeWidth={2.5} />
+                    <button className="opacity-0 group-hover:opacity-100 transition-opacity px-2.5 py-2 hover:bg-cultivate-bg-hover rounded-lg flex items-center">
+                      <MoreHorizontal className="w-4 h-4 text-cultivate-text-primary" strokeWidth={2.5} />
                     </button>
                   </div>
                 ))}
@@ -242,7 +242,7 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
 
         {/* User Profile — outer div, not button, to avoid nested <button> hydration error
             Click zones: avatar+name area opens menu; install button opens install modal */}
-        <div className={`${isStandalone ? '' : 'border-t border-[#2B2B2B]'} p-2 ${isStandalone ? 'pb-6 pl-3' : 'pb-2'} lg:pb-2 relative ${!sidebarOpen ? 'flex justify-center' : ''}`}>
+        <div className={`${isStandalone ? '' : 'border-t border-cultivate-border-subtle'} p-2 ${isStandalone ? 'pb-6 pl-3' : 'pb-2'} lg:pb-2 relative ${!sidebarOpen ? 'flex justify-center' : ''}`}>
           <div
             onClick={() => setShowUserMenu(!showUserMenu)}
             className={`group relative flex items-center p-1.5 ${sidebarOpen ? 'w-full justify-between gap-2' : 'justify-center'} cursor-pointer`}
@@ -251,15 +251,15 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
             <div
               className={`flex items-center ${sidebarOpen ? 'gap-2' : ''} ${isStandalone && sidebarOpen ? 'w-auto max-w-[calc(100%-3rem)] px-2.5 py-1.5 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] transition-colors' : ''}`}
             >
-              <div className="w-10 h-10 bg-[#85b878] rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-cultivate-green-light rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-base font-medium">{getInitials(user.name)}</span>
               </div>
               {sidebarOpen && (
                 <div className="flex-1 min-w-0 text-left">
-                  <p className="text-sm font-medium text-[#C2C0B6] truncate">
+                  <p className="text-sm font-medium text-cultivate-text-primary truncate">
                     {user.name?.split(" ")[0]}
                   </p>
-                  <p className="text-xs text-[#9C9A92] truncate">
+                  <p className="text-xs text-cultivate-text-secondary truncate">
                     {user.role === "ADMIN" ? "Admin" : "Agronomist"}
                   </p>
                 </div>
@@ -269,7 +269,7 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
               <div className="flex items-center">
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowInstallModal(true); }}
-                  className={`${isStandalone ? 'h-10 w-10 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] flex items-center justify-center' : 'p-1.5 border border-[#3B3B3B] hover:border-[#5a7048] rounded-md'} transition-colors text-[#9C9A92] hover:text-[#C2C0B6]`}
+                  className={`${isStandalone ? 'h-10 w-10 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] flex items-center justify-center' : 'p-1.5 border border-cultivate-border-element hover:border-[#5a7048] rounded-md'} transition-colors text-cultivate-text-secondary hover:text-cultivate-text-primary`}
                   title="Install app"
                 >
                   <Download className="w-4 h-4" />
@@ -277,7 +277,7 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
               </div>
             )}
             {!sidebarOpen && (
-              <div className="absolute left-full ml-2 px-2 py-1 bg-[#2B2B2B] text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+              <div className="absolute left-full ml-2 px-2 py-1 bg-cultivate-bg-elevated text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                 {user.name?.split(" ")[0]}
               </div>
             )}
@@ -287,22 +287,22 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
           {showUserMenu && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
-              <div className={`absolute bottom-full mb-2 bg-[#1C1C1C] rounded-lg shadow-lg border border-[#2B2B2B] py-2 z-50 ${sidebarOpen ? 'left-3 right-3' : 'left-0 min-w-[200px]'}`}>
+              <div className={`absolute bottom-full mb-2 bg-cultivate-bg-sidebar rounded-lg shadow-lg border border-cultivate-border-subtle py-2 z-50 ${sidebarOpen ? 'left-3 right-3' : 'left-0 min-w-[200px]'}`}>
                 <div className="px-3 py-2 mb-1">
-                  <p className="text-xs text-[#9C9A92] truncate">{user.email}</p>
+                  <p className="text-xs text-cultivate-text-secondary truncate">{user.email}</p>
                 </div>
-                <button className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors rounded">
+                <button className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors rounded">
                   <Settings className="w-4 h-4" />
                   Settings
                 </button>
-                <button className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors rounded">
+                <button className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors rounded">
                   <HelpCircle className="w-4 h-4" />
                   Help
                 </button>
-                <div className="border-t border-[#2B2B2B] mt-1 pt-1">
+                <div className="border-t border-cultivate-border-subtle mt-1 pt-1">
                   <button
                     onClick={handleSignOut}
-                    className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors rounded"
+                    className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors rounded"
                   >
                     <LogOut className="w-4 h-4" />
                     Sign out
@@ -330,7 +330,7 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                   Parent has overflow-hidden so this flex-shrink-0 div never moves.
                   Mobile: GlassCircleButton inline with welcome text + pt-8 safe area.
                   Desktop: static heading, no button (sidebar always visible). */}
-              <div className="relative flex-shrink-0 bg-[#1E1E1E] pt-8 pb-6 lg:pt-0 lg:pb-0 lg:bg-transparent">
+              <div className="relative flex-shrink-0 bg-cultivate-bg-main pt-8 pb-6 lg:pt-0 lg:pb-0 lg:bg-transparent">
                 <div className="flex items-center gap-3 lg:hidden">
                   {!sidebarOpen && (
                     <GlassCircleButton
@@ -342,17 +342,17 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                     </GlassCircleButton>
                   )}
                   <div>
-                    <h1 className="text-3xl font-serif text-[#C2C0B6] mb-0.5">
+                    <h1 className="text-3xl font-serif text-cultivate-text-primary mb-0.5">
                       Welcome, {user.name?.split(" ")[0]}
                     </h1>
-                    <p className="text-sm text-[#9C9A92]">Manage your AI agents and knowledge bases</p>
+                    <p className="text-sm text-cultivate-text-secondary">Manage your AI agents and knowledge bases</p>
                   </div>
                 </div>
                 <div className="hidden lg:block mb-8">
-                  <h1 className="text-3xl font-serif text-[#C2C0B6] mb-1">
+                  <h1 className="text-3xl font-serif text-cultivate-text-primary mb-1">
                     Welcome, {user.name?.split(" ")[0]}
                   </h1>
-                  <p className="text-sm text-[#9C9A92]">
+                  <p className="text-sm text-cultivate-text-secondary">
                     Manage your AI agents and knowledge bases
                   </p>
                 </div>
@@ -370,91 +370,91 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
               <div className="lg:flex-shrink-0">
               {/* Stat Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <button onClick={() => setActiveNav("agents")} className="bg-[#2B2B2B] rounded-xl p-5 text-left hover:border-[#85b878] border border-transparent transition-colors">
+                <button onClick={() => setActiveNav("agents")} className="bg-cultivate-bg-elevated rounded-xl p-5 text-left hover:border-[#85b878] border border-transparent transition-colors">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm text-[#9C9A92]">Active Agents</span>
-                    <div className="w-9 h-9 bg-[#85b878]/20 rounded-lg flex items-center justify-center">
-                      <Bot className="w-5 h-5 text-[#85b878]" />
+                    <span className="text-sm text-cultivate-text-secondary">Active Agents</span>
+                    <div className="w-9 h-9 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center">
+                      <Bot className="w-5 h-5 text-cultivate-green-light" />
                     </div>
                   </div>
                   <p className="text-3xl font-semibold text-white">
-                    {demoMode ? 5 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-[#6B6B6B]" /> : (stats?.activeAgents ?? "—")}
+                    {demoMode ? 5 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-cultivate-text-tertiary" /> : (stats?.activeAgents ?? "—")}
                   </p>
                 </button>
 
-                <button onClick={() => setActiveNav("knowledge")} className="bg-[#2B2B2B] rounded-xl p-5 text-left hover:border-[#608e96] border border-transparent transition-colors">
+                <button onClick={() => setActiveNav("knowledge")} className="bg-cultivate-bg-elevated rounded-xl p-5 text-left hover:border-[#608e96] border border-transparent transition-colors">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm text-[#9C9A92]">Knowledge Docs</span>
-                    <div className="w-9 h-9 bg-[#608e96]/20 rounded-lg flex items-center justify-center">
-                      <BookOpen className="w-5 h-5 text-[#608e96]" />
+                    <span className="text-sm text-cultivate-text-secondary">Knowledge Docs</span>
+                    <div className="w-9 h-9 bg-cultivate-teal/20 rounded-lg flex items-center justify-center">
+                      <BookOpen className="w-5 h-5 text-cultivate-teal" />
                     </div>
                   </div>
                   <p className="text-3xl font-semibold text-white">
-                    {demoMode ? 18 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-[#6B6B6B]" /> : (stats?.knowledgeDocs ?? "—")}
+                    {demoMode ? 18 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-cultivate-text-tertiary" /> : (stats?.knowledgeDocs ?? "—")}
                   </p>
                 </button>
 
-                <button onClick={() => setActiveNav("flagged")} className="bg-[#2B2B2B] rounded-xl p-5 text-left hover:border-[#e8c8ab] border border-transparent transition-colors">
+                <button onClick={() => setActiveNav("flagged")} className="bg-cultivate-bg-elevated rounded-xl p-5 text-left hover:border-[#e8c8ab] border border-transparent transition-colors">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm text-[#9C9A92]">Pending Flags</span>
-                    <div className="w-9 h-9 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center">
-                      <Flag className="w-5 h-5 text-[#e8c8ab]" />
+                    <span className="text-sm text-cultivate-text-secondary">Pending Flags</span>
+                    <div className="w-9 h-9 bg-cultivate-beige/20 rounded-lg flex items-center justify-center">
+                      <Flag className="w-5 h-5 text-cultivate-beige" />
                     </div>
                   </div>
                   <p className="text-3xl font-semibold text-white">
-                    {demoMode ? 4 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-[#6B6B6B]" /> : (stats?.pendingFlags ?? "—")}
+                    {demoMode ? 4 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-cultivate-text-tertiary" /> : (stats?.pendingFlags ?? "—")}
                   </p>
                 </button>
               </div>
 
               {/* Quick Actions */}
               <div className="mb-8">
-                <h2 className="text-sm text-[#9C9A92] mb-3">Quick Actions</h2>
+                <h2 className="text-sm text-cultivate-text-secondary mb-3">Quick Actions</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <button onClick={() => setActiveNav("agents")} className="group p-4 bg-[#2B2B2B] rounded-xl border border-[#3B3B3B] hover:border-[#85b878] transition-colors text-left">
+                  <button onClick={() => setActiveNav("agents")} className="group p-4 bg-cultivate-bg-elevated rounded-xl border border-cultivate-border-element hover:border-[#85b878] transition-colors text-left">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-[#85b878]/20 rounded-lg flex items-center justify-center group-hover:bg-[#85b878]/30 transition-colors">
-                        <Plus className="w-5 h-5 text-[#85b878]" />
+                      <div className="w-9 h-9 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center group-hover:bg-cultivate-green-light/30 transition-colors">
+                        <Plus className="w-5 h-5 text-cultivate-green-light" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-[#C2C0B6]">Create New Agent</p>
-                        <p className="text-xs text-[#6B6B6B]">Set up a new AI agent with custom knowledge</p>
+                        <p className="text-sm font-medium text-cultivate-text-primary">Create New Agent</p>
+                        <p className="text-xs text-cultivate-text-tertiary">Set up a new AI agent with custom knowledge</p>
                       </div>
                     </div>
                   </button>
 
-                  <button onClick={() => setActiveNav("knowledge")} className="group p-4 bg-[#2B2B2B] rounded-xl border border-[#3B3B3B] hover:border-[#608e96] transition-colors text-left">
+                  <button onClick={() => setActiveNav("knowledge")} className="group p-4 bg-cultivate-bg-elevated rounded-xl border border-cultivate-border-element hover:border-[#608e96] transition-colors text-left">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-[#608e96]/20 rounded-lg flex items-center justify-center group-hover:bg-[#608e96]/30 transition-colors">
-                        <Upload className="w-5 h-5 text-[#608e96]" />
+                      <div className="w-9 h-9 bg-cultivate-teal/20 rounded-lg flex items-center justify-center group-hover:bg-cultivate-teal/30 transition-colors">
+                        <Upload className="w-5 h-5 text-cultivate-teal" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-[#C2C0B6]">Upload Knowledge Base</p>
-                        <p className="text-xs text-[#6B6B6B]">Add PDFs or documents to train your agents</p>
+                        <p className="text-sm font-medium text-cultivate-text-primary">Upload Knowledge Base</p>
+                        <p className="text-xs text-cultivate-text-tertiary">Add PDFs or documents to train your agents</p>
                       </div>
                     </div>
                   </button>
 
-                  <button onClick={() => setActiveNav("flagged")} className="group p-4 bg-[#2B2B2B] rounded-xl border border-[#3B3B3B] hover:border-[#e8c8ab] transition-colors text-left">
+                  <button onClick={() => setActiveNav("flagged")} className="group p-4 bg-cultivate-bg-elevated rounded-xl border border-cultivate-border-element hover:border-[#e8c8ab] transition-colors text-left">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center group-hover:bg-[#e8c8ab]/30 transition-colors">
-                        <Eye className="w-5 h-5 text-[#e8c8ab]" />
+                      <div className="w-9 h-9 bg-cultivate-beige/20 rounded-lg flex items-center justify-center group-hover:bg-cultivate-beige/30 transition-colors">
+                        <Eye className="w-5 h-5 text-cultivate-beige" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-[#C2C0B6]">Review Flagged Queries</p>
-                        <p className="text-xs text-[#6B6B6B]">Check low-confidence farmer questions</p>
+                        <p className="text-sm font-medium text-cultivate-text-primary">Review Flagged Queries</p>
+                        <p className="text-xs text-cultivate-text-tertiary">Check low-confidence farmer questions</p>
                       </div>
                     </div>
                   </button>
 
-                  <button onClick={() => setActiveNav("analytics")} className="group p-4 bg-[#2B2B2B] rounded-xl border border-[#3B3B3B] hover:border-[#536d3d] transition-colors text-left">
+                  <button onClick={() => setActiveNav("analytics")} className="group p-4 bg-cultivate-bg-elevated rounded-xl border border-cultivate-border-element hover:border-[#536d3d] transition-colors text-left">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-[#536d3d]/20 rounded-lg flex items-center justify-center group-hover:bg-[#536d3d]/30 transition-colors">
-                        <BarChart3 className="w-5 h-5 text-[#536d3d]" />
+                      <div className="w-9 h-9 bg-cultivate-green-dark/20 rounded-lg flex items-center justify-center group-hover:bg-cultivate-green-dark/30 transition-colors">
+                        <BarChart3 className="w-5 h-5 text-cultivate-green-dark" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-[#C2C0B6]">View Analytics</p>
-                        <p className="text-xs text-[#6B6B6B]">See usage stats and API costs</p>
+                        <p className="text-sm font-medium text-cultivate-text-primary">View Analytics</p>
+                        <p className="text-xs text-cultivate-text-tertiary">See usage stats and API costs</p>
                       </div>
                     </div>
                   </button>
@@ -463,8 +463,8 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
 
               {/* Recent Activity Header */}
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm text-[#9C9A92]">Recent Activity</h2>
-                <span className="text-xs text-[#6B6B6B]">Last 7 days</span>
+                <h2 className="text-sm text-cultivate-text-secondary">Recent Activity</h2>
+                <span className="text-xs text-cultivate-text-tertiary">Last 7 days</span>
               </div>
               </div>
 
@@ -475,88 +475,88 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                 {/* Loading state — only in real mode */}
                 {!demoMode && activityLoading && (
                   <div className="flex items-center justify-center py-10">
-                    <Loader2 className="w-5 h-5 text-[#6B6B6B] animate-spin" />
+                    <Loader2 className="w-5 h-5 text-cultivate-text-tertiary animate-spin" />
                   </div>
                 )}
 
                 {/* Demo mode: hardcoded activity items that show what a mature account looks like */}
                 {demoMode && (
                   <>
-                <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                    <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <CheckCircle className="w-4 h-4 text-[#85b878]" />
+                <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                    <div className="w-8 h-8 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <CheckCircle className="w-4 h-4 text-cultivate-green-light" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#C2C0B6]`}>
-                        You <span className="text-[#85b878]">verified</span> a response about maize aphid identification
+                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-primary`}>
+                        You <span className="text-cultivate-green-light">verified</span> a response about maize aphid identification
                       </p>
-                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>Pest Management &middot; 12 hours ago</p>
+                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary mt-0.5`}>Pest Management &middot; 12 hours ago</p>
                     </div>
                   </div>
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                    <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Pencil className="w-4 h-4 text-[#608e96]" />
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                    <div className="w-8 h-8 bg-cultivate-teal/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Pencil className="w-4 h-4 text-cultivate-teal" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#C2C0B6]`}>
-                        You <span className="text-[#608e96]">corrected</span> a response about okra planting schedule
+                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-primary`}>
+                        You <span className="text-cultivate-teal">corrected</span> a response about okra planting schedule
                       </p>
-                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>General Farm Advisor &middot; 2 days ago</p>
+                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary mt-0.5`}>General Farm Advisor &middot; 2 days ago</p>
                     </div>
                   </div>
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                    <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Flag className="w-4 h-4 text-[#e8c8ab]" />
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                    <div className="w-8 h-8 bg-cultivate-beige/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Flag className="w-4 h-4 text-cultivate-beige" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#C2C0B6]`}>
-                        New <span className="text-[#e8c8ab]">flagged query</span> from Kwame Asante about cassava disease
+                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-primary`}>
+                        New <span className="text-cultivate-beige">flagged query</span> from Kwame Asante about cassava disease
                       </p>
-                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>General Farm Advisor &middot; 2 hours ago &middot; 45% confidence</p>
+                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary mt-0.5`}>General Farm Advisor &middot; 2 hours ago &middot; 45% confidence</p>
                     </div>
                   </div>
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                    <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Bot className="w-4 h-4 text-[#85b878]" />
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                    <div className="w-8 h-8 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Bot className="w-4 h-4 text-cultivate-green-light" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#C2C0B6]`}>
-                        <span className="text-[#85b878]">Cocoa Specialist</span> agent was created
+                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-primary`}>
+                        <span className="text-cultivate-green-light">Cocoa Specialist</span> agent was created
                       </p>
-                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>4 knowledge bases attached &middot; 1 day ago</p>
+                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary mt-0.5`}>4 knowledge bases attached &middot; 1 day ago</p>
                     </div>
                   </div>
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                    <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <MessageCircle className="w-4 h-4 text-[#608e96]" />
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                    <div className="w-8 h-8 bg-cultivate-teal/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <MessageCircle className="w-4 h-4 text-cultivate-teal" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#C2C0B6]`}>
-                        Ama Mensah started a <span className="text-[#608e96]">new conversation</span> about tomato fertilizer
+                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-primary`}>
+                        Ama Mensah started a <span className="text-cultivate-teal">new conversation</span> about tomato fertilizer
                       </p>
-                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>General Farm Advisor &middot; 5 hours ago</p>
+                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary mt-0.5`}>General Farm Advisor &middot; 5 hours ago</p>
                     </div>
                   </div>
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                    <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Flag className="w-4 h-4 text-[#e8c8ab]" />
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                    <div className="w-8 h-8 bg-cultivate-beige/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Flag className="w-4 h-4 text-cultivate-beige" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#C2C0B6]`}>
-                        New <span className="text-[#e8c8ab]">flagged query</span> from Abena Darkwa about cocoa pod disease
+                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-primary`}>
+                        New <span className="text-cultivate-beige">flagged query</span> from Abena Darkwa about cocoa pod disease
                       </p>
-                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>General Farm Advisor &middot; 6 hours ago &middot; 41% confidence</p>
+                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary mt-0.5`}>General Farm Advisor &middot; 6 hours ago &middot; 41% confidence</p>
                     </div>
                   </div>
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                    <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <BookOpen className="w-4 h-4 text-[#608e96]" />
+                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                    <div className="w-8 h-8 bg-cultivate-teal/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <BookOpen className="w-4 h-4 text-cultivate-teal" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#C2C0B6]`}>
-                        <span className="text-[#608e96]">Cocoa Farming Guide 2026.pdf</span> uploaded to knowledge base
+                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-primary`}>
+                        <span className="text-cultivate-teal">Cocoa Farming Guide 2026.pdf</span> uploaded to knowledge base
                       </p>
-                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-[#6B6B6B] mt-0.5`}>Cocoa Specialist &middot; 3 days ago &middot; 42 chunks</p>
+                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary mt-0.5`}>Cocoa Specialist &middot; 3 days ago &middot; 42 chunks</p>
                     </div>
                   </div>
                   </>
@@ -570,7 +570,7 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                 {/* Empty state — real mode, no activity yet */}
                 {!demoMode && !activityLoading && activities.length === 0 && (
                   <div className="py-8 text-center">
-                    <p className="text-sm text-[#6B6B6B]">No activity in the last 7 days.</p>
+                    <p className="text-sm text-cultivate-text-tertiary">No activity in the last 7 days.</p>
                   </div>
                 )}
 
@@ -578,7 +578,7 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                 <div className="pl-1.5 pr-1.5 py-3">
                   <button
                     onClick={() => setActivityPanelOpen(true)}
-                    className="flex items-center gap-1 text-xs text-[#9C9A92] hover:text-white transition-colors"
+                    className="flex items-center gap-1 text-xs text-cultivate-text-secondary hover:text-white transition-colors"
                   >
                     View all activity
                     <ArrowRight className="w-3 h-3" />
@@ -610,18 +610,18 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
                   </div>
                 )}
                 <div className="text-center">
-                  <h1 className="text-2xl font-serif text-[#C2C0B6]">Analytics</h1>
-                  <p className="text-sm text-[#9C9A92] mt-1">Usage stats and insights</p>
+                  <h1 className="text-2xl font-serif text-cultivate-text-primary">Analytics</h1>
+                  <p className="text-sm text-cultivate-text-secondary mt-1">Usage stats and insights</p>
                 </div>
               </div>
               {/* Desktop header */}
               <div className="hidden lg:block mb-6">
-                <h1 className="text-2xl font-serif text-[#C2C0B6]">Analytics</h1>
-                <p className="text-sm text-[#9C9A92] mt-1">Usage stats and insights</p>
+                <h1 className="text-2xl font-serif text-cultivate-text-primary">Analytics</h1>
+                <p className="text-sm text-cultivate-text-secondary mt-1">Usage stats and insights</p>
               </div>
-              <div className="bg-[#2B2B2B] rounded-xl p-8 text-center">
-                <BarChart3 className="w-10 h-10 text-[#6B6B6B] mx-auto mb-3" />
-                <p className="text-sm text-[#6B6B6B]">Analytics coming soon.</p>
+              <div className="bg-cultivate-bg-elevated rounded-xl p-8 text-center">
+                <BarChart3 className="w-10 h-10 text-cultivate-text-tertiary mx-auto mb-3" />
+                <p className="text-sm text-cultivate-text-tertiary">Analytics coming soon.</p>
               </div>
             </div>
           )}
@@ -637,19 +637,19 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
           />
           {/* Mobile: centered dialog that grows with content. Desktop: right-side panel. */}
           <div className="fixed inset-0 z-50 flex items-center justify-center px-3 py-[calc(env(safe-area-inset-top)+12px)] lg:p-0 lg:block lg:inset-y-0 lg:right-0 lg:left-auto lg:w-[500px] lg:h-full">
-            <div className="w-full max-w-sm mx-auto max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-24px)] bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl lg:rounded-none lg:border-l lg:border-t-0 lg:border-r-0 lg:border-b-0 lg:max-w-none lg:h-full lg:max-h-none flex flex-col shadow-2xl">
+            <div className="w-full max-w-sm mx-auto max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-24px)] bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl lg:rounded-none lg:border-l lg:border-t-0 lg:border-r-0 lg:border-b-0 lg:max-w-none lg:h-full lg:max-h-none flex flex-col shadow-2xl">
             {/* Panel Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#2B2B2B]">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-cultivate-border-subtle">
               <div>
                 <h2 className="text-sm font-medium text-white">Recent Activity</h2>
-                <p className="text-xs text-[#9C9A92] mt-0.5">Last 30 days</p>
+                <p className="text-xs text-cultivate-text-secondary mt-0.5">Last 30 days</p>
               </div>
               <button
                 type="button"
                 onClick={handleCloseActivityPanel}
-                className="p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors"
+                className="p-1.5 hover:bg-cultivate-bg-elevated rounded-lg transition-colors"
               >
-                <X className="w-4 h-4 text-[#9C9A92]" />
+                <X className="w-4 h-4 text-cultivate-text-secondary" />
               </button>
             </div>
 
@@ -662,94 +662,94 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
               {/* Demo mode: hardcoded items showing a mature account's history */}
               {demoMode && (
                 <>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <CheckCircle className="w-4 h-4 text-[#85b878]" />
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                <div className="w-8 h-8 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CheckCircle className="w-4 h-4 text-cultivate-green-light" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]">You <span className="text-[#85b878]">verified</span> a response about maize aphid identification</p>
-                  <p className="text-xs text-[#6B6B6B] mt-0.5">Pest Management &middot; 12 hours ago</p>
+                  <p className="text-sm text-cultivate-text-primary">You <span className="text-cultivate-green-light">verified</span> a response about maize aphid identification</p>
+                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">Pest Management &middot; 12 hours ago</p>
                 </div>
               </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Pencil className="w-4 h-4 text-[#608e96]" />
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                <div className="w-8 h-8 bg-cultivate-teal/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Pencil className="w-4 h-4 text-cultivate-teal" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]">You <span className="text-[#608e96]">corrected</span> a response about okra planting schedule</p>
-                  <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 2 days ago</p>
+                  <p className="text-sm text-cultivate-text-primary">You <span className="text-cultivate-teal">corrected</span> a response about okra planting schedule</p>
+                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">General Farm Advisor &middot; 2 days ago</p>
                 </div>
               </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Flag className="w-4 h-4 text-[#e8c8ab]" />
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                <div className="w-8 h-8 bg-cultivate-beige/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Flag className="w-4 h-4 text-cultivate-beige" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]">New <span className="text-[#e8c8ab]">flagged query</span> from Kwame Asante about cassava disease</p>
-                  <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 2 hours ago &middot; 45% confidence</p>
+                  <p className="text-sm text-cultivate-text-primary">New <span className="text-cultivate-beige">flagged query</span> from Kwame Asante about cassava disease</p>
+                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">General Farm Advisor &middot; 2 hours ago &middot; 45% confidence</p>
                 </div>
               </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Bot className="w-4 h-4 text-[#85b878]" />
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                <div className="w-8 h-8 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Bot className="w-4 h-4 text-cultivate-green-light" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]"><span className="text-[#85b878]">Cocoa Specialist</span> agent was created</p>
-                  <p className="text-xs text-[#6B6B6B] mt-0.5">4 knowledge bases attached &middot; 1 day ago</p>
+                  <p className="text-sm text-cultivate-text-primary"><span className="text-cultivate-green-light">Cocoa Specialist</span> agent was created</p>
+                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">4 knowledge bases attached &middot; 1 day ago</p>
                 </div>
               </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <MessageCircle className="w-4 h-4 text-[#608e96]" />
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                <div className="w-8 h-8 bg-cultivate-teal/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <MessageCircle className="w-4 h-4 text-cultivate-teal" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]">Ama Mensah started a <span className="text-[#608e96]">new conversation</span> about tomato fertilizer</p>
-                  <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 5 hours ago</p>
+                  <p className="text-sm text-cultivate-text-primary">Ama Mensah started a <span className="text-cultivate-teal">new conversation</span> about tomato fertilizer</p>
+                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">General Farm Advisor &middot; 5 hours ago</p>
                 </div>
               </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                <div className="w-8 h-8 bg-[#e8c8ab]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Flag className="w-4 h-4 text-[#e8c8ab]" />
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                <div className="w-8 h-8 bg-cultivate-beige/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Flag className="w-4 h-4 text-cultivate-beige" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]">New <span className="text-[#e8c8ab]">flagged query</span> from Abena Darkwa about cocoa pod disease</p>
-                  <p className="text-xs text-[#6B6B6B] mt-0.5">General Farm Advisor &middot; 6 hours ago &middot; 41% confidence</p>
+                  <p className="text-sm text-cultivate-text-primary">New <span className="text-cultivate-beige">flagged query</span> from Abena Darkwa about cocoa pod disease</p>
+                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">General Farm Advisor &middot; 6 hours ago &middot; 41% confidence</p>
                 </div>
               </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <BookOpen className="w-4 h-4 text-[#608e96]" />
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                <div className="w-8 h-8 bg-cultivate-teal/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <BookOpen className="w-4 h-4 text-cultivate-teal" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]"><span className="text-[#608e96]">Cocoa Farming Guide 2026.pdf</span> uploaded to knowledge base</p>
-                  <p className="text-xs text-[#6B6B6B] mt-0.5">Cocoa Specialist &middot; 3 days ago &middot; 42 chunks</p>
+                  <p className="text-sm text-cultivate-text-primary"><span className="text-cultivate-teal">Cocoa Farming Guide 2026.pdf</span> uploaded to knowledge base</p>
+                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">Cocoa Specialist &middot; 3 days ago &middot; 42 chunks</p>
                 </div>
               </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <CheckCircle className="w-4 h-4 text-[#85b878]" />
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                <div className="w-8 h-8 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CheckCircle className="w-4 h-4 text-cultivate-green-light" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]">You <span className="text-[#85b878]">verified</span> a response about tomato blight treatment</p>
-                  <p className="text-xs text-[#6B6B6B] mt-0.5">Pest Management &middot; 4 days ago</p>
+                  <p className="text-sm text-cultivate-text-primary">You <span className="text-cultivate-green-light">verified</span> a response about tomato blight treatment</p>
+                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">Pest Management &middot; 4 days ago</p>
                 </div>
               </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                <div className="w-8 h-8 bg-[#608e96]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <MessageCircle className="w-4 h-4 text-[#608e96]" />
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                <div className="w-8 h-8 bg-cultivate-teal/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <MessageCircle className="w-4 h-4 text-cultivate-teal" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]">Kofi Mensah started a <span className="text-[#608e96]">new conversation</span> about armyworm outbreak</p>
-                  <p className="text-xs text-[#6B6B6B] mt-0.5">Pest Management &middot; 5 days ago</p>
+                  <p className="text-sm text-cultivate-text-primary">Kofi Mensah started a <span className="text-cultivate-teal">new conversation</span> about armyworm outbreak</p>
+                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">Pest Management &middot; 5 days ago</p>
                 </div>
               </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`}>
-                <div className="w-8 h-8 bg-[#85b878]/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Bot className="w-4 h-4 text-[#85b878]" />
+              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
+                <div className="w-8 h-8 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Bot className="w-4 h-4 text-cultivate-green-light" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#C2C0B6]"><span className="text-[#85b878]">Maize Expert</span> agent was updated with new system prompt</p>
-                  <p className="text-xs text-[#6B6B6B] mt-0.5">6 days ago</p>
+                  <p className="text-sm text-cultivate-text-primary"><span className="text-cultivate-green-light">Maize Expert</span> agent was updated with new system prompt</p>
+                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">6 days ago</p>
                 </div>
               </div>
                 </>
@@ -758,7 +758,7 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
               {/* Real mode: same activities array fetched for the overview — no second API call */}
               {!demoMode && activityLoading && (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-5 h-5 text-[#6B6B6B] animate-spin" />
+                  <Loader2 className="w-5 h-5 text-cultivate-text-tertiary animate-spin" />
                 </div>
               )}
               {!demoMode && !activityLoading && activities.map((item: ActivityItem, i: number) => (
@@ -766,17 +766,17 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
               ))}
               {!demoMode && !activityLoading && activities.length === 0 && (
                 <div className="py-8 text-center">
-                  <p className="text-sm text-[#6B6B6B]">No activity in the last 30 days.</p>
+                  <p className="text-sm text-cultivate-text-tertiary">No activity in the last 30 days.</p>
                 </div>
               )}
             </div>
 
             {/* Panel Footer */}
-            <div className="px-5 py-3 border-t border-[#2B2B2B]">
+            <div className="px-5 py-3 border-t border-cultivate-border-subtle">
               <button
                 type="button"
                 onClick={handleCloseActivityPanel}
-                className="w-full px-4 py-2 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#C2C0B6] transition-colors"
+                className="w-full px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
               >
                 Close
               </button>
@@ -790,23 +790,23 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
       {showInstallModal && (
         <>
           <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowInstallModal(false)} />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[#1C1C1C] border border-[#2B2B2B] rounded-xl p-6 w-80 shadow-xl">
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-80 shadow-xl">
             <div className="mb-4">
               <div className="w-10 h-10 bg-[#5a7048] rounded-full flex items-center justify-center mb-3">
                 <Download className="w-5 h-5 text-white" />
               </div>
               <h2 className="text-white font-semibold text-base mb-1.5">Install Cultivate</h2>
-              <p className="text-[#9C9A92] text-sm leading-relaxed">
+              <p className="text-cultivate-text-secondary text-sm leading-relaxed">
                 Add Cultivate to your home screen for quick access and offline support.
               </p>
-              <p className="text-[#6B6B6B] text-xs mt-2 leading-relaxed">
+              <p className="text-cultivate-text-tertiary text-xs mt-2 leading-relaxed">
                 On iOS: tap the Share button in Safari, then &ldquo;Add to Home Screen&rdquo;.
               </p>
             </div>
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setShowInstallModal(false)}
-                className="px-4 py-2 text-sm text-[#9C9A92] hover:text-white transition-colors rounded-lg"
+                className="px-4 py-2 text-sm text-cultivate-text-secondary hover:text-white transition-colors rounded-lg"
               >
                 Not now
               </button>

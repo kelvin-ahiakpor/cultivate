@@ -86,6 +86,18 @@
   --color-cultivate-teal: var(--cultivate-teal);
   --color-cultivate-beige: var(--cultivate-beige);
   --color-cultivate-cream: var(--cultivate-cream);
+
+  /* UI color utilities */
+  --color-cultivate-text-primary: var(--cultivate-text-primary);
+  --color-cultivate-text-secondary: var(--cultivate-text-secondary);
+  --color-cultivate-text-tertiary: var(--cultivate-text-tertiary);
+  --color-cultivate-bg-main: var(--cultivate-bg-main);
+  --color-cultivate-bg-sidebar: var(--cultivate-bg-sidebar);
+  --color-cultivate-bg-elevated: var(--cultivate-bg-elevated);
+  --color-cultivate-bg-hover: var(--cultivate-bg-hover);
+  --color-cultivate-bg-hover-extreme: var(--cultivate-bg-hover-extreme);
+  --color-cultivate-border-subtle: var(--cultivate-border-subtle);
+  --color-cultivate-border-element: var(--cultivate-border-element);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

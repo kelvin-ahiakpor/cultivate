@@ -190,7 +190,7 @@ export default function KnowledgeView({
   return (
     <div className="flex flex-col h-full overflow-y-hidden overflow-x-clip">
       {/* PART 1: Fixed Section - stays at top */}
-      <div className="flex-shrink-0 bg-[#1E1E1E] z-10 pt-8 lg:pt-0">
+      <div className="flex-shrink-0 bg-cultivate-bg-main z-10 pt-8 lg:pt-0">
         {/* Mobile header — glass button absolute left, title centered, icon action absolute right */}
         <div className="relative flex items-center justify-center mb-6 lg:hidden">
           {!sidebarOpen && (
@@ -201,8 +201,8 @@ export default function KnowledgeView({
             </div>
           )}
           <div className="text-center">
-            <h1 className="text-2xl font-serif text-[#C2C0B6]">Knowledge Base</h1>
-            <p className="text-sm text-[#9C9A92] mt-1">{totalCount} documents uploaded</p>
+            <h1 className="text-2xl font-serif text-cultivate-text-primary">Knowledge Base</h1>
+            <p className="text-sm text-cultivate-text-secondary mt-1">{totalCount} documents uploaded</p>
           </div>
           <div className="absolute right-0">
             <button
@@ -217,8 +217,8 @@ export default function KnowledgeView({
         {/* Desktop header */}
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-serif text-[#C2C0B6]">Knowledge Base</h1>
-            <p className="text-sm text-[#9C9A92] mt-1">{totalCount} documents uploaded</p>
+            <h1 className="text-2xl font-serif text-cultivate-text-primary">Knowledge Base</h1>
+            <p className="text-sm text-cultivate-text-secondary mt-1">{totalCount} documents uploaded</p>
           </div>
           <button
             onClick={handleOpenUploadModal}
@@ -233,11 +233,11 @@ export default function KnowledgeView({
         <div className="flex items-center gap-3 mb-6">
           {/* Agent Filter — demo: hardcoded names, real: from API */}
           <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B] pointer-events-none" />
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary pointer-events-none" />
             <select
               value={agentFilter || "All Agents"}
               onChange={(e) => handleAgentChange(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-[#C2C0B6] focus:outline-none focus:border-[#85b878] cursor-pointer appearance-none min-w-[200px]"
+              className="pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-cultivate-text-primary focus:outline-none focus:border-[#85b878] cursor-pointer appearance-none min-w-[200px]"
             >
               <option value="All Agents">All Agents</option>
               {demoMode
@@ -249,33 +249,33 @@ export default function KnowledgeView({
 
           {/* Search */}
           <div className="relative flex-1 max-w-[78.5%]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary" />
             <input
               type="text"
               placeholder="Search docs..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+              className="w-full pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
             />
           </div>
         </div>
 
         {/* Document Count */}
         <div className="mb-4 px-1">
-          <p className="text-sm text-[#9C9A92]">
+          <p className="text-sm text-cultivate-text-secondary">
             {filteredCount} {filteredCount === 1 ? 'document' : 'documents'}
             {(searchQuery || agentFilter) && (
-              <span className="text-[#6B6B6B]"> &middot; filtered from {totalCount} total</span>
+              <span className="text-cultivate-text-tertiary"> &middot; filtered from {totalCount} total</span>
             )}
           </p>
         </div>
 
         {/* Table Header - Desktop only */}
-        <div className="hidden lg:grid grid-cols-[1fr_120px_80px_140px_40px] gap-4 px-5 py-3 mr-2 border-b border-[#3B3B3B]">
-          <span className="text-xs text-[#6B6B6B] uppercase tracking-wide">Document</span>
-          <span className="text-xs text-[#6B6B6B] uppercase tracking-wide">Agent</span>
-          <span className="text-xs text-[#6B6B6B] uppercase tracking-wide">Chunks</span>
-          <span className="text-xs text-[#6B6B6B] uppercase tracking-wide">Uploaded</span>
+        <div className="hidden lg:grid grid-cols-[1fr_120px_80px_140px_40px] gap-4 px-5 py-3 mr-2 border-b border-cultivate-border-element">
+          <span className="text-xs text-cultivate-text-tertiary uppercase tracking-wide">Document</span>
+          <span className="text-xs text-cultivate-text-tertiary uppercase tracking-wide">Agent</span>
+          <span className="text-xs text-cultivate-text-tertiary uppercase tracking-wide">Chunks</span>
+          <span className="text-xs text-cultivate-text-tertiary uppercase tracking-wide">Uploaded</span>
           <span></span>
         </div>
       </div>
@@ -288,18 +288,18 @@ export default function KnowledgeView({
             <div
               key={doc.id}
               onClick={() => setViewPanelDoc(doc)}
-              className="bg-[#2B2B2B] rounded-lg p-4 hover:bg-[#2B2B2B]/70 transition-colors cursor-pointer"
+              className="bg-cultivate-bg-elevated rounded-lg p-4 hover:bg-cultivate-bg-elevated/70 transition-colors cursor-pointer"
             >
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white truncate mb-1">{doc.title}</p>
-                  <p className="text-xs text-[#6B6B6B] truncate">{doc.fileName}</p>
+                  <p className="text-xs text-cultivate-text-tertiary truncate">{doc.fileName}</p>
                 </div>
                 <div className="w-8 h-8 bg-[#3B3B3B] rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Eye className="w-4 h-4 text-[#85b878]" />
+                  <Eye className="w-4 h-4 text-cultivate-green-light" />
                 </div>
               </div>
-              <p className="text-xs text-[#9C9A92] truncate">{doc.agentName}</p>
+              <p className="text-xs text-cultivate-text-secondary truncate">{doc.agentName}</p>
             </div>
           ))}
         </div>
@@ -309,8 +309,8 @@ export default function KnowledgeView({
           {paginatedDocs.map((doc, index) => (
             <div
               key={doc.id}
-              className={`grid grid-cols-[1fr_120px_80px_140px_40px] gap-4 px-5 py-3.5 mr-3 hover:bg-[#2B2B2B]/30 transition-colors ${
-                index === paginatedDocs.length - 1 ? '' : 'border-b border-[#3B3B3B]'
+              className={`grid grid-cols-[1fr_120px_80px_140px_40px] gap-4 px-5 py-3.5 mr-3 hover:bg-cultivate-bg-elevated/30 transition-colors ${
+                index === paginatedDocs.length - 1 ? '' : 'border-b border-cultivate-border-element'
               }`}
             >
               <div className="flex items-center gap-3 min-w-0">
@@ -318,60 +318,60 @@ export default function KnowledgeView({
                   {doc.fileType === "PDF" ? (
                     <FileText className="w-4 h-4 text-[#e8c8ab]" />
                   ) : (
-                    <File className="w-4 h-4 text-[#608e96]" />
+                    <File className="w-4 h-4 text-cultivate-teal" />
                   )}
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm text-white truncate">{doc.title}</p>
-                  <p className="text-xs text-[#6B6B6B] truncate">{doc.fileName}</p>
+                  <p className="text-xs text-cultivate-text-tertiary truncate">{doc.fileName}</p>
                 </div>
               </div>
               <div className="flex items-center">
-                <span className="text-xs text-[#9C9A92] truncate">{doc.agentName}</span>
+                <span className="text-xs text-cultivate-text-secondary truncate">{doc.agentName}</span>
               </div>
               <div className="flex items-center">
-                <span className="text-xs text-[#9C9A92]">{doc.chunkCount}</span>
+                <span className="text-xs text-cultivate-text-secondary">{doc.chunkCount}</span>
               </div>
               <div className="flex items-center">
-                <span className="text-xs text-[#6B6B6B]">{doc.uploadedAt}</span>
+                <span className="text-xs text-cultivate-text-tertiary">{doc.uploadedAt}</span>
               </div>
               <div className="flex items-center relative">
               <button
                 onClick={() => setOpenMenuId(openMenuId === doc.id ? null : doc.id)}
                 className="p-1 hover:bg-[#3B3B3B] rounded transition-colors"
               >
-                <MoreHorizontal className="w-4 h-4 text-[#C2C0B6]" />
+                <MoreHorizontal className="w-4 h-4 text-cultivate-text-primary" />
               </button>
 
               {openMenuId === doc.id && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                  <div className="absolute right-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-[#2B2B2B] py-1 z-50 min-w-[140px]">
+                  <div className="absolute right-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-cultivate-border-subtle py-1 z-50 min-w-[140px]">
                     <button 
                       onClick={() => handleViewDocument(doc)}
-                      className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors"
+                      className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       View
                     </button>
                     <button 
                       onClick={() => handleDownloadDocument(doc)}
-                      className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors"
+                      className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors"
                     >
                       <Download className="w-3.5 h-3.5" />
                       Download
                     </button>
                     <button 
                       onClick={() => { /* Handle update */ setOpenMenuId(null); }}
-                      className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2 transition-colors"
+                      className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors"
                     >
                       <FileText className="w-3.5 h-3.5" />
                       Update
                     </button>
-                    <div className="border-t border-[#2B2B2B] my-1" />
+                    <div className="border-t border-cultivate-border-subtle my-1" />
                     <button 
                       onClick={() => { setDeleteModalDoc(doc); setOpenMenuId(null); }}
-                      className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-[#141413] hover:text-red-300 flex items-center gap-2 transition-colors"
+                      className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-cultivate-bg-hover hover:text-red-300 flex items-center gap-2 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       Delete
@@ -386,8 +386,8 @@ export default function KnowledgeView({
 
         {paginatedDocs.length === 0 && (
           <div className="p-8 text-center">
-            <BookOpen className="w-10 h-10 text-[#6B6B6B] mx-auto mb-3" />
-            <p className="text-sm text-[#6B6B6B]">
+            <BookOpen className="w-10 h-10 text-cultivate-text-tertiary mx-auto mb-3" />
+            <p className="text-sm text-cultivate-text-tertiary">
               {searchQuery || agentFilter
                 ? "No documents match your filters."
                 : "No documents uploaded yet."}
@@ -401,17 +401,17 @@ export default function KnowledgeView({
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Prev
             </button>
-            <span className="px-3 py-1.5 text-sm text-[#6B6B6B]">
+            <span className="px-3 py-1.5 text-sm text-cultivate-text-tertiary">
               {startIndex + 1}–{Math.min(endIndex, filteredCount)}
             </span>
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Next
             </button>
@@ -424,13 +424,13 @@ export default function KnowledgeView({
         <>
           <div className="fixed inset-0 bg-black/60 z-40" onClick={handleCloseUploadModal} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1C1C1C] rounded-xl border border-[#2B2B2B] w-full max-w-lg p-6">
+            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-lg p-6">
               <h2 className="text-lg font-medium text-white mb-4">Upload Knowledge Base</h2>
 
               <div className="space-y-4">
                 {/* Update or New Document */}
-                <div className="bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg p-3">
-                  <label className="block text-sm text-[#9C9A92] mb-2">What are you doing?</label>
+                <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg p-3">
+                  <label className="block text-sm text-cultivate-text-secondary mb-2">What are you doing?</label>
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input 
@@ -460,39 +460,39 @@ export default function KnowledgeView({
                 {/* Show document selector when updating */}
                 {uploadType === 'update' && (
                   <div>
-                    <label className="block text-sm text-[#9C9A92] mb-1.5">Select document to update</label>
+                    <label className="block text-sm text-cultivate-text-secondary mb-1.5">Select document to update</label>
                     <button
                       type="button"
                       onClick={() => setShowDocSelectorModal(true)}
-                      className="w-full px-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-left hover:border-[#5a7048] transition-colors"
+                      className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-left hover:border-[#5a7048] transition-colors"
                     >
                       {updateDocId ? (
                         <span className="text-white">{sortedDocuments.find(d => d.id === updateDocId)?.title}</span>
                       ) : (
-                        <span className="text-[#6B6B6B]">Click to select a document...</span>
+                        <span className="text-cultivate-text-tertiary">Click to select a document...</span>
                       )}
                     </button>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm text-[#9C9A92] mb-1.5">Document Title</label>
+                  <label className="block text-sm text-cultivate-text-secondary mb-1.5">Document Title</label>
                   <input
                     type="text"
                     value={uploadTitle}
                     onChange={(e) => setUploadTitle(e.target.value)}
                     placeholder="e.g. Maize Farming Best Practices"
-                    className="w-full px-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
+                    className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm text-[#9C9A92] mb-1.5">Assign to Agent</label>
+                  <label className="block text-sm text-cultivate-text-secondary mb-1.5">Assign to Agent</label>
                   <div className="relative">
                     <select
                       value={uploadAgentId}
                       onChange={(e) => setUploadAgentId(e.target.value)}
-                      className="w-full px-3 py-2.5 pr-10 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white focus:outline-none focus:border-[#5a7048] appearance-none"
+                      className="w-full px-3 py-2.5 pr-10 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white focus:outline-none focus:border-[#5a7048] appearance-none"
                     >
                       <option value="">Select an agent...</option>
                       {demoMode
@@ -500,7 +500,7 @@ export default function KnowledgeView({
                         : realAgents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)
                       }
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B] pointer-events-none" />
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary pointer-events-none" />
                   </div>
                 </div>
 
@@ -515,17 +515,17 @@ export default function KnowledgeView({
                     if (file) setUploadFile(file);
                   }}
                   className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-                    dragOver ? 'border-[#85b878] bg-[#85b878]/5' : 'border-[#3B3B3B]'
+                    dragOver ? 'border-[#85b878] bg-cultivate-green-light/5' : 'border-cultivate-border-element'
                   }`}
                 >
-                  <Upload className="w-8 h-8 text-[#6B6B6B] mx-auto mb-3" />
+                  <Upload className="w-8 h-8 text-cultivate-text-tertiary mx-auto mb-3" />
                   {uploadFile ? (
-                    <p className="text-sm text-[#85b878]">{uploadFile.name}</p>
+                    <p className="text-sm text-cultivate-green-light">{uploadFile.name}</p>
                   ) : (
                     <>
-                      <p className="text-sm text-[#C2C0B6] mb-1">Drag and drop your file here</p>
-                      <p className="text-xs text-[#6B6B6B] mb-3">or</p>
-                      <label className="px-4 py-2 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-[#C2C0B6] hover:border-[#85b878] transition-colors cursor-pointer">
+                      <p className="text-sm text-cultivate-text-primary mb-1">Drag and drop your file here</p>
+                      <p className="text-xs text-cultivate-text-tertiary mb-3">or</p>
+                      <label className="px-4 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-cultivate-text-primary hover:border-[#85b878] transition-colors cursor-pointer">
                         Browse Files
                         <input
                           type="file"
@@ -536,7 +536,7 @@ export default function KnowledgeView({
                       </label>
                     </>
                   )}
-                  <p className="text-xs text-[#6B6B6B] mt-3">Supports PDF, DOCX, TXT (max 25MB)</p>
+                  <p className="text-xs text-cultivate-text-tertiary mt-3">Supports PDF, DOCX, TXT (max 25MB)</p>
                 </div>
 
                 {uploadError && (
@@ -548,7 +548,7 @@ export default function KnowledgeView({
                 <button
                   onClick={handleCloseUploadModal}
                   disabled={uploading}
-                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors disabled:opacity-50"
+                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -577,51 +577,51 @@ export default function KnowledgeView({
           <div className="lg:hidden fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-none">
             <div
               onClick={(e) => e.stopPropagation()}
-              className="bg-[#1C1C1C] rounded-xl border border-[#2B2B2B] w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl pointer-events-auto"
+              className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl pointer-events-auto"
             >
             {/* Panel Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#2B2B2B]">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-cultivate-border-subtle">
               <div className="flex-1 min-w-0 pr-2">
                 <h2 className="text-sm font-medium text-white truncate">{viewPanelDoc.title}</h2>
-                <p className="text-xs text-[#9C9A92] mt-0.5 truncate">{viewPanelDoc.fileName}</p>
+                <p className="text-xs text-cultivate-text-secondary mt-0.5 truncate">{viewPanelDoc.fileName}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setViewPanelDoc(null)}
-                className="p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors flex-shrink-0"
+                className="p-1.5 hover:bg-cultivate-bg-elevated rounded-lg transition-colors flex-shrink-0"
               >
-                <X className="w-4 h-4 text-[#9C9A92]" />
+                <X className="w-4 h-4 text-cultivate-text-secondary" />
               </button>
             </div>
 
             {/* Document Metadata */}
             <div className="flex-1 overflow-y-auto px-4 py-4 thin-scrollbar">
               <div className="space-y-4">
-                <div className="bg-[#2B2B2B] rounded-lg p-3 space-y-2.5">
+                <div className="bg-cultivate-bg-elevated rounded-lg p-3 space-y-2.5">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#9C9A92]">Chunks</span>
+                    <span className="text-cultivate-text-secondary">Chunks</span>
                     <span className="text-white">{viewPanelDoc.chunkCount} segments</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#9C9A92]">Uploaded</span>
+                    <span className="text-cultivate-text-secondary">Uploaded</span>
                     <span className="text-white">{viewPanelDoc.uploadedAt}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#9C9A92]">Last updated</span>
+                    <span className="text-cultivate-text-secondary">Last updated</span>
                     <span className="text-white">{viewPanelDoc.uploadedAt}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#9C9A92]">Referenced in</span>
+                    <span className="text-cultivate-text-secondary">Referenced in</span>
                     <span className="text-white">{viewPanelDoc.referencedInChats} chats</span>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-medium text-[#9C9A92] uppercase tracking-wide mb-2">Used by agents</h3>
-                  <div className="bg-[#2B2B2B] rounded-lg p-3">
+                  <h3 className="text-xs font-medium text-cultivate-text-secondary uppercase tracking-wide mb-2">Used by agents</h3>
+                  <div className="bg-cultivate-bg-elevated rounded-lg p-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-[#85b878]/20 rounded flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs text-[#85b878]">✓</span>
+                      <div className="w-6 h-6 bg-cultivate-green-light/20 rounded flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs text-cultivate-green-light">✓</span>
                       </div>
                       <span className="text-sm text-white">{viewPanelDoc.agentName}</span>
                     </div>
@@ -631,10 +631,10 @@ export default function KnowledgeView({
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-3 border-t border-[#2B2B2B]">
+            <div className="px-4 py-3 border-t border-cultivate-border-subtle">
               <button
                 onClick={() => setViewPanelDoc(null)}
-                className="w-full px-4 py-2 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#C2C0B6] transition-colors"
+                className="w-full px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
               >
                 Close
               </button>
@@ -643,48 +643,48 @@ export default function KnowledgeView({
           </div>
 
           {/* Desktop: Side panel */}
-          <div className="hidden lg:flex fixed top-0 right-0 h-full w-[600px] bg-[#1C1C1C] border-l border-[#2B2B2B] z-50 flex-col shadow-2xl">
+          <div className="hidden lg:flex fixed top-0 right-0 h-full w-[600px] bg-[#1C1C1C] border-l border-cultivate-border-subtle z-50 flex-col shadow-2xl">
             {/* Panel Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#2B2B2B]">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-cultivate-border-subtle">
               <div>
                 <h2 className="text-sm font-medium text-white">{viewPanelDoc.title}</h2>
-                <p className="text-xs text-[#9C9A92] mt-0.5">{viewPanelDoc.fileName} · {viewPanelDoc.fileType}</p>
+                <p className="text-xs text-cultivate-text-secondary mt-0.5">{viewPanelDoc.fileName} · {viewPanelDoc.fileType}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setViewPanelDoc(null)}
-                className="p-1.5 hover:bg-[#2B2B2B] rounded-lg transition-colors"
+                className="p-1.5 hover:bg-cultivate-bg-elevated rounded-lg transition-colors"
               >
-                <X className="w-4 h-4 text-[#9C9A92]" />
+                <X className="w-4 h-4 text-cultivate-text-secondary" />
               </button>
             </div>
 
             {/* Document Metadata */}
-            <div className="px-5 py-4 border-b border-[#2B2B2B] space-y-3">
+            <div className="px-5 py-4 border-b border-cultivate-border-subtle space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-[#9C9A92]">Primary Agent</span>
+                <span className="text-cultivate-text-secondary">Primary Agent</span>
                 <span className="text-white">{viewPanelDoc.agentName}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-[#9C9A92]">Chunks</span>
+                <span className="text-cultivate-text-secondary">Chunks</span>
                 <span className="text-white">{viewPanelDoc.chunkCount} segments</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-[#9C9A92]">Uploaded</span>
+                <span className="text-cultivate-text-secondary">Uploaded</span>
                 <span className="text-white">{viewPanelDoc.uploadedAt}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-[#9C9A92]">Last updated</span>
+                <span className="text-cultivate-text-secondary">Last updated</span>
                 <span className="text-white">{viewPanelDoc.uploadedAt}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-[#9C9A92]">Referenced in chats</span>
+                <span className="text-cultivate-text-secondary">Referenced in chats</span>
                 <span className="text-white">{viewPanelDoc.referencedInChats} conversations</span>
               </div>
               <a
                 href="#"
                 onClick={(e) => { e.preventDefault(); /* Open actual file when backend ready */ }}
-                className="flex items-center gap-2 text-sm text-[#85b878] hover:text-[#9dcf84] transition-colors"
+                className="flex items-center gap-2 text-sm text-cultivate-green-light hover:text-[#9dcf84] transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 Open original document
@@ -695,24 +695,24 @@ export default function KnowledgeView({
             <div className="flex-1 overflow-y-auto px-5 py-4 thin-scrollbar">
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-xs font-medium text-[#9C9A92] uppercase tracking-wide mb-2">Document Preview</h3>
-                  <div className="text-sm text-[#C2C0B6] leading-relaxed space-y-3">
+                  <h3 className="text-xs font-medium text-cultivate-text-secondary uppercase tracking-wide mb-2">Document Preview</h3>
+                  <div className="text-sm text-cultivate-text-primary leading-relaxed space-y-3">
                     <p>This knowledge base document contains comprehensive information about {viewPanelDoc.title.toLowerCase()}. The content has been processed and chunked into {viewPanelDoc.chunkCount} segments for optimal retrieval by the AI agent.</p>
-                    <p className="text-[#6B6B6B] italic">Full document preview will be available when backend integration is complete. The RAG system will use vector embeddings to retrieve relevant chunks based on farmer queries.</p>
+                    <p className="text-cultivate-text-tertiary italic">Full document preview will be available when backend integration is complete. The RAG system will use vector embeddings to retrieve relevant chunks based on farmer queries.</p>
                   </div>
                 </div>
 
                 {/* Mock chunk preview */}
-                <div className="pt-3 border-t border-[#2B2B2B]">
-                  <h3 className="text-xs font-medium text-[#9C9A92] uppercase tracking-wide mb-3">Sample Chunks (Preview)</h3>
+                <div className="pt-3 border-t border-cultivate-border-subtle">
+                  <h3 className="text-xs font-medium text-cultivate-text-secondary uppercase tracking-wide mb-3">Sample Chunks (Preview)</h3>
                   <div className="space-y-2">
                     {Array.from({ length: Math.min(5, viewPanelDoc.chunkCount) }).map((_, i) => (
-                      <div key={i} className="p-3 bg-[#141413] border border-[#2B2B2B] rounded-lg">
+                      <div key={i} className="p-3 bg-cultivate-bg-hover border border-cultivate-border-subtle rounded-lg">
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs text-[#6B6B6B]">Chunk {i + 1}</span>
-                          <span className="text-xs text-[#6B6B6B]">~250 tokens</span>
+                          <span className="text-xs text-cultivate-text-tertiary">Chunk {i + 1}</span>
+                          <span className="text-xs text-cultivate-text-tertiary">~250 tokens</span>
                         </div>
-                        <p className="text-xs text-[#9C9A92] leading-relaxed">
+                        <p className="text-xs text-cultivate-text-secondary leading-relaxed">
                           Sample content from chunk {i + 1} will appear here once the document is processed by the RAG pipeline...
                         </p>
                       </div>
@@ -723,11 +723,11 @@ export default function KnowledgeView({
             </div>
 
             {/* Panel Footer */}
-            <div className="px-5 py-3 border-t border-[#2B2B2B] flex gap-2">
+            <div className="px-5 py-3 border-t border-cultivate-border-subtle flex gap-2">
               <button
                 type="button"
                 onClick={() => handleDownloadDocument(viewPanelDoc)}
-                className="flex-1 px-4 py-2 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#85b878] transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#85b878] transition-colors flex items-center justify-center gap-2"
               >
                 <Download className="w-3.5 h-3.5" />
                 Download
@@ -735,7 +735,7 @@ export default function KnowledgeView({
               <button
                 type="button"
                 onClick={() => setViewPanelDoc(null)}
-                className="flex-1 px-4 py-2 text-sm text-[#C2C0B6] hover:text-white border border-[#3B3B3B] rounded-lg hover:border-[#C2C0B6] transition-colors"
+                className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
               >
                 Close
               </button>
@@ -749,30 +749,30 @@ export default function KnowledgeView({
         <>
           <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setDeleteModalDoc(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1C1C1C] rounded-xl border border-[#2B2B2B] w-full max-w-md p-6">
+            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Trash2 className="w-5 h-5 text-red-400" />
                 </div>
                 <div>
                   <h2 className="text-lg font-medium text-white">Delete Document</h2>
-                  <p className="text-sm text-[#9C9A92] mt-1">
+                  <p className="text-sm text-cultivate-text-secondary mt-1">
                     Are you sure you want to delete <span className="text-white font-medium">{deleteModalDoc.title}</span>?
                   </p>
                 </div>
               </div>
 
-              <div className="bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg p-3 mb-5">
-                <p className="text-xs text-[#C2C0B6] leading-relaxed">
+              <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg p-3 mb-5">
+                <p className="text-xs text-cultivate-text-primary leading-relaxed">
                   This will remove the document and all {deleteModalDoc.chunkCount} associated chunks from the knowledge base. 
                   The <span className="text-white">{deleteModalDoc.agentName}</span> agent will no longer be able to reference this information.
                 </p>
-                <div className="mt-3 pt-3 border-t border-[#3B3B3B]">
+                <div className="mt-3 pt-3 border-t border-cultivate-border-element">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[#9C9A92]">Referenced in conversations:</span>
+                    <span className="text-xs text-cultivate-text-secondary">Referenced in conversations:</span>
                     <span className="text-xs font-medium text-orange-400">{deleteModalDoc.referencedInChats} chats</span>
                   </div>
-                  <p className="text-xs text-[#6B6B6B] mt-1.5">
+                  <p className="text-xs text-cultivate-text-tertiary mt-1.5">
                     Note: This document is actively used. Consider creating a new version instead of deleting.
                   </p>
                 </div>
@@ -781,7 +781,7 @@ export default function KnowledgeView({
               <div className="flex items-center justify-end gap-3">
                 <button
                   onClick={() => setDeleteModalDoc(null)}
-                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors"
+                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors"
                 >
                   Cancel
                 </button>
@@ -804,34 +804,34 @@ export default function KnowledgeView({
         <>
           <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setShowDocSelectorModal(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1C1C1C] rounded-xl border border-[#2B2B2B] w-full max-w-xl p-6">
+            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-medium text-white">Select Document to Update</h2>
                 <button
                   type="button"
                   onClick={() => setShowDocSelectorModal(false)}
-                  className="p-1 hover:bg-[#2B2B2B] rounded-lg transition-colors"
+                  className="p-1 hover:bg-cultivate-bg-elevated rounded-lg transition-colors"
                 >
-                  <X className="w-5 h-5 text-[#9C9A92]" />
+                  <X className="w-5 h-5 text-cultivate-text-secondary" />
                 </button>
               </div>
 
               {/* Search Input */}
               <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B]" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary" />
                 <input
                   type="text"
                   value={docSearchQuery}
                   onChange={(e) => setDocSearchQuery(e.target.value)}
                   placeholder="Search docs..."
-                  className="w-full pl-9 pr-3 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
+                  className="w-full pl-9 pr-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
                 />
               </div>
 
               {/* Documents List */}
               <div className="max-h-[400px] overflow-y-auto thin-scrollbar scrollbar-outset pr-2 space-y-1">
                 {filteredSelectorDocs.length === 0 ? (
-                  <div className="text-center py-8 text-[#6B6B6B] text-sm">
+                  <div className="text-center py-8 text-cultivate-text-tertiary text-sm">
                     No documents found
                   </div>
                 ) : (
@@ -843,11 +843,11 @@ export default function KnowledgeView({
                       className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors ${
                         updateDocId === doc.id
                           ? 'bg-[#5a7048] text-white'
-                          : 'hover:bg-[#2B2B2B] text-[#C2C0B6]'
+                          : 'hover:bg-cultivate-bg-elevated text-cultivate-text-primary'
                       }`}
                     >
                       <div className="font-medium text-sm">{doc.title}</div>
-                      <div className="text-xs text-[#9C9A92] mt-0.5">
+                      <div className="text-xs text-cultivate-text-secondary mt-0.5">
                         {doc.fileName} · {doc.agentName}
                       </div>
                     </button>
@@ -855,10 +855,10 @@ export default function KnowledgeView({
                 )}
               </div>
 
-              <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-[#2B2B2B]">
+              <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-cultivate-border-subtle">
                 <button
                   onClick={() => setShowDocSelectorModal(false)}
-                  className="px-4 py-2 text-sm text-[#C2C0B6] hover:text-white transition-colors"
+                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors"
                 >
                   Cancel
                 </button>

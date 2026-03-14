@@ -160,7 +160,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
   return (
     <div className="flex flex-col h-full overflow-y-hidden overflow-x-clip">
       {/* PART 1: Fixed Section */}
-      <div className="flex-shrink-0 bg-[#1E1E1E] z-10 pb-4 pt-8 lg:pt-0">
+      <div className="flex-shrink-0 bg-cultivate-bg-main z-10 pb-4 pt-8 lg:pt-0">
         {/* Mobile header — glass button absolute left, title centered */}
         <div className="relative flex items-center justify-center mb-6 lg:hidden">
           {!sidebarOpen && setSidebarOpen && (
@@ -171,37 +171,37 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
             </div>
           )}
           <div className="text-center">
-            <h1 className="text-2xl font-serif text-[#C2C0B6]">Chats</h1>
-            <p className="text-sm text-[#9C9A92] mt-1">{mockChats.length} conversations with Cultivate</p>
+            <h1 className="text-2xl font-serif text-cultivate-text-primary">Chats</h1>
+            <p className="text-sm text-cultivate-text-secondary mt-1">{mockChats.length} conversations with Cultivate</p>
           </div>
         </div>
 
         {/* Desktop header */}
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-serif text-[#C2C0B6]">Chats</h1>
-            <p className="text-sm text-[#9C9A92] mt-1">{mockChats.length} conversations with Cultivate</p>
+            <h1 className="text-2xl font-serif text-cultivate-text-primary">Chats</h1>
+            <p className="text-sm text-cultivate-text-secondary mt-1">{mockChats.length} conversations with Cultivate</p>
           </div>
         </div>
 
         {/* Search */}
         <div className="relative mb-4 w-[98.5%]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B6B6B]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary" />
           <input
             type="text"
             placeholder="Search your chats..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-[#2B2B2B] border border-[#3B3B3B] rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+            className="w-full pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
           />
         </div>
 
         {/* Count */}
         <div className="px-1">
-          <p className="text-sm standalone:text-base lg:text-sm text-[#9C9A92]">
+          <p className="text-sm standalone:text-base lg:text-sm text-cultivate-text-secondary">
             {filteredChats.length} {filteredChats.length === 1 ? 'conversation' : 'conversations'}
             {searchQuery && (
-              <span className="text-[#6B6B6B]"> &middot; filtered from {demoMode ? mockChats.length : (apiConversations.total || 0)} total</span>
+              <span className="text-cultivate-text-tertiary"> &middot; filtered from {demoMode ? mockChats.length : (apiConversations.total || 0)} total</span>
             )}
           </p>
         </div>
@@ -213,12 +213,12 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
           <div className="mr-3">
             {!demoMode && apiConversations.isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-5 h-5 text-[#9C9A92] animate-spin" />
+                <Loader2 className="w-5 h-5 text-cultivate-text-secondary animate-spin" />
               </div>
             ) : paginatedChats.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <MessageCircle className="w-8 h-8 text-[#3B3B3B] mb-3" />
-                <p className="text-sm text-[#6B6B6B]">No conversations yet</p>
+                <p className="text-sm text-cultivate-text-tertiary">No conversations yet</p>
               </div>
             ) : (
               <>
@@ -226,16 +226,16 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
                 <div
                   key={chat.id}
                   onClick={() => { setOpenedChat(chat); onChatSelect?.(chat.id, chat.title, chat.systemName); }}
-                  className={`pl-1.5 pr-1.5 py-2.5 hover:bg-[#2B2B2B]/40 transition-colors cursor-pointer ${
+                  className={`pl-1.5 pr-1.5 py-2.5 hover:bg-cultivate-bg-elevated/40 transition-colors cursor-pointer ${
                     index < paginatedChats.length - 1
-                      ? `border-b border-[#3B3B3B] ${isStandalone ? "border-none" : ""} lg:border-b lg:border-[#3B3B3B]`
+                      ? `border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`
                       : ''
                   }`}
                 >
                   <p className="text-sm standalone:text-base lg:text-sm text-white">{chat.title}</p>
                   <div className="flex items-center justify-between mt-1">
-                    <p className="text-xs standalone:text-sm lg:text-xs text-[#6B6B6B]">{isStandalone ? chat.lastMessage : `Last message ${chat.lastMessage}`}</p>
-                    <p className="text-xs standalone:text-sm lg:text-xs text-[#9C9A92]">{chat.agentName}</p>
+                    <p className="text-xs standalone:text-sm lg:text-xs text-cultivate-text-tertiary">{isStandalone ? chat.lastMessage : `Last message ${chat.lastMessage}`}</p>
+                    <p className="text-xs standalone:text-sm lg:text-xs text-cultivate-text-secondary">{chat.agentName}</p>
                   </div>
                 </div>
               ))}
@@ -245,21 +245,21 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
 
           {/* Pagination Controls */}
           {filteredChats.length > 0 && totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 px-5 pt-4 pb-0 mt-2 border-t border-[#3B3B3B]">
+            <div className="flex items-center justify-center gap-2 px-5 pt-4 pb-0 mt-2 border-t border-cultivate-border-element">
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Prev
               </button>
-              <span className={`px-3 py-1.5 ${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-[#6B6B6B]`}>
+              <span className={`px-3 py-1.5 ${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-tertiary`}>
                 {startIndex + 1}–{Math.min(endIndex, filteredChats.length)}
               </span>
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1.5 text-sm text-[#9C9A92] bg-[#2B2B2B] border border-[#3B3B3B] rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Next
               </button>

@@ -330,7 +330,7 @@ export default function ConversationView({
           Mobile: [glass back] | [title + system pill centered] | [+ new chat]
           Desktop: breadcrumb [system /] [title ▾] with dropdown
           pt-16 on mobile for Dynamic Island safe area — DO NOT reduce to pt-3 alone */}
-      <div className="flex-shrink-0 bg-[#1E1E1E] pt-16 lg:pt-3 pb-3 px-3 lg:pl-4 lg:pr-3">
+      <div className="flex-shrink-0 bg-cultivate-bg-main pt-16 lg:pt-3 pb-3 px-3 lg:pl-4 lg:pr-3">
         {/* Mobile header */}
         <div className="lg:hidden flex items-center justify-between">
           <GlassCircleButton onClick={onBack} aria-label="Back">
@@ -341,17 +341,17 @@ export default function ConversationView({
               {title || "Untitled conversation"}
             </span>
             {systemName && (
-              <div className="inline-flex items-center gap-1 bg-[#2B2B2B] rounded-full px-2.5 py-0.5">
-                <Box className="w-3 h-3 text-[#9C9A92]" />
-                <span className="text-xs text-[#9C9A92] truncate max-w-[180px]">{systemName}</span>
+              <div className="inline-flex items-center gap-1 bg-cultivate-bg-elevated rounded-full px-2.5 py-0.5">
+                <Box className="w-3 h-3 text-cultivate-text-secondary" />
+                <span className="text-xs text-cultivate-text-secondary truncate max-w-[180px]">{systemName}</span>
               </div>
             )}
           </div>
           <button
             onClick={onNewChat}
-            className="w-11 h-11 bg-[#2B2B2B] hover:bg-[#3B3B3B] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+            className="w-11 h-11 bg-cultivate-bg-elevated hover:bg-[#3B3B3B] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
           >
-            <Plus className="w-5 h-5 text-[#85b878]" />
+            <Plus className="w-5 h-5 text-cultivate-green-light" />
           </button>
         </div>
 
@@ -359,17 +359,17 @@ export default function ConversationView({
         <div className="hidden lg:flex items-center gap-1">
           {systemName && (
             <>
-              <span className="text-sm text-[#C2C0B6] hover:text-white truncate cursor-pointer transition-colors">
+              <span className="text-sm text-cultivate-text-primary hover:text-white truncate cursor-pointer transition-colors">
                 {systemName}
               </span>
-              <span className="text-sm text-[#6B6B6B] flex-shrink-0">/</span>
+              <span className="text-sm text-cultivate-text-tertiary flex-shrink-0">/</span>
             </>
           )}
           {/* Title + chevron — independent hover zones */}
           <div className={`inline-flex items-stretch rounded-lg overflow-hidden cursor-pointer relative ${
-            headerMenuOpen ? "bg-[#141413]" : "hover:bg-[#141413]"
+            headerMenuOpen ? "bg-cultivate-bg-hover" : "hover:bg-cultivate-bg-hover"
           }`}>
-            <span className="text-sm text-[#C2C0B6] truncate max-w-[220px] py-1 pl-2 pr-1 hover:bg-[#0a0a0a] transition-colors">
+            <span className="text-sm text-cultivate-text-primary truncate max-w-[220px] py-1 pl-2 pr-1 hover:bg-[#0a0a0a] transition-colors">
               {title || "Untitled conversation"}
             </span>
             <button
@@ -380,37 +380,37 @@ export default function ConversationView({
               }}
               className={`${headerMenuOpen ? "bg-[#0a0a0a]" : "hover:bg-[#0a0a0a]"} transition-all px-1.5 self-stretch flex items-center`}
             >
-              <ChevronDown className="w-3.5 h-3.5 text-[#9C9A92] hover:text-white transition-colors" strokeWidth={1.5} />
+              <ChevronDown className="w-3.5 h-3.5 text-cultivate-text-secondary hover:text-white transition-colors" strokeWidth={1.5} />
             </button>
 
             {headerMenuOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setHeaderMenuOpen(false)} />
-                <div className="absolute left-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-[#2B2B2B] py-1 z-50 min-w-[200px] whitespace-nowrap">
+                <div className="absolute left-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-cultivate-border-subtle py-1 z-50 min-w-[200px] whitespace-nowrap">
                   <button
                     onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
-                    className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2.5 transition-colors"
+                    className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2.5 transition-colors"
                   >
                     <Share className="w-3.5 h-3.5" />Share
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
-                    className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2.5 transition-colors"
+                    className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2.5 transition-colors"
                   >
                     <Pencil className="w-3.5 h-3.5" />Rename
                   </button>
                   {systemName && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-[#C2C0B6] hover:bg-[#141413] hover:text-white flex items-center gap-2.5 transition-colors"
+                      className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2.5 transition-colors"
                     >
                       <Unlink className="w-3.5 h-3.5" />Remove from system
                     </button>
                   )}
-                  <div className="border-t border-[#2B2B2B] my-1 mx-3" />
+                  <div className="border-t border-cultivate-border-subtle my-1 mx-3" />
                   <button
                     onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
-                    className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-[#141413] hover:text-red-300 flex items-center gap-2.5 transition-colors"
+                    className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-cultivate-bg-hover hover:text-red-300 flex items-center gap-2.5 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />Delete
                   </button>
@@ -432,7 +432,7 @@ export default function ConversationView({
             <div className={`flex-1 px-8 standalone:px-2 lg:px-8 pt-6 ${isStandalone ? "pb-12" : "pb-6"} space-y-4`}>
               {messagesLoading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-5 h-5 text-[#9C9A92] animate-spin" />
+                  <Loader2 className="w-5 h-5 text-cultivate-text-secondary animate-spin" />
                 </div>
               ) : (
                 <>
@@ -440,13 +440,13 @@ export default function ConversationView({
                     <div key={msg.id}>
                       {msg.role === "USER" ? (
                         <div className="flex justify-end">
-                          <div className="max-w-[75%] bg-[#2B2B2B] rounded-2xl px-4 py-3">
+                          <div className="max-w-[75%] bg-cultivate-bg-elevated rounded-2xl px-4 py-3">
                             <p className="text-base text-white whitespace-pre-wrap">{msg.content}</p>
                           </div>
                         </div>
                       ) : (
                         <div className="group">
-                          <div className="prose prose-base prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
+                          <div className="prose prose-base prose-invert max-w-none text-cultivate-text-primary leading-relaxed prose-p:my-1 prose-headings:text-cultivate-text-primary prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-cultivate-text-primary prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                           </div>
 
@@ -454,12 +454,12 @@ export default function ConversationView({
                           {msg.role === "ASSISTANT" && msg.flaggedQuery?.status === "CORRECTED" && msg.flaggedQuery?.agronomistResponse && (
                             <div className="mt-3 pl-4 border-l-2 border-[#85b878]/30">
                               <div className="flex items-center gap-2 mb-2">
-                                <div className="w-6 h-6 rounded-full bg-[#85b878]/20 flex items-center justify-center flex-shrink-0">
-                                  <CheckCircle className="w-3.5 h-3.5 text-[#85b878]" />
+                                <div className="w-6 h-6 rounded-full bg-cultivate-green-light/20 flex items-center justify-center flex-shrink-0">
+                                  <CheckCircle className="w-3.5 h-3.5 text-cultivate-green-light" />
                                 </div>
-                                <span className="text-xs font-medium text-[#85b878]">Expert Correction</span>
+                                <span className="text-xs font-medium text-cultivate-green-light">Expert Correction</span>
                               </div>
-                              <div className="prose prose-sm prose-invert max-w-none prose-p:text-[#C2C0B6] prose-p:leading-relaxed prose-headings:text-[#C2C0B6] prose-strong:text-[#C2C0B6] prose-li:text-[#C2C0B6] prose-p:my-1">
+                              <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary prose-p:my-1">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                   {msg.flaggedQuery.agronomistResponse}
                                 </ReactMarkdown>
@@ -471,12 +471,12 @@ export default function ConversationView({
                           {msg.role === "ASSISTANT" && msg.flaggedQuery?.status === "VERIFIED" && msg.flaggedQuery?.verificationNotes && (
                             <div className="mt-3 pl-4 border-l-2 border-[#85b878]/30">
                               <div className="flex items-center gap-2 mb-2">
-                                <div className="w-6 h-6 rounded-full bg-[#85b878]/20 flex items-center justify-center flex-shrink-0">
-                                  <CheckCircle className="w-3.5 h-3.5 text-[#85b878]" />
+                                <div className="w-6 h-6 rounded-full bg-cultivate-green-light/20 flex items-center justify-center flex-shrink-0">
+                                  <CheckCircle className="w-3.5 h-3.5 text-cultivate-green-light" />
                                 </div>
-                                <span className="text-xs font-medium text-[#85b878]">Verified by Expert</span>
+                                <span className="text-xs font-medium text-cultivate-green-light">Verified by Expert</span>
                               </div>
-                              <p className="text-sm text-[#C2C0B6] leading-relaxed">
+                              <p className="text-sm text-cultivate-text-primary leading-relaxed">
                                 {msg.flaggedQuery.verificationNotes}
                               </p>
                             </div>
@@ -493,7 +493,7 @@ export default function ConversationView({
                             return (
                               <div className="mt-3 pl-4 border-l-2 border-[#9C9A92]/30">
                                 <div className="flex items-center justify-between mb-2">
-                                  <span className="text-xs font-medium text-[#9C9A92]">Why You Flagged This</span>
+                                  <span className="text-xs font-medium text-cultivate-text-secondary">Why You Flagged This</span>
                                   {reasons.length > 1 && (
                                     <div className="flex items-center gap-1">
                                       <button
@@ -505,11 +505,11 @@ export default function ConversationView({
                                             return newMap;
                                           });
                                         }}
-                                        className="p-1 hover:bg-[#2B2B2B] rounded transition-colors"
+                                        className="p-1 hover:bg-cultivate-bg-elevated rounded transition-colors"
                                       >
-                                        <ChevronLeft className="w-3.5 h-3.5 text-[#9C9A92]" />
+                                        <ChevronLeft className="w-3.5 h-3.5 text-cultivate-text-secondary" />
                                       </button>
-                                      <span className="text-xs text-[#6B6B6B]">{currentIdx + 1}/{reasons.length}</span>
+                                      <span className="text-xs text-cultivate-text-tertiary">{currentIdx + 1}/{reasons.length}</span>
                                       <button
                                         onClick={() => {
                                           setCurrentReasonIndex(prev => {
@@ -519,17 +519,17 @@ export default function ConversationView({
                                             return newMap;
                                           });
                                         }}
-                                        className="p-1 hover:bg-[#2B2B2B] rounded transition-colors"
+                                        className="p-1 hover:bg-cultivate-bg-elevated rounded transition-colors"
                                       >
-                                        <ChevronRight className="w-3.5 h-3.5 text-[#9C9A92]" />
+                                        <ChevronRight className="w-3.5 h-3.5 text-cultivate-text-secondary" />
                                       </button>
                                     </div>
                                   )}
                                 </div>
-                                <p className="text-xs text-[#6B6B6B] mb-1">
+                                <p className="text-xs text-cultivate-text-tertiary mb-1">
                                   {currentReason.ordinal} • {formatTimestamp(currentReason.timestamp)}
                                 </p>
-                                <p className="text-sm text-[#9C9A92] leading-relaxed">
+                                <p className="text-sm text-cultivate-text-secondary leading-relaxed">
                                   {currentReason.message}
                                 </p>
                               </div>
@@ -542,12 +542,12 @@ export default function ConversationView({
                               <Tooltip content="Copy">
                                 <button
                                   onClick={() => handleCopy(msg.id, msg.content)}
-                                  className="p-1.5 hover:bg-[#141413] rounded transition-colors"
+                                  className="p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors"
                                 >
                                 {copiedMessages.has(msg.id) ? (
-                                  <Check className="w-3.5 h-3.5 text-[#C2C0B6] transition-colors" />
+                                  <Check className="w-3.5 h-3.5 text-cultivate-text-primary transition-colors" />
                                 ) : (
-                                  <Copy className="w-3.5 h-3.5 text-[#9C9A92] hover:text-[#C2C0B6] transition-colors" />
+                                  <Copy className="w-3.5 h-3.5 text-cultivate-text-secondary hover:text-cultivate-text-primary transition-colors" />
                                 )}
                               </button>
                             </Tooltip>
@@ -557,9 +557,9 @@ export default function ConversationView({
                                   // TODO: Implement thumbs up feedback
                                   console.log("Thumbs up for message:", msg.id);
                                 }}
-                                className="p-1.5 hover:bg-[#141413] rounded transition-colors"
+                                className="p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors"
                               >
-                                <ThumbsUp className="w-3.5 h-3.5 text-[#9C9A92] hover:text-[#C2C0B6] transition-colors" />
+                                <ThumbsUp className="w-3.5 h-3.5 text-cultivate-text-secondary hover:text-cultivate-text-primary transition-colors" />
                               </button>
                             </Tooltip>
                             <Tooltip content={
@@ -574,7 +574,7 @@ export default function ConversationView({
                                   flaggingInProgress.has(msg.id) ||
                                   (msg.flaggedQuery?.status !== undefined && msg.flaggedQuery.status !== "PENDING")
                                 }
-                                className={`p-1.5 hover:bg-[#141413] rounded transition-colors ${
+                                className={`p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors ${
                                   flaggingInProgress.has(msg.id)
                                     ? "opacity-50"
                                     : ""
@@ -592,10 +592,10 @@ export default function ConversationView({
                                   }
                                   className={`w-3.5 h-3.5 transition-colors ${
                                     msg.flaggedQuery?.status === "VERIFIED" || msg.flaggedQuery?.status === "CORRECTED"
-                                      ? "text-[#85b878]"  // green for both verified and corrected
+                                      ? "text-cultivate-green-light"  // green for both verified and corrected
                                       : flaggedMessages.has(msg.id)
                                         ? "text-red-400"  // red for pending
-                                        : "text-[#9C9A92] hover:text-[#C2C0B6]"  // default gray
+                                        : "text-cultivate-text-secondary hover:text-cultivate-text-primary"  // default gray
                                   }`}
                                 />
                               </button>
@@ -606,9 +606,9 @@ export default function ConversationView({
                                   // TODO: Implement retry (regenerate response)
                                   console.log("Retry message:", msg.id);
                                 }}
-                                className="p-1.5 hover:bg-[#141413] rounded transition-colors"
+                                className="p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors"
                               >
-                                <RotateCw className="w-3.5 h-3.5 text-[#9C9A92] hover:text-[#C2C0B6] transition-colors" />
+                                <RotateCw className="w-3.5 h-3.5 text-cultivate-text-secondary hover:text-cultivate-text-primary transition-colors" />
                               </button>
                             </Tooltip>
                           </div>{/* end icons opacity div */}
@@ -637,14 +637,14 @@ export default function ConversationView({
                   {isStreaming && (
                     <div>
                       {streamingContent ? (
-                        <div className="prose prose-base prose-invert max-w-none text-[#C2C0B6] leading-relaxed prose-p:my-1 prose-headings:text-[#C2C0B6] prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-[#C2C0B6] prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
+                        <div className="prose prose-base prose-invert max-w-none text-cultivate-text-primary leading-relaxed prose-p:my-1 prose-headings:text-cultivate-text-primary prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-cultivate-text-primary prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamingContent}</ReactMarkdown>
                         </div>
                       ) : (
                         <div className="flex gap-1 items-center py-1">
-                          <span className="w-1.5 h-1.5 bg-[#85b878] rounded-full animate-bounce [animation-delay:0ms]" />
-                          <span className="w-1.5 h-1.5 bg-[#85b878] rounded-full animate-bounce [animation-delay:150ms]" />
-                          <span className="w-1.5 h-1.5 bg-[#85b878] rounded-full animate-bounce [animation-delay:300ms]" />
+                          <span className="w-1.5 h-1.5 bg-cultivate-green-light rounded-full animate-bounce [animation-delay:0ms]" />
+                          <span className="w-1.5 h-1.5 bg-cultivate-green-light rounded-full animate-bounce [animation-delay:150ms]" />
+                          <span className="w-1.5 h-1.5 bg-cultivate-green-light rounded-full animate-bounce [animation-delay:300ms]" />
                         </div>
                       )}
                     </div>
@@ -653,7 +653,7 @@ export default function ConversationView({
                   {/* Disclaimer — in-flow on standalone, under input otherwise */}
                   {isStandalone && (
                     <div className="mt-6 ">
-                      <p className="text-sm text-[#C2C0B6] text-right leading-snug max-w-[250px] ml-auto">
+                      <p className="text-sm text-cultivate-text-primary text-right leading-snug max-w-[250px] ml-auto">
                         AI can make mistakes.<br />Please verify important information.
                       </p>
                     </div>
@@ -666,12 +666,12 @@ export default function ConversationView({
             {/* ── Sticky Input ────────────────────────────────────────────
                 Standalone: glass gradient overlay, transparent bg, -mt-10 to overlap messages
                 Desktop/web: solid bg, centered max width */}
-            <div className={`sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-[#1E1E1E] pb-2"}`}>
+            <div className={`sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-cultivate-bg-main pb-2"}`}>
               {isStandalone && (
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent backdrop-blur-[0.5px]" />
               )}
               <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-3.5 mb-1"}`}>
-                <div className="bg-[#2B2B2B] rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
+                <div className="bg-cultivate-bg-elevated rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
                   <textarea
                     placeholder={inputProps ? "Ask a follow-up..." : "Reply..."}
                     rows={1}
@@ -689,7 +689,7 @@ export default function ConversationView({
                         className="p-1.5 hover:bg-[#3B3B3B] rounded transition-colors"
                         title="New chat"
                       >
-                        <Plus className="w-5 h-5 text-[#C2C0B6]" />
+                        <Plus className="w-5 h-5 text-cultivate-text-primary" />
                       </button>
                     </div>
 
@@ -700,7 +700,7 @@ export default function ConversationView({
                         <div className="relative">
                           <button
                             onClick={() => inputProps.setShowAgentMenu(!inputProps.showAgentMenu)}
-                            className="flex items-center gap-1 text-[#C2C0B6] hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
+                            className="flex items-center gap-1 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
                           >
                             <span>{inputProps.selectedAgent}</span>
                             <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
@@ -708,12 +708,12 @@ export default function ConversationView({
                           {inputProps.showAgentMenu && (
                             <>
                               <div className="fixed inset-0 z-40" onClick={() => inputProps.setShowAgentMenu(false)} />
-                              <div className="absolute bottom-full right-0 mb-2 bg-[#2B2B2B] rounded-lg shadow-lg border border-[#3B3B3B] py-2 z-50 min-w-[200px]">
+                              <div className="absolute bottom-full right-0 mb-2 bg-cultivate-bg-elevated rounded-lg shadow-lg border border-cultivate-border-element py-2 z-50 min-w-[200px]">
                                 {inputProps.agents.map((agent) => (
                                   <button
                                     key={agent.id}
                                     onClick={() => { inputProps.onAgentSelect(agent.id, agent.name); inputProps.setShowAgentMenu(false); }}
-                                    className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors ${inputProps.selectedAgent === agent.name ? "text-[#85b878]" : "text-[#C2C0B6]"}`}
+                                    className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors ${inputProps.selectedAgent === agent.name ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
                                   >
                                     {agent.name}
                                   </button>
@@ -724,7 +724,7 @@ export default function ConversationView({
                         </div>
                       ) : (
                         /* Demo mode: static agent label */
-                        <span className="text-sm standalone:text-base lg:text-sm text-[#9C9A92]">
+                        <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-secondary">
                           {demoAgentLabel || "General Farm Advisor"}
                         </span>
                       )}
@@ -733,13 +733,13 @@ export default function ConversationView({
                       {inputProps ? (
                         inputProps.isStreaming ? (
                           <div className="p-2">
-                            <Loader2 className="w-5 h-5 text-[#85b878] animate-spin" />
+                            <Loader2 className="w-5 h-5 text-cultivate-green-light animate-spin" />
                           </div>
                         ) : (
                           <button
                             onClick={() => { inputProps.onSend(); inputProps.onSendIconCycle(); }}
                             disabled={!inputProps.value.trim()}
-                            className="p-2 bg-[#85b878] text-white rounded-xl hover:bg-[#536d3d] transition-colors disabled:opacity-40"
+                            className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-[#536d3d] transition-colors disabled:opacity-40"
                           >
                             {inputProps.sendIcon === "cabbage" && <CabbageIcon />}
                             {inputProps.sendIcon === "plane" && <PaperPlaneIcon />}
@@ -747,7 +747,7 @@ export default function ConversationView({
                           </button>
                         )
                       ) : (
-                        <button className="p-2 bg-[#85b878] text-white rounded-xl hover:bg-[#536d3d] transition-colors opacity-40 cursor-default">
+                        <button className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-[#536d3d] transition-colors opacity-40 cursor-default">
                           <CabbageIcon />
                         </button>
                       )}
@@ -755,7 +755,7 @@ export default function ConversationView({
                   </div>
                 </div>
                 {!isStandalone && (
-                  <p className="mt-2 text-xs text-[#9C9A92] text-center leading-snug">
+                  <p className="mt-2 text-xs text-cultivate-text-secondary text-center leading-snug">
                     AI can make mistakes. Please verify important information.
                   </p>
                 )}
@@ -813,11 +813,11 @@ export default function ConversationView({
         return (
           <>
             <div className="fixed inset-0 bg-black/50 z-50" onClick={() => { setShowFlagModal(false); setFlagReason(""); setCopiedFlagMessages(new Set()); }} />
-            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#2B2B2B] rounded-lg border border-[#3B3B3B] p-5 z-50 w-[90%] max-w-md max-h-[80vh] overflow-y-auto">
-              <h3 className="text-base font-semibold text-[#C2C0B6] mb-2">
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-cultivate-bg-elevated rounded-lg border border-cultivate-border-element p-5 z-50 w-[90%] max-w-md max-h-[80vh] overflow-y-auto">
+              <h3 className="text-base font-semibold text-cultivate-text-primary mb-2">
                 {isUpdatingFlag ? "Update flag" : "Flag for Review"}
               </h3>
-              <p className="text-xs text-[#9C9A92] mb-3">
+              <p className="text-xs text-cultivate-text-secondary mb-3">
                 {isUpdatingFlag
                   ? `Add additional context to your flag, you have up to 2 revisions`
                   : <>This message will be sent to an agronomist for review.<br />You can optionally provide a reason:</>}
@@ -826,7 +826,7 @@ export default function ConversationView({
               {/* Show previous messages if updating */}
               {isUpdatingFlag && allMessages.length > 0 && (
                 <div className="mb-3">
-                  <p className="text-xs text-[#9C9A92] mb-1.5">
+                  <p className="text-xs text-cultivate-text-secondary mb-1.5">
                     Your flag reasons{!canAddMore ? ' (limit reached)' : ':'}
                   </p>
                   <div className="space-y-1">
@@ -837,22 +837,22 @@ export default function ConversationView({
                       const isUpdate = idx > 0; // First is initial, rest are updates
 
                       return (
-                        <div key={idx} className="flex items-start gap-2 bg-[#1E1E1E] rounded px-2 py-1.5 group">
+                        <div key={idx} className="flex items-start gap-2 bg-cultivate-bg-main rounded px-2 py-1.5 group">
                           <p className="flex-1 text-xs break-words">
-                            <span className="text-[#9C9A92]">{ordinal} · {msg.date} · </span>
-                            <span className={isUpdate ? "font-semibold text-[#C2C0B6]" : "text-[#C2C0B6]"}>
+                            <span className="text-cultivate-text-secondary">{ordinal} · {msg.date} · </span>
+                            <span className={isUpdate ? "font-semibold text-cultivate-text-primary" : "text-cultivate-text-primary"}>
                               {msg.text}
                             </span>
                           </p>
                           <button
                             onClick={() => handleFlagCopy(idx, msg.text)}
-                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[#2B2B2B] rounded transition-all flex-shrink-0"
+                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-cultivate-bg-elevated rounded transition-all flex-shrink-0"
                             title="Copy"
                           >
                             {copiedFlagMessages.has(idx) ? (
-                              <Check className="w-3 h-3 text-[#85b878]" />
+                              <Check className="w-3 h-3 text-cultivate-green-light" />
                             ) : (
-                              <Copy className="w-3 h-3 text-[#9C9A92]" />
+                              <Copy className="w-3 h-3 text-cultivate-text-secondary" />
                             )}
                           </button>
                         </div>
@@ -870,7 +870,7 @@ export default function ConversationView({
                   e.target.style.height = e.target.scrollHeight + "px";
                 }}
                 placeholder={isUpdatingFlag ? "Add update..." : "Why are you flagging this? (optional)"}
-                className="w-full px-2.5 py-2 bg-[#1E1E1E] text-[#C2C0B6] text-sm placeholder-[#6B6B6B] border border-[#3B3B3B] rounded-lg resize-none focus:outline-none focus:border-[#85b878] mb-3 overflow-hidden"
+                className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm placeholder-[#6B6B6B] border border-cultivate-border-element rounded-lg resize-none focus:outline-none focus:border-[#85b878] mb-3 overflow-hidden"
                 rows={1}
                 style={{ minHeight: "36px" }}
                 disabled={isUpdatingFlag && !canAddMore}
@@ -878,7 +878,7 @@ export default function ConversationView({
               <div className="flex items-center gap-2 justify-end">
                 <button
                   onClick={() => { setShowFlagModal(false); setFlagReason(""); setCopiedFlagMessages(new Set()); }}
-                  className="px-3 py-1.5 text-xs text-[#C2C0B6] hover:bg-[#3B3B3B] rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-xs text-cultivate-text-primary hover:bg-[#3B3B3B] rounded-lg transition-colors"
                 >
                   Cancel
                 </button>

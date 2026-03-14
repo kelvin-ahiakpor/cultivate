@@ -26,23 +26,23 @@ export default function LandingPage() {
         <nav className="px-4 lg:px-12 py-4 lg:py-6 relative">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <Sprout className="w-8 h-8 text-[#536d3d]" />
+              <Sprout className="w-8 h-8 text-cultivate-green-dark" />
             </div>
 
             {/* Desktop nav links */}
             <div className="hidden lg:flex items-center gap-10 text-[15px]">
-              <a href="/" className="text-gray-700 hover:text-[#536d3d] transition-colors font-medium">Homepage</a>
-              <a href="#how-it-works" className="text-gray-700 hover:text-[#536d3d] transition-colors font-medium">Platform</a>
-              <a href="#why-cultivate" className="text-gray-700 hover:text-[#536d3d] transition-colors font-medium">About Us</a>
-              <a href="#trust" className="text-gray-700 hover:text-[#536d3d] transition-colors font-medium">Careers</a>
-              <a href="#contact" className="text-gray-700 hover:text-[#536d3d] transition-colors font-medium">Contact Us</a>
+              <a href="/" className="text-gray-700 hover:text-cultivate-green-dark transition-colors font-medium">Homepage</a>
+              <a href="#how-it-works" className="text-gray-700 hover:text-cultivate-green-dark transition-colors font-medium">Platform</a>
+              <a href="#why-cultivate" className="text-gray-700 hover:text-cultivate-green-dark transition-colors font-medium">About Us</a>
+              <a href="#trust" className="text-gray-700 hover:text-cultivate-green-dark transition-colors font-medium">Careers</a>
+              <a href="#contact" className="text-gray-700 hover:text-cultivate-green-dark transition-colors font-medium">Contact Us</a>
             </div>
 
             {/* Right: auth buttons (desktop) + hamburger (mobile) */}
             <div className="flex items-center gap-2 lg:gap-3">
               <Link
                 href="/signup"
-                className="hidden lg:flex bg-[#85b878] hover:bg-[#536d3d] text-white px-8 py-3 rounded-full transition-all duration-300 font-medium shadow-md hover:shadow-lg items-center gap-2"
+                className="hidden lg:flex bg-[#85b878] hover:bg-cultivate-green-dark text-white px-8 py-3 rounded-full transition-all duration-300 font-medium shadow-md hover:shadow-lg items-center gap-2"
               >
                 Sign Up
                 <ArrowRight className="w-4 h-4" />
@@ -75,11 +75,11 @@ export default function LandingPage() {
             }`}
           >
             <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-4 space-y-1">
-              <a href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-[#536d3d] hover:bg-gray-50 rounded-xl transition-colors font-medium">Homepage</a>
-              <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-[#536d3d] hover:bg-gray-50 rounded-xl transition-colors font-medium">Platform</a>
-              <a href="#why-cultivate" onClick={() => setMobileMenuOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-[#536d3d] hover:bg-gray-50 rounded-xl transition-colors font-medium">About Us</a>
-              <a href="#trust" onClick={() => setMobileMenuOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-[#536d3d] hover:bg-gray-50 rounded-xl transition-colors font-medium">Careers</a>
-              <a href="#contact" onClick={() => setMobileMenuOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-[#536d3d] hover:bg-gray-50 rounded-xl transition-colors font-medium">Contact Us</a>
+              <a href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-cultivate-green-dark hover:bg-gray-50 rounded-xl transition-colors font-medium">Homepage</a>
+              <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-cultivate-green-dark hover:bg-gray-50 rounded-xl transition-colors font-medium">Platform</a>
+              <a href="#why-cultivate" onClick={() => setMobileMenuOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-cultivate-green-dark hover:bg-gray-50 rounded-xl transition-colors font-medium">About Us</a>
+              <a href="#trust" onClick={() => setMobileMenuOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-cultivate-green-dark hover:bg-gray-50 rounded-xl transition-colors font-medium">Careers</a>
+              <a href="#contact" onClick={() => setMobileMenuOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-cultivate-green-dark hover:bg-gray-50 rounded-xl transition-colors font-medium">Contact Us</a>
 
               <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">
                 <Link
@@ -139,7 +139,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12 lg:mb-24 space-y-4">
             <h2 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-gray-900">
-              Simple. Powerful. <span className="text-[#536d3d]">Effective.</span>
+              Simple. Powerful. <span className="text-cultivate-green-dark">Effective.</span>
             </h2>
             <p className="text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto">
               Three steps to transform how agricultural knowledge reaches farmers
@@ -149,9 +149,9 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-3 gap-6 lg:gap-12">
             {/* Step 1 */}
             <div className="group relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#536d3d]/5 to-transparent rounded-3xl transform group-hover:scale-105 transition-transform duration-300"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-cultivate-green-dark/5 to-transparent rounded-3xl transform group-hover:scale-105 transition-transform duration-300"></div>
               <div className="relative bg-white rounded-3xl p-6 lg:p-10 shadow-sm hover:shadow-xl transition-all duration-300 h-full">
-                <div className="w-14 h-14 lg:w-16 lg:h-16 bg-[#536d3d] rounded-2xl flex items-center justify-center mb-5 lg:mb-6">
+                <div className="w-14 h-14 lg:w-16 lg:h-16 bg-cultivate-green-dark rounded-2xl flex items-center justify-center mb-5 lg:mb-6">
                   <Users className="w-7 h-7 lg:w-8 lg:h-8 text-white" />
                 </div>
                 <div className="space-y-3 lg:space-y-4">
@@ -223,7 +223,7 @@ export default function LandingPage() {
       </section>
 
       {/* Why It Matters Section */}
-      <section id="why-cultivate" className="py-16 lg:py-32 px-4 lg:px-12 bg-[#536d3d] text-white relative overflow-hidden">
+      <section id="why-cultivate" className="py-16 lg:py-32 px-4 lg:px-12 bg-cultivate-green-dark text-white relative overflow-hidden">
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#85b878] rounded-full blur-3xl opacity-20"></div>
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#608e96] rounded-full blur-3xl opacity-20"></div>
@@ -278,7 +278,7 @@ export default function LandingPage() {
               <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-6 lg:p-8 border border-white/20">
                 <div className="flex items-start gap-4">
                   <div className="w-11 h-11 lg:w-12 lg:h-12 bg-[#e8c8ab] rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Users className="w-5 h-5 lg:w-6 lg:h-6 text-[#536d3d]" />
+                    <Users className="w-5 h-5 lg:w-6 lg:h-6 text-cultivate-green-dark" />
                   </div>
                   <div>
                     <h3 className="text-xl lg:text-2xl font-bold mb-1 lg:mb-2">Scale Without Limits</h3>
@@ -298,7 +298,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12 lg:mb-24 space-y-4">
             <h2 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-gray-900">
-              AI guided by <span className="text-[#536d3d]">real experts</span>
+              AI guided by <span className="text-cultivate-green-dark">real experts</span>
             </h2>
             <p className="text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto">
               Not just another chatbot. Every response is backed by agricultural expertise.
@@ -307,8 +307,8 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-6 lg:gap-8 mb-12 lg:mb-16">
             <div className="bg-white rounded-3xl p-6 lg:p-10 shadow-sm border border-gray-100">
-              <div className="w-14 h-14 lg:w-16 lg:h-16 bg-[#536d3d]/10 rounded-2xl flex items-center justify-center mb-5 lg:mb-6">
-                <Shield className="w-7 h-7 lg:w-8 lg:h-8 text-[#536d3d]" />
+              <div className="w-14 h-14 lg:w-16 lg:h-16 bg-cultivate-green-dark/10 rounded-2xl flex items-center justify-center mb-5 lg:mb-6">
+                <Shield className="w-7 h-7 lg:w-8 lg:h-8 text-cultivate-green-dark" />
               </div>
               <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-3 lg:mb-4">Trained by Agronomists</h3>
               <p className="text-gray-600 text-base lg:text-lg leading-relaxed">
@@ -339,7 +339,7 @@ export default function LandingPage() {
           </div>
 
           {/* Testimonial placeholder */}
-          <div className="bg-gradient-to-br from-[#536d3d] to-[#85b878] rounded-3xl p-8 lg:p-16 text-white">
+          <div className="bg-gradient-to-br from-cultivate-green-dark to-cultivate-green-light rounded-3xl p-8 lg:p-16 text-white">
             <div className="max-w-4xl mx-auto text-center space-y-6">
               {/* PLACEHOLDER: Testimonial from Farmitecture agronomist or early farmer user */}
               <div className="text-2xl sm:text-3xl lg:text-5xl font-bold leading-tight">
@@ -371,7 +371,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2 lg:pt-4">
             <Link
               href="/signup"
-              className="group bg-[#85b878] text-white px-8 lg:px-10 py-4 lg:py-5 rounded-full hover:bg-[#536d3d] transition-all duration-300 font-bold text-lg lg:text-xl shadow-xl hover:shadow-2xl flex items-center justify-center gap-2 min-h-[52px]"
+              className="group bg-[#85b878] text-white px-8 lg:px-10 py-4 lg:py-5 rounded-full hover:bg-cultivate-green-dark transition-all duration-300 font-bold text-lg lg:text-xl shadow-xl hover:shadow-2xl flex items-center justify-center gap-2 min-h-[52px]"
             >
               Start Your Free Trial
               <ArrowRight className="w-5 h-5 lg:w-6 lg:h-6 group-hover:translate-x-1 transition-transform" />

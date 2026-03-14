@@ -252,7 +252,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="bg-[#536d3d] text-white py-2 px-6 rounded-none font-medium hover:bg-[#3d5229] focus:outline-none focus:ring-2 focus:ring-[#536d3d] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+              className="bg-cultivate-green-dark text-white py-2 px-6 rounded-none font-medium hover:bg-[#3d5229] focus:outline-none focus:ring-2 focus:ring-[#536d3d] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
             >
               {isLoading ? "Creating account..." : "Create account"}
             </button>
