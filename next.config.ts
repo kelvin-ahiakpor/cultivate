@@ -6,7 +6,6 @@ const nextConfig: NextConfig = {
   // Empty turbopack config silences the "webpack config but no turbopack config" warning.
   // Serwist's webpack plugin only runs at build time (and is disabled in dev anyway).
   turbopack: {},
-  turbopack: {},
   images: {
     unoptimized: true,
     remotePatterns: [],
