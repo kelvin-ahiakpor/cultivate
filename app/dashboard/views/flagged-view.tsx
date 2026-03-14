@@ -457,7 +457,7 @@ export default function FlaggedView({
                     <button
                       onClick={() => {
                         const el = flagReasonsRefs.current.get(query.id);
-                        el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                       }}
                       className="mt-2 text-xs text-[#e8c8ab] hover:text-[#e8c8ab]/80 transition-colors flex items-center gap-1"
                     >
