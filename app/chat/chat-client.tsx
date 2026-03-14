@@ -55,7 +55,21 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   // Chat state
-  interface ChatMessage { id: string; role: "USER" | "ASSISTANT"; content: string; }
+  interface ChatMessage {
+    id: string;
+    role: "USER" | "ASSISTANT";
+    content: string;
+    confidenceScore?: number;
+    isFlagged?: boolean;
+    flaggedQuery?: {
+      id: string;
+      status?: "PENDING" | "VERIFIED" | "CORRECTED";
+      farmerReason?: string | null;
+      farmerUpdates?: string | null;
+      agronomistResponse?: string | null;
+      verificationNotes?: string | null;
+    };
+  }
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -210,6 +224,9 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                 id: event.message?.id || genId(),
                 role: "ASSISTANT",
                 content: assistantText,
+                confidenceScore: event.message?.confidenceScore,
+                isFlagged: event.message?.isFlagged,
+                flaggedQuery: event.message?.flaggedQuery,
               };
               setMessages(prev => [...prev, assistantMsg]);
               setStreamingContent("");
@@ -267,6 +284,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
         id: m.id,
         role: m.role as "USER" | "ASSISTANT",
         content: m.content,
+        confidenceScore: m.confidenceScore,
         isFlagged: m.isFlagged,
         flaggedQuery: m.flaggedQuery,
       })));
@@ -281,6 +299,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
             id: m.id,
             role: m.role,
             content: m.content,
+            confidenceScore: m.confidenceScore,
             isFlagged: m.isFlagged,
             flaggedQuery: m.flaggedQuery
           })));

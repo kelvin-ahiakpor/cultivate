@@ -364,6 +364,29 @@ export async function POST(
     });
   } catch (err) {
     console.error("POST /api/conversations/[id]/messages error:", err);
+
+    // Save error message to DB so conversation history is complete
+    // This catches errors that happen BEFORE streaming starts (e.g., RAG failures)
+    try {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      const isBillingError = errorMessage.includes("credit balance") || errorMessage.includes("billing");
+      const userFacingError = isBillingError
+        ? "The AI service is temporarily unavailable due to billing limits. Please contact support."
+        : "Sorry, something went wrong. Please try again.";
+
+      await prisma.message.create({
+        data: {
+          content: userFacingError,
+          role: "ASSISTANT",
+          conversationId: id,
+          senderId: user.id,
+        },
+      });
+    } catch (saveErr) {
+      console.error("Failed to save error message to DB:", saveErr);
+      // Don't throw - we still want to return the API error
+    }
+
     return apiError("Failed to send message", 500);
   }
 }

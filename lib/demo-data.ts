@@ -293,9 +293,9 @@ export const DEMO_FARMER_CONVO_MESSAGES: Record<string, DemoChatMessage[]> = {
   // Chat 1: Hydroponic NFT — VERIFIED with verification notes
   "1": [
     { id: "m1", role: "USER", content: "Good morning! My NFT system EC reading is at 2.8. Is that too high for lettuce?", timestamp: "9:15 AM" },
-    { id: "m2", role: "ASSISTANT", content: "Good morning! For lettuce in NFT, the ideal EC is typically between 1.2-2.0 mS/cm. An EC of 2.8 is quite high and could stress your plants. I'd recommend diluting your nutrient solution gradually to bring it down to the 1.5-1.8 range.", timestamp: "9:16 AM" },
+    { id: "m2", role: "ASSISTANT", content: "Good morning! For lettuce in NFT, the ideal EC is typically between 1.2-2.0 mS/cm. An EC of 2.8 is quite high and could stress your plants. I'd recommend diluting your nutrient solution gradually to bring it down to the 1.5-1.8 range.", timestamp: "9:16 AM", confidenceScore: 0.92 },
     { id: "m3", role: "USER", content: "Okay got it. Should I just add water directly or drain some and refill?", timestamp: "9:18 AM" },
-    { id: "m4", role: "ASSISTANT", content: "The best approach is to partially drain (about 30-40%) and refill with fresh water. This way you avoid shocking the plants with a sudden change. Monitor the EC as you add water, and stop when you reach your target range.", timestamp: "9:19 AM" },
+    { id: "m4", role: "ASSISTANT", content: "The best approach is to partially drain (about 30-40%) and refill with fresh water. This way you avoid shocking the plants with a sudden change. Monitor the EC as you add water, and stop when you reach your target range.", timestamp: "9:19 AM", confidenceScore: 0.88 },
     { id: "m5", role: "USER", content: "Perfect. One more thing — my pH keeps drifting up to 7.2 even after I adjust it. What's causing that?", timestamp: "9:22 AM" },
     {
       id: "m6",
@@ -318,7 +318,7 @@ export const DEMO_FARMER_CONVO_MESSAGES: Record<string, DemoChatMessage[]> = {
   // Chat 2: Drip Irrigation — CORRECTED with agronomist response
   "2": [
     { id: "m1", role: "USER", content: "Hi, I just installed my drip irrigation kit. How often should I run it during the dry season?", timestamp: "2:10 PM" },
-    { id: "m2", role: "ASSISTANT", content: "Great question! For the dry season, frequency depends on your crop and soil type. For vegetables in sandy soil, aim for 2-3 times daily for 15-20 minutes. For clay soil, once daily for 30-45 minutes is usually enough.", timestamp: "2:11 PM" },
+    { id: "m2", role: "ASSISTANT", content: "Great question! For the dry season, frequency depends on your crop and soil type. For vegetables in sandy soil, aim for 2-3 times daily for 15-20 minutes. For clay soil, once daily for 30-45 minutes is usually enough.", timestamp: "2:11 PM", confidenceScore: 0.85 },
     { id: "m3", role: "USER", content: "I'm growing tomatoes and peppers in loamy soil. What would you recommend?", timestamp: "2:13 PM" },
     {
       id: "m4",
@@ -340,7 +340,7 @@ export const DEMO_FARMER_CONVO_MESSAGES: Record<string, DemoChatMessage[]> = {
   // Chat 3: Greenhouse ventilation — PENDING with multiple flag updates
   "3": [
     { id: "m1", role: "USER", content: "My greenhouse is getting too hot during the day — sometimes hitting 42°C. The vents are open but it's not helping much.", timestamp: "11:05 AM" },
-    { id: "m2", role: "ASSISTANT", content: "42°C is definitely too hot for most crops! Even with vents open, greenhouses can overheat in Ghana's climate. Have you considered adding shade cloth? A 40-50% shade net can reduce temperatures by 5-8°C without blocking too much light.", timestamp: "11:06 AM" },
+    { id: "m2", role: "ASSISTANT", content: "42°C is definitely too hot for most crops! Even with vents open, greenhouses can overheat in Ghana's climate. Have you considered adding shade cloth? A 40-50% shade net can reduce temperatures by 5-8°C without blocking too much light.", timestamp: "11:06 AM", confidenceScore: 0.90 },
     { id: "m3", role: "USER", content: "I haven't tried shade cloth yet. Would that affect my tomato yields?", timestamp: "11:08 AM" },
     {
       id: "m4",
@@ -357,7 +357,7 @@ export const DEMO_FARMER_CONVO_MESSAGES: Record<string, DemoChatMessage[]> = {
       }
     },
     { id: "m5", role: "USER", content: "Okay I'll look into getting shade cloth. Any other tips for cooling?", timestamp: "11:12 AM" },
-    { id: "m6", role: "ASSISTANT", content: "Yes! Other cooling strategies:\n\n1. **Misting/fogging** — evaporative cooling can drop temps by 3-5°C\n2. **Whitewash** — temporary lime wash on roof during hottest months\n3. **Improved cross-ventilation** — add side vents if you only have roof vents\n4. **Mulching** — keeps root zone cool even if air temp is high\n\nCombining 2-3 of these methods works best!", timestamp: "11:13 AM" },
+    { id: "m6", role: "ASSISTANT", content: "Yes! Other cooling strategies:\n\n1. **Misting/fogging** — evaporative cooling can drop temps by 3-5°C\n2. **Whitewash** — temporary lime wash on roof during hottest months\n3. **Improved cross-ventilation** — add side vents if you only have roof vents\n4. **Mulching** — keeps root zone cool even if air temp is high\n\nCombining 2-3 of these methods works best!", timestamp: "11:13 AM", confidenceScore: 0.87 },
   ],
 
   // Default fallback for other chats

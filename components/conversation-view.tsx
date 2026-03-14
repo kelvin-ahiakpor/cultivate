@@ -55,6 +55,7 @@ export interface ConversationMessage {
   id: string;
   role: "USER" | "ASSISTANT";
   content: string;
+  confidenceScore?: number;
   isFlagged?: boolean;
   flaggedQuery?: {
     id: string;
@@ -534,14 +535,15 @@ export default function ConversationView({
                               </div>
                             );
                           })()}
-
                           {/* Message actions — copy, thumbs up, flag, retry */}
-                          <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Tooltip content="Copy">
-                              <button
-                                onClick={() => handleCopy(msg.id, msg.content)}
-                                className="p-1.5 hover:bg-[#141413] rounded transition-colors"
-                              >
+                          {/* Actions row: icons fade on hover, badge always visible */}
+                          <div className="flex items-center mt-2">
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Tooltip content="Copy">
+                                <button
+                                  onClick={() => handleCopy(msg.id, msg.content)}
+                                  className="p-1.5 hover:bg-[#141413] rounded transition-colors"
+                                >
                                 {copiedMessages.has(msg.id) ? (
                                   <Check className="w-3.5 h-3.5 text-[#C2C0B6] transition-colors" />
                                 ) : (
@@ -609,11 +611,27 @@ export default function ConversationView({
                                 <RotateCw className="w-3.5 h-3.5 text-[#9C9A92] hover:text-[#C2C0B6] transition-colors" />
                               </button>
                             </Tooltip>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                          </div>{/* end icons opacity div */}
+
+                          {/* Badge is a sibling — shows on hover like action icons */}
+                          {msg.role === "ASSISTANT" && msg.confidenceScore !== undefined && msg.confidenceScore !== null && (
+                            <Tooltip content="Confidence Score">
+                              <div className={`ml-2 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity ${
+                                msg.confidenceScore < 0.6
+                                  ? "text-cultivate-beige"
+                                  : msg.confidenceScore < 0.8
+                                    ? "text-cultivate-teal"
+                                    : "text-cultivate-green-light"
+                              }`}>
+                                {Math.round(msg.confidenceScore * 100)}%
+                              </div>
+                            </Tooltip>
+                          )}
+                        </div>{/* end actions row */}
+                      </div>
+                    )}
+                  </div>
+                ))}
 
                   {/* Streaming indicator (real mode only) */}
                   {isStreaming && (
