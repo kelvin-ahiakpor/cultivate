@@ -21,6 +21,14 @@ export interface DemoChatMessage {
   timestamp: string;
   confidenceScore?: number;
   isFlagged?: boolean;
+  flaggedQuery?: {
+    id: string;
+    status?: "PENDING" | "VERIFIED" | "CORRECTED";
+    farmerReason?: string | null;
+    farmerUpdates?: string | null;
+    agronomistResponse?: string | null;
+    verificationNotes?: string | null;
+  };
 }
 
 // ─── Agents ───────────────────────────────────────────────────────────────────
@@ -133,10 +141,60 @@ export const DEMO_FLAGGED_CONVOS: Record<string, { title: string; messages: Demo
 // ─── Flagged Queries list ─────────────────────────────────────────────────────
 
 export const DEMO_FLAGGED = [
-  { id: "1", farmerName: "Kwame Asante", farmerMessage: "My cassava leaves are turning yellow and curling. I sprayed something last week but it's getting worse. What should I do?", agentResponse: "Based on the symptoms described, this could be Cassava Mosaic Disease (CMD) or a nutrient deficiency. However, I'm not confident enough to provide specific treatment advice without more information.", agentName: "General Farm Advisor", confidenceScore: 0.45, status: "PENDING", createdAt: "2 hours ago", conversationId: "conv-1" },
-  { id: "2", farmerName: "Ama Mensah", farmerMessage: "What is the best fertilizer ratio for tomatoes in sandy soil during the dry season?", agentResponse: "For tomatoes in sandy soil, a balanced NPK fertilizer is generally recommended, but specific ratios depend on soil test results which I don't have access to.", agentName: "General Farm Advisor", confidenceScore: 0.52, status: "PENDING", createdAt: "5 hours ago", conversationId: "conv-2" },
-  { id: "3", farmerName: "Yaw Boateng", farmerMessage: "I found small black insects on my maize tassels. Are they harmful?", agentResponse: "These are likely aphids, which are common on maize. They can reduce yield if populations are high. Neem-based sprays can help control them.", agentName: "Pest Management", confidenceScore: 0.62, status: "VERIFIED", createdAt: "1 day ago", reviewedAt: "12 hours ago", verificationNotes: "Agent correctly identified aphids. Response is appropriate for the farmer's level of understanding.", conversationId: "conv-3" },
-  { id: "4", farmerName: "Efua Owusu", farmerMessage: "When should I start planting okra this year?", agentResponse: "Okra can be planted year-round in Ghana, but the best time is at the start of the rainy season (March-April) for optimal germination.", agronomistResponse: "In the Greater Accra region specifically, early March planting gives best yields. Soak seeds overnight before planting for better germination rates. The agent's general advice is correct but lacks regional specificity.", agentName: "General Farm Advisor", confidenceScore: 0.58, status: "CORRECTED", createdAt: "3 days ago", reviewedAt: "2 days ago", conversationId: "conv-4" },
+  {
+    id: "1",
+    farmerName: "Kwame Asante",
+    farmerMessage: "My cassava leaves are turning yellow and curling. I sprayed something last week but it's getting worse. What should I do?",
+    agentResponse: "Based on the symptoms described, this could be Cassava Mosaic Disease (CMD) or a nutrient deficiency. However, I'm not confident enough to provide specific treatment advice without more information.",
+    agentName: "General Farm Advisor",
+    confidenceScore: 0.45,
+    status: "PENDING",
+    createdAt: "2 hours ago",
+    conversationId: "conv-1",
+    farmerReason: "[2026-03-14T10:15:00.000Z] The agent didn't give me specific steps to take. I need to know what to spray.",
+    farmerUpdates: "[2026-03-14T11:30:00.000Z] Also, my neighbor said it could be whiteflies, not mosaic disease. I'm confused now.\n\n[2026-03-14T12:05:00.000Z] Urgent! The yellowing is spreading to more plants. Please help!"
+  },
+  {
+    id: "2",
+    farmerName: "Ama Mensah",
+    farmerMessage: "What is the best fertilizer ratio for tomatoes in sandy soil during the dry season?",
+    agentResponse: "For tomatoes in sandy soil, a balanced NPK fertilizer is generally recommended, but specific ratios depend on soil test results which I don't have access to.",
+    agentName: "General Farm Advisor",
+    confidenceScore: 0.52,
+    status: "PENDING",
+    createdAt: "5 hours ago",
+    conversationId: "conv-2",
+    farmerReason: "[2026-03-14T07:20:00.000Z] Too vague. I need actual numbers like 15-15-15 or 20-10-10. Can't afford soil testing right now."
+  },
+  {
+    id: "3",
+    farmerName: "Yaw Boateng",
+    farmerMessage: "I found small black insects on my maize tassels. Are they harmful?",
+    agentResponse: "These are likely aphids, which are common on maize. They can reduce yield if populations are high. Neem-based sprays can help control them.",
+    agentName: "Pest Management",
+    confidenceScore: 0.62,
+    status: "VERIFIED",
+    createdAt: "1 day ago",
+    reviewedAt: "12 hours ago",
+    verificationNotes: "Agent correctly identified aphids. Response is appropriate for the farmer's level of understanding. Neem spray recommendation is sound organic approach.",
+    conversationId: "conv-3",
+    farmerReason: "[2026-03-13T14:25:00.000Z] Just checking if this is correct before I buy neem oil. Want to make sure it's really aphids."
+  },
+  {
+    id: "4",
+    farmerName: "Efua Owusu",
+    farmerMessage: "When should I start planting okra this year?",
+    agentResponse: "Okra can be planted year-round in Ghana, but the best time is at the start of the rainy season (March-April) for optimal germination.",
+    agronomistResponse: "For the **Greater Accra region specifically**, early **March** planting gives best yields (just before the rains). Here's the recommended timeline:\n\n- **Soil prep**: Late February\n- **Planting**: First week of March\n- **Germination**: 5-7 days\n- **First harvest**: 50-60 days (late April)\n\n**Pro tip**: Soak seeds in water overnight before planting to improve germination rates from 60% to 85%+. The agent's general advice is correct but lacks regional specificity and the soaking technique.",
+    agentName: "General Farm Advisor",
+    confidenceScore: 0.58,
+    status: "CORRECTED",
+    createdAt: "3 days ago",
+    reviewedAt: "2 days ago",
+    conversationId: "conv-4",
+    farmerReason: "[2026-03-11T09:10:00.000Z] This seems too general. I'm in Dodowa, Greater Accra. Does the timing change for my area?",
+    farmerUpdates: "[2026-03-11T15:45:00.000Z] Also, should I do anything to the seeds before planting?"
+  },
   { id: "5", farmerName: "Kofi Adjei", farmerMessage: "How much water does my rice paddy need per day during the vegetative stage?", agentResponse: "Rice paddies generally need standing water of about 5-10cm during the vegetative stage. However, specific water requirements depend on soil type and weather conditions.", agentName: "General Farm Advisor", confidenceScore: 0.48, status: "PENDING", createdAt: "4 hours ago", conversationId: "conv-1" },
   { id: "6", farmerName: "Abena Darkwa", farmerMessage: "My cocoa pods have brown patches and some are turning black. Is this black pod disease?", agentResponse: "Brown and black patches on cocoa pods could indicate Phytophthora pod rot (black pod disease). I would recommend consulting an agronomist for proper diagnosis.", agentName: "General Farm Advisor", confidenceScore: 0.41, status: "PENDING", createdAt: "6 hours ago", conversationId: "conv-2" },
   { id: "7", farmerName: "Kweku Mensah", farmerMessage: "How do I select the best plantain suckers for replanting?", agentResponse: "Choose sword suckers (narrow leaves, pointed tips) rather than water suckers. Sword suckers are more vigorous and produce better yields.", agentName: "General Farm Advisor", confidenceScore: 0.64, status: "VERIFIED", createdAt: "2 days ago", reviewedAt: "1 day ago", verificationNotes: "Correct advice. Sword suckers are indeed preferred over water suckers for plantain propagation in Ghana.", conversationId: "conv-3" },
@@ -230,17 +288,84 @@ export const DEMO_FARMER_CHATS = [
   { id: "38", title: "Mushroom cultivation on cocoa farms", agentName: "Cocoa Specialist", lastMessage: "3 weeks ago", messageCount: 6 },
 ];
 
-// Messages shown when a farmer opens any chat in demo mode
-export const DEMO_FARMER_CONVO_MESSAGES: DemoChatMessage[] = [
-  { id: "m1", role: "USER", content: "Hello, I need some help with my cassava farm.", timestamp: "10:02 AM" },
-  { id: "m2", role: "ASSISTANT", content: "Hello! I'd be happy to help with your cassava farm. What would you like to know? I can assist with planting, pest management, harvesting, soil preparation, and more.", timestamp: "10:02 AM" },
-  { id: "m3", role: "USER", content: "I planted some new cassava stems about 3 months ago. The first month everything looked great, the stems sprouted well and leaves were coming in nicely.", timestamp: "10:04 AM" },
-  { id: "m4", role: "ASSISTANT", content: "That sounds like a good start! Three months is when cassava really begins establishing its root system. How are the plants looking now? Are you noticing any changes in growth or leaf appearance?", timestamp: "10:04 AM" },
-  { id: "m5", role: "USER", content: "Yes that is exactly why I am contacting you. In the second month I noticed some of the lower leaves were starting to turn a bit yellow. I thought maybe it was just normal so I didn't worry too much.", timestamp: "10:06 AM" },
-  { id: "m6", role: "ASSISTANT", content: "Some lower leaf yellowing can be normal in cassava as the plant matures — older leaves naturally senesce (die off) as the plant directs energy to new growth. However, if the yellowing has been spreading or you're seeing it on newer leaves too, that could indicate something else. Can you tell me more about the pattern? Is it just the bottom leaves, or is it moving upward?", timestamp: "10:06 AM" },
-  { id: "m7", role: "USER", content: "At first it was just the bottom ones yes. But now I'm seeing it on the middle leaves too. And the new leaves at the top are looking smaller than they should be.", timestamp: "10:08 AM" },
-  { id: "m8", role: "ASSISTANT", content: "That's a more concerning pattern. When yellowing moves from lower to upper leaves and new growth appears stunted, it could suggest:\n\n1. **Nitrogen deficiency** — most common cause of progressive yellowing bottom to top\n2. **Cassava Mosaic Disease (CMD)** — if you see patches of yellow and green\n3. **Root issues** — waterlogging affecting nutrient uptake\n\nCan you describe the yellowing? Is it uniform yellow, or do you see patches and mottling?", timestamp: "10:09 AM" },
-];
+// Messages shown when a farmer opens a chat in demo mode (keyed by chat ID)
+export const DEMO_FARMER_CONVO_MESSAGES: Record<string, DemoChatMessage[]> = {
+  // Chat 1: Hydroponic NFT — VERIFIED with verification notes
+  "1": [
+    { id: "m1", role: "USER", content: "Good morning! My NFT system EC reading is at 2.8. Is that too high for lettuce?", timestamp: "9:15 AM" },
+    { id: "m2", role: "ASSISTANT", content: "Good morning! For lettuce in NFT, the ideal EC is typically between 1.2-2.0 mS/cm. An EC of 2.8 is quite high and could stress your plants. I'd recommend diluting your nutrient solution gradually to bring it down to the 1.5-1.8 range.", timestamp: "9:16 AM" },
+    { id: "m3", role: "USER", content: "Okay got it. Should I just add water directly or drain some and refill?", timestamp: "9:18 AM" },
+    { id: "m4", role: "ASSISTANT", content: "The best approach is to partially drain (about 30-40%) and refill with fresh water. This way you avoid shocking the plants with a sudden change. Monitor the EC as you add water, and stop when you reach your target range.", timestamp: "9:19 AM" },
+    { id: "m5", role: "USER", content: "Perfect. One more thing — my pH keeps drifting up to 7.2 even after I adjust it. What's causing that?", timestamp: "9:22 AM" },
+    {
+      id: "m6",
+      role: "ASSISTANT",
+      content: "pH drift upward is common in NFT systems and usually caused by:\n\n1. **Nutrient uptake imbalance** — plants absorb more hydrogen ions than hydroxide\n2. **Hard water** — high alkalinity in your water source\n3. **Algae growth** — photosynthesis raises pH during the day\n\nFor lettuce, target pH 5.5-6.5. Use pH Down (phosphoric acid) to adjust, and check twice daily until it stabilizes.",
+      timestamp: "9:23 AM",
+      confidenceScore: 0.68,
+      isFlagged: true,
+      flaggedQuery: {
+        id: "fq-demo-1",
+        status: "VERIFIED",
+        farmerReason: "[2026-03-13T09:25:00.000Z] The pH advice seems generic. I need to know if this is specific to my Farmitecture NFT system.",
+        farmerUpdates: "[2026-03-13T14:30:00.000Z] Actually never mind, I checked the manual and this matches what it says. Good advice!",
+        verificationNotes: "Correct advice. pH drift is normal in NFT systems, especially with hard water. The 5.5-6.5 range is standard for lettuce cultivation."
+      }
+    },
+    { id: "m7", role: "USER", content: "Thank you! I'll try adjusting it now and keep monitoring.", timestamp: "9:25 AM" },
+  ],
+
+  // Chat 2: Drip Irrigation — CORRECTED with agronomist response
+  "2": [
+    { id: "m1", role: "USER", content: "Hi, I just installed my drip irrigation kit. How often should I run it during the dry season?", timestamp: "2:10 PM" },
+    { id: "m2", role: "ASSISTANT", content: "Great question! For the dry season, frequency depends on your crop and soil type. For vegetables in sandy soil, aim for 2-3 times daily for 15-20 minutes. For clay soil, once daily for 30-45 minutes is usually enough.", timestamp: "2:11 PM" },
+    { id: "m3", role: "USER", content: "I'm growing tomatoes and peppers in loamy soil. What would you recommend?", timestamp: "2:13 PM" },
+    {
+      id: "m4",
+      role: "ASSISTANT",
+      content: "For tomatoes and peppers in loamy soil during the dry season, water once every 2-3 days for about 45 minutes to 1 hour. This should provide enough moisture without waterlogging.",
+      timestamp: "2:14 PM",
+      confidenceScore: 0.55,
+      isFlagged: true,
+      flaggedQuery: {
+        id: "fq-demo-2",
+        status: "CORRECTED",
+        farmerReason: "[2026-03-12T14:15:00.000Z] This doesn't sound right. I read that tomatoes need daily watering in the dry season, not every 2-3 days.",
+        agronomistResponse: "The farmer is correct. For **tomatoes during the dry season**, daily watering is essential, especially during fruiting. The correct schedule for loamy soil would be:\n\n- **Vegetative stage**: Once daily, early morning, 30-40 minutes\n- **Flowering & fruiting**: Twice daily (morning + late afternoon), 20-30 minutes each\n- **Peppers**: Once daily, 25-35 minutes (less water than tomatoes)\n\nMonitor soil moisture at 15cm depth — it should feel slightly moist but not saturated. Adjust timing based on plant response and weather conditions."
+      }
+    },
+    { id: "m5", role: "USER", content: "Hmm, let me check that. I thought tomatoes needed more frequent watering...", timestamp: "2:16 PM" },
+  ],
+
+  // Chat 3: Greenhouse ventilation — PENDING with multiple flag updates
+  "3": [
+    { id: "m1", role: "USER", content: "My greenhouse is getting too hot during the day — sometimes hitting 42°C. The vents are open but it's not helping much.", timestamp: "11:05 AM" },
+    { id: "m2", role: "ASSISTANT", content: "42°C is definitely too hot for most crops! Even with vents open, greenhouses can overheat in Ghana's climate. Have you considered adding shade cloth? A 40-50% shade net can reduce temperatures by 5-8°C without blocking too much light.", timestamp: "11:06 AM" },
+    { id: "m3", role: "USER", content: "I haven't tried shade cloth yet. Would that affect my tomato yields?", timestamp: "11:08 AM" },
+    {
+      id: "m4",
+      role: "ASSISTANT",
+      content: "Shade cloth at 40-50% won't significantly reduce tomato yields if your greenhouse is already getting excessive heat. In fact, it can improve yields by preventing heat stress, blossom drop, and sunscald on fruits.",
+      timestamp: "11:09 AM",
+      confidenceScore: 0.63,
+      isFlagged: true,
+      flaggedQuery: {
+        id: "fq-demo-3",
+        status: "PENDING",
+        farmerReason: "[2026-03-14T11:12:00.000Z] I'm not sure this is right. My neighbor uses 70% shade and his tomatoes are doing fine.",
+        farmerUpdates: "[2026-03-14T11:45:00.000Z] Also, wouldn't reducing light affect photosynthesis and reduce yields anyway?\n\n[2026-03-14T13:20:00.000Z] I tried looking this up but I'm getting conflicting information. Need expert clarification please!"
+      }
+    },
+    { id: "m5", role: "USER", content: "Okay I'll look into getting shade cloth. Any other tips for cooling?", timestamp: "11:12 AM" },
+    { id: "m6", role: "ASSISTANT", content: "Yes! Other cooling strategies:\n\n1. **Misting/fogging** — evaporative cooling can drop temps by 3-5°C\n2. **Whitewash** — temporary lime wash on roof during hottest months\n3. **Improved cross-ventilation** — add side vents if you only have roof vents\n4. **Mulching** — keeps root zone cool even if air temp is high\n\nCombining 2-3 of these methods works best!", timestamp: "11:13 AM" },
+  ],
+
+  // Default fallback for other chats
+  "default": [
+    { id: "m1", role: "USER", content: "Hello, I need some help with my farm.", timestamp: "10:02 AM" },
+    { id: "m2", role: "ASSISTANT", content: "Hello! I'd be happy to help. What would you like to know?", timestamp: "10:02 AM" },
+  ],
+};
 
 // ─── Farmer Systems ───────────────────────────────────────────────────────────
 

@@ -261,11 +261,14 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
     if (window.innerWidth < 1024) setSidebarOpen(false);
 
     if (demoMode) {
-      // Demo: load mock messages — same set for every chat (realistic demo)
-      setMessages(DEMO_FARMER_CONVO_MESSAGES.map(m => ({
+      // Demo: load mock messages for this specific chat (or default)
+      const chatMessages = DEMO_FARMER_CONVO_MESSAGES[chatId] || DEMO_FARMER_CONVO_MESSAGES["default"];
+      setMessages(chatMessages.map(m => ({
         id: m.id,
         role: m.role as "USER" | "ASSISTANT",
         content: m.content,
+        isFlagged: m.isFlagged,
+        flaggedQuery: m.flaggedQuery,
       })));
     } else {
       setMessagesLoading(true);

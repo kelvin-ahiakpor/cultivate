@@ -25,8 +25,11 @@ export interface Chat {
 // Demo mock data — sourced from lib/demo-data.ts
 export const mockChats: Chat[] = DEMO_FARMER_CHATS as Chat[];
 
-// Mock conversation messages for opened chat — sourced from lib/demo-data.ts
-const mockConversationMessages: ChatMessage[] = DEMO_FARMER_CONVO_MESSAGES as ChatMessage[];
+// Helper to get mock conversation messages for a specific chat ID
+const getMockConversationMessages = (chatId: string): ChatMessage[] => {
+  const messages = DEMO_FARMER_CONVO_MESSAGES[chatId] || DEMO_FARMER_CONVO_MESSAGES["default"];
+  return messages as ChatMessage[];
+};
 
 interface ChatsViewProps {
   onChatSelect?: (chatId: string | null, title?: string, systemName?: string) => void;
@@ -145,7 +148,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
         setHeaderMenuOpen={setHeaderMenuOpen}
         onBack={() => { setOpenedChat(null); onChatSelect?.(null); }}
         onNewChat={() => { setOpenedChat(null); onNewChat?.(); }}
-        messages={demoMode ? mockConversationMessages : realMessages}
+        messages={demoMode ? getMockConversationMessages(openedChat.id) : realMessages}
         messagesLoading={messagesLoading}
         isStandalone={isStandalone}
         demoAgentLabel={openedChat.agentName}
