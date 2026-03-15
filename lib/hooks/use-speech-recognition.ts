@@ -155,6 +155,12 @@ export function useSpeechRecognition(
 
     // Handle errors
     recognition.onerror = (event: any) => {
+      // Ignore "aborted" errors (user cancelled, expected)
+      if (event.error === "aborted") {
+        setIsListening(false);
+        return;
+      }
+
       console.error("Speech recognition error:", event.error);
 
       let errorMessage = "An error occurred";

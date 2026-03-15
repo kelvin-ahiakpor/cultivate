@@ -43,7 +43,7 @@
  */
 
 import { useRef, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle, Mic, MicOff, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle, Mic, MicOff, AlertTriangle, AudioLines } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { notify } from "@/lib/toast";
@@ -51,7 +51,7 @@ import GlassCircleButton from "@/components/glass-circle-button";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon } from "@/components/send-icons";
 import { Tooltip } from "@/components/tooltip";
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
-import { WaveIcon, AnimatedDots } from "@/components/wave-icon";
+import { AnimatedDots } from "@/components/wave-icon";
 
 export interface ConversationMessage {
   id: string;
@@ -141,6 +141,8 @@ export default function ConversationView({
 
   // Voice input state
   const [voiceState, setVoiceState] = useState<"idle" | "connecting" | "listening" | "error">("idle");
+  const connectingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const { transcript, isListening, isSupported: isSpeechSupported, error: speechError, startListening, stopListening, resetTranscript } = useSpeechRecognition({
     lang: "en-US",
     onTranscript: (text, isFinal) => {
@@ -154,20 +156,35 @@ export default function ConversationView({
 
   // Handle voice button click
   const handleVoiceClick = async () => {
+    console.log("handleVoiceClick - current state:", voiceState);
     if (voiceState === "listening") {
       // Stop listening
+      console.log("Stopping listening...");
       stopListening();
       setVoiceState("idle");
     } else if (voiceState === "idle") {
       // Start listening
+      console.log("Starting connection...");
       setVoiceState("connecting");
       // Brief connecting state (mic initialization)
-      setTimeout(() => {
+      connectingTimeoutRef.current = setTimeout(() => {
+        console.log("Connecting timeout fired - calling startListening()");
+        console.log("isSpeechSupported:", isSpeechSupported);
         startListening();
+        console.log("startListening() called, setting state to listening");
         setVoiceState("listening");
       }, 500);
+    } else if (voiceState === "connecting") {
+      // Cancel connection
+      console.log("Canceling connection...");
+      if (connectingTimeoutRef.current) {
+        clearTimeout(connectingTimeoutRef.current);
+        connectingTimeoutRef.current = null;
+      }
+      setVoiceState("idle");
     } else if (voiceState === "error") {
       // Reset from error
+      console.log("Resetting from error...");
       setVoiceState("idle");
     }
   };
@@ -182,9 +199,20 @@ export default function ConversationView({
     }
   }, [speechError]);
 
+  // Cleanup connecting timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (connectingTimeoutRef.current) {
+        clearTimeout(connectingTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Reset to idle when speech stops unexpectedly
   useEffect(() => {
+    console.log("Speech state check - isListening:", isListening, "voiceState:", voiceState);
     if (!isListening && voiceState === "listening") {
+      console.log("Speech stopped unexpectedly - resetting to idle");
       setVoiceState("idle");
     }
   }, [isListening, voiceState]);
@@ -768,22 +796,24 @@ export default function ConversationView({
                               className="p-2 hover:bg-[#3B3B3B] rounded-lg transition-colors disabled:opacity-40"
                               title="Voice input"
                             >
-                              <WaveIcon className="text-cultivate-text-primary" />
+                              <AudioLines className="w-5 h-5 text-cultivate-text-primary" />
                             </button>
                           )}
 
                           {voiceState === "connecting" && (
                             <button
-                              className="px-3 py-1.5 bg-cultivate-green-light rounded-full flex items-center gap-2 cursor-default"
+                              onClick={handleVoiceClick}
+                              className="px-3 py-1.5 bg-cultivate-green-light hover:bg-[#536d3d] rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
                             >
                               <AnimatedDots type="pulse" />
+                              <span>Cancel</span>
                             </button>
                           )}
 
                           {voiceState === "listening" && (
                             <button
                               onClick={handleVoiceClick}
-                              className="px-3 py-1.5 bg-cultivate-green-light hover:bg-[#536d3d] rounded-full flex items-center gap-2 transition-colors text-white text-sm font-medium"
+                              className="px-3 py-1.5 bg-cultivate-green-light hover:bg-[#536d3d] rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
                             >
                               <AnimatedDots type="wave" />
                               <span>Stop</span>
@@ -793,7 +823,7 @@ export default function ConversationView({
                           {voiceState === "error" && (
                             <button
                               onClick={handleVoiceClick}
-                              className="px-3 py-1.5 bg-red-500 rounded-full flex items-center gap-2 text-white text-sm font-medium"
+                              className="px-3 py-1.5 bg-red-500 rounded-lg flex items-center gap-2 text-white text-sm"
                               title={speechError || "Error"}
                             >
                               <AlertTriangle className="w-4 h-4" />
