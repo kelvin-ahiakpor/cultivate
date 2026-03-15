@@ -27,7 +27,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
-import { chatStream, generateTitle } from "@/lib/claude";
+import { mastraStream, generateTitle } from "@/lib/claude"; // Phase 6: Using Mastra agent with weather tool
 import { scoreConfidence, shouldFlag } from "@/lib/confidence";
 import { calculateCost } from "@/lib/cost";
 import { retrieveContext } from "@/lib/mastra-rag"; // NOW USES MASTRA RAG
@@ -164,6 +164,7 @@ export async function POST(
     const trimmedContent = content.trim();
 
     // 1. Save user message
+    console.log(`[Conversation ${id}] Step 1: Saving user message...`);
     const userMessage = await prisma.message.create({
       data: {
         content: trimmedContent,
@@ -174,6 +175,7 @@ export async function POST(
     });
 
     // 2. Load conversation history (last 20 messages for context)
+    console.log(`[Conversation ${id}] Step 2: Loading conversation history...`);
     const history = await prisma.message.findMany({
       where: { conversationId: id, id: { not: userMessage.id } },
       orderBy: { createdAt: "desc" },
@@ -190,6 +192,7 @@ export async function POST(
 
     // 3. Check if this is the first message (for auto-title)
     const isFirstMessage = conversationHistory.length === 0;
+    console.log(`[Conversation ${id}] Step 3: Loaded ${conversationHistory.length} messages from history`);
 
     // 4. Retrieve relevant knowledge context via RAG
     //    Embeds the farmer's question, searches pgvector for similar chunks,
@@ -202,13 +205,17 @@ export async function POST(
       console.log(`[Conversation ${id}] No RAG context found (agent has no knowledge or no relevant chunks)`);
     }
 
-    // 5. Stream Claude response via SSE
-    const { stream, getUsage } = await chatStream({
+    // 5. Stream Claude response via SSE (using Mastra agent with weather tool)
+    console.log(`[Conversation ${id}] Step 5: Starting Mastra agent stream...`);
+    const { stream, getUsage } = await mastraStream({
       systemPrompt: conversation.agent.systemPrompt,
       responseStyle: conversation.agent.responseStyle,
       conversationHistory,
       userMessage: trimmedContent,
       knowledgeContext: rag.hasContext ? rag.context : undefined,
+      // User context (Phase 6.2: location field to be added to User model)
+      userLocation: undefined, // TODO: user.location when Phase 6.2 is complete
+      userName: user.name,
     });
 
     let fullResponse = "";
@@ -230,8 +237,10 @@ export async function POST(
             );
           }
 
-          // 6. Get token usage
+          // 6. Get token usage (with fallback if stream failed)
           const usage = await getUsage();
+          const inputTokens = usage?.inputTokens || 0;
+          const outputTokens = usage?.outputTokens || 0;
 
           // 7. Score confidence (returns null if disabled)
           const confidenceScore = scoreConfidence({
@@ -256,9 +265,9 @@ export async function POST(
           // 9. Track API usage
           await prisma.apiUsage.create({
             data: {
-              inputTokens: usage.inputTokens,
-              outputTokens: usage.outputTokens,
-              totalCost: calculateCost(usage.inputTokens, usage.outputTokens),
+              inputTokens,
+              outputTokens,
+              totalCost: calculateCost(inputTokens, outputTokens),
               endpoint: "chat",
               model: "claude-sonnet-4-5-20250929",
               organizationId: conversation.agent.organizationId,
@@ -333,7 +342,7 @@ export async function POST(
           const isBillingError = errMsg.includes("credit balance") || errMsg.includes("billing");
           const userFacingError = isBillingError
             ? "The AI service is temporarily unavailable due to billing limits. Please contact support."
-            : "An error occurred while generating the response";
+            : "Sorry, an error occurred while generating the response";
 
           // Store error message in DB so conversation history is complete when user returns
           await prisma.message.create({

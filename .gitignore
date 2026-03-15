@@ -57,3 +57,8 @@ ui-references/
 
 # Book on building ai agents
 *.pdf
+
+# Vim/editor swap files
+*.swp
+*.swo
+*.swn

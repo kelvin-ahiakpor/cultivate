@@ -1,10 +1,14 @@
 /**
  * Claude AI integration for Cultivate.
  *
- * This module wraps the Anthropic SDK and provides:
- * - chat()        — non-streaming, returns full response (useful for testing/simple cases)
- * - chatStream()  — streaming via async iterator (used in production for live token delivery)
- * - generateTitle() — cheap Haiku call to auto-name conversations
+ * This module provides two chat implementations:
+ * 1. LEGACY (Direct Anthropic SDK):
+ *    - chat()        — non-streaming, returns full response
+ *    - chatStream()  — streaming via async iterator
+ *    - generateTitle() — cheap Haiku call to auto-name conversations
+ *
+ * 2. MASTRA (Recommended for Phase 6+):
+ *    - mastraStream() — streaming with tool calling support (weather, future: KB search, etc.)
  *
  * The system prompt is assembled from 3 layers:
  * 1. Agent's systemPrompt (set by the agronomist, e.g. "You are a maize farming expert...")
@@ -12,6 +16,7 @@
  * 3. Knowledge context from RAG (Phase 3 — relevant document chunks)
  */
 import Anthropic from "@anthropic-ai/sdk";
+import { buildAgent } from "@/lib/agent-builder";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -190,4 +195,82 @@ export async function generateTitle(userMessage: string): Promise<string> {
   } catch {
     return "New conversation";
   }
+}
+
+/**
+ * MASTRA STREAMING (Phase 6+) — Recommended for tool calling support
+ *
+ * Uses Mastra Agent with weather tool access. Claude automatically decides when to call tools
+ * based on the conversation context (see TOOL-USAGE.md).
+ *
+ * Returns an async iterator that yields text chunks as Claude generates them,
+ * plus a getUsage() promise that resolves with token counts after the stream ends.
+ *
+ * Example usage:
+ *   const { stream, getUsage } = await mastraStream(input);
+ *   for await (const chunk of stream) { sendToClient(chunk); }
+ *   const { inputTokens, outputTokens } = await getUsage();
+ */
+export async function mastraStream(
+  input: ChatInput & { userLocation?: string; userName?: string }
+): Promise<{
+  stream: AsyncIterable<string>;
+  getUsage: () => Promise<{ inputTokens: number; outputTokens: number }>;
+}> {
+  // Build Mastra agent with weather tool access
+  const agent = buildAgent({
+    systemPrompt: input.systemPrompt,
+    responseStyle: input.responseStyle || undefined,
+    knowledgeContext: input.knowledgeContext,
+    userContext: {
+      location: input.userLocation,
+      name: input.userName,
+    },
+  });
+
+  // Convert conversation history to Mastra format
+  const messages = [
+    ...input.conversationHistory.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    })),
+    { role: "user" as const, content: input.userMessage },
+  ];
+
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let resolveUsage: (usage: { inputTokens: number; outputTokens: number }) => void;
+
+  const usagePromise = new Promise<{ inputTokens: number; outputTokens: number }>((resolve) => {
+    resolveUsage = resolve;
+  });
+
+  // Use Mastra agent's stream method (MASTRA-GUIDE.md Section 8)
+  const result = await agent.stream(messages, {
+    onStepFinish: ({ stepType, toolName }) => {
+      // Log tool calls for debugging
+      if (toolName) {
+        console.log(`\n🔧 [TOOL CALL] ${toolName} - ${stepType}\n`);
+      }
+    },
+  });
+
+  // Async generator that yields text chunks
+  const stream = (async function* () {
+    for await (const chunk of result.textStream) {
+      yield chunk;
+    }
+
+    // Get token usage after stream completes
+    // Note: Mastra uses AI SDK's usage format
+    const usage = await result.usage;
+    inputTokens = usage.promptTokens;
+    outputTokens = usage.completionTokens;
+    resolveUsage!({ inputTokens, outputTokens });
+  })();
+
+  return {
+    stream,
+    getUsage: () => usagePromise,
+  };
 }
