@@ -38,6 +38,7 @@ export function buildAgent(config: AgentConfig) {
   );
 
   return new Agent({
+    id: "cultivate-agent",
     name: "cultivate-agent",
 
     instructions,
