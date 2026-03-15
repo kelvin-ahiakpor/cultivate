@@ -42,7 +42,7 @@
  * diverge in layout or behaviour.
  */
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle, Mic, MicOff, AlertTriangle, AudioLines } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -143,15 +143,19 @@ export default function ConversationView({
   const [voiceState, setVoiceState] = useState<"idle" | "connecting" | "listening" | "error">("idle");
   const connectingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Stable callback to prevent recognition from restarting on every render
+  const handleTranscript = useCallback((text: string, isFinal: boolean) => {
+    if (isFinal && inputProps) {
+      // Set final transcript as message value
+      inputProps.onChange(text);
+    }
+  }, [inputProps]);
+
   const { transcript, isListening, isSupported: isSpeechSupported, error: speechError, startListening, stopListening, resetTranscript } = useSpeechRecognition({
     lang: "en-US",
-    onTranscript: (text, isFinal) => {
-      if (isFinal && inputProps) {
-        // Set final transcript as message value
-        inputProps.onChange(text);
-        resetTranscript();
-      }
-    },
+    continuous: true, // Keep listening until user clicks Stop
+    interimResults: false, // Disable interim results - might be causing issues
+    onTranscript: handleTranscript,
   });
 
   // Handle voice button click
@@ -163,24 +167,23 @@ export default function ConversationView({
       stopListening();
       setVoiceState("idle");
     } else if (voiceState === "idle") {
-      // Start listening
-      console.log("Starting connection...");
+      // Start listening IMMEDIATELY (mic access must be from direct user click)
+      console.log("Starting listening NOW...");
+      startListening();
+
+      // Show "connecting" animation briefly for UX polish
       setVoiceState("connecting");
-      // Brief connecting state (mic initialization)
       connectingTimeoutRef.current = setTimeout(() => {
-        console.log("Connecting timeout fired - calling startListening()");
-        console.log("isSpeechSupported:", isSpeechSupported);
-        startListening();
-        console.log("startListening() called, setting state to listening");
         setVoiceState("listening");
-      }, 500);
+      }, 300); // Quick 300ms animation
     } else if (voiceState === "connecting") {
-      // Cancel connection
-      console.log("Canceling connection...");
+      // Cancel during connecting animation
+      console.log("Canceling...");
       if (connectingTimeoutRef.current) {
         clearTimeout(connectingTimeoutRef.current);
         connectingTimeoutRef.current = null;
       }
+      stopListening();
       setVoiceState("idle");
     } else if (voiceState === "error") {
       // Reset from error
