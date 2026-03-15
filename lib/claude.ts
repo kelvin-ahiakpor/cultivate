@@ -228,14 +228,11 @@ export async function mastraStream(
     },
   });
 
-  // Convert conversation history to Mastra format
-  const messages = [
-    ...input.conversationHistory.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    })),
-    { role: "user" as const, content: input.userMessage },
-  ];
+  // Convert conversation history to Mastra ModelMessage format (lowercase roles, string content)
+  const contextMessages = input.conversationHistory.map((msg) => ({
+    role: msg.role as "user" | "assistant",
+    content: msg.content,
+  }));
 
   let inputTokens = 0;
   let outputTokens = 0;
@@ -245,14 +242,10 @@ export async function mastraStream(
     resolveUsage = resolve;
   });
 
-  // Use Mastra agent's stream method (MASTRA-GUIDE.md Section 8)
-  const result = await agent.stream(messages, {
-    onStepFinish: ({ stepType, toolName }) => {
-      // Log tool calls for debugging
-      if (toolName) {
-        console.log(`\n🔧 [TOOL CALL] ${toolName} - ${stepType}\n`);
-      }
-    },
+  // Use Mastra agent's stream method — pass current user message as string,
+  // conversation history as context (ModelMessage[])
+  const result = await agent.stream(input.userMessage, {
+    context: contextMessages,
   });
 
   // Async generator that yields text chunks
@@ -264,8 +257,8 @@ export async function mastraStream(
     // Get token usage after stream completes
     // Note: Mastra uses AI SDK's usage format
     const usage = await result.usage;
-    inputTokens = usage.promptTokens;
-    outputTokens = usage.completionTokens;
+    inputTokens = usage.inputTokens ?? 0;
+    outputTokens = usage.outputTokens ?? 0;
     resolveUsage!({ inputTokens, outputTokens });
   })();
 

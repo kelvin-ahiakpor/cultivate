@@ -43,13 +43,15 @@
  */
 
 import { useRef, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle, Mic, MicOff, AlertTriangle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { notify } from "@/lib/toast";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon } from "@/components/send-icons";
 import { Tooltip } from "@/components/tooltip";
+import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
+import { WaveIcon, AnimatedDots } from "@/components/wave-icon";
 
 export interface ConversationMessage {
   id: string;
@@ -136,6 +138,56 @@ export default function ConversationView({
   const [flagDataCache, setFlagDataCache] = useState<Map<string, { reason: string; updates: string }>>(new Map());
   // Track current reason index for each message (for navigation)
   const [currentReasonIndex, setCurrentReasonIndex] = useState<Map<string, number>>(new Map());
+
+  // Voice input state
+  const [voiceState, setVoiceState] = useState<"idle" | "connecting" | "listening" | "error">("idle");
+  const { transcript, isListening, isSupported: isSpeechSupported, error: speechError, startListening, stopListening, resetTranscript } = useSpeechRecognition({
+    lang: "en-US",
+    onTranscript: (text, isFinal) => {
+      if (isFinal && inputProps) {
+        // Set final transcript as message value
+        inputProps.onChange(text);
+        resetTranscript();
+      }
+    },
+  });
+
+  // Handle voice button click
+  const handleVoiceClick = async () => {
+    if (voiceState === "listening") {
+      // Stop listening
+      stopListening();
+      setVoiceState("idle");
+    } else if (voiceState === "idle") {
+      // Start listening
+      setVoiceState("connecting");
+      // Brief connecting state (mic initialization)
+      setTimeout(() => {
+        startListening();
+        setVoiceState("listening");
+      }, 500);
+    } else if (voiceState === "error") {
+      // Reset from error
+      setVoiceState("idle");
+    }
+  };
+
+  // Update voice state based on speech recognition errors
+  useEffect(() => {
+    if (speechError) {
+      setVoiceState("error");
+      // Auto-reset error after 3 seconds
+      const timer = setTimeout(() => setVoiceState("idle"), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [speechError]);
+
+  // Reset to idle when speech stops unexpectedly
+  useEffect(() => {
+    if (!isListening && voiceState === "listening") {
+      setVoiceState("idle");
+    }
+  }, [isListening, voiceState]);
 
   console.log("ConversationView render - headerMenuOpen:", headerMenuOpen);
 
@@ -673,16 +725,24 @@ export default function ConversationView({
               <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-3.5 mb-1"}`}>
                 <div className="bg-cultivate-bg-elevated rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
                   <textarea
-                    placeholder={inputProps ? "Ask a follow-up..." : "Reply..."}
+                    placeholder={
+                      inputProps
+                        ? voiceState === "connecting"
+                          ? "Connecting..."
+                          : voiceState === "listening"
+                            ? "Listening..."
+                            : "Ask a follow-up..."
+                        : "Reply..."
+                    }
                     rows={1}
                     value={inputProps?.value ?? ""}
                     onChange={inputProps ? (e) => inputProps.onChange(e.target.value) : undefined}
                     onKeyDown={inputProps ? (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); inputProps.onSend(); } } : undefined}
-                    readOnly={!inputProps}
+                    readOnly={!inputProps || voiceState !== "idle"}
                     className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-[#6B6B6B] bg-transparent text-sm standalone:text-base lg:text-sm"
                   />
                   <div className="flex items-center justify-between mt-2">
-                    {/* Left: new chat button */}
+                    {/* Left: new chat button + voice input */}
                     <div className="flex items-center gap-2">
                       <button
                         onClick={inputProps ? inputProps.onNewChat : onNewChat}
@@ -691,6 +751,57 @@ export default function ConversationView({
                       >
                         <Plus className="w-5 h-5 text-cultivate-text-primary" />
                       </button>
+
+                      {/* Voice input button (Claude-style, only in real mode) */}
+                      {inputProps && isSpeechSupported && (
+                        <div className="flex items-center gap-2">
+                          {/* Mic icon (shows when connecting/listening/error) */}
+                          {voiceState !== "idle" && (
+                            <Mic className="w-5 h-5 text-cultivate-text-secondary" />
+                          )}
+
+                          {/* State-based button */}
+                          {voiceState === "idle" && (
+                            <button
+                              onClick={handleVoiceClick}
+                              disabled={inputProps.isStreaming}
+                              className="p-2 hover:bg-[#3B3B3B] rounded-lg transition-colors disabled:opacity-40"
+                              title="Voice input"
+                            >
+                              <WaveIcon className="text-cultivate-text-primary" />
+                            </button>
+                          )}
+
+                          {voiceState === "connecting" && (
+                            <button
+                              className="px-3 py-1.5 bg-cultivate-green-light rounded-full flex items-center gap-2 cursor-default"
+                            >
+                              <AnimatedDots type="pulse" />
+                            </button>
+                          )}
+
+                          {voiceState === "listening" && (
+                            <button
+                              onClick={handleVoiceClick}
+                              className="px-3 py-1.5 bg-cultivate-green-light hover:bg-[#536d3d] rounded-full flex items-center gap-2 transition-colors text-white text-sm font-medium"
+                            >
+                              <AnimatedDots type="wave" />
+                              <span>Stop</span>
+                            </button>
+                          )}
+
+                          {voiceState === "error" && (
+                            <button
+                              onClick={handleVoiceClick}
+                              className="px-3 py-1.5 bg-red-500 rounded-full flex items-center gap-2 text-white text-sm font-medium"
+                              title={speechError || "Error"}
+                            >
+                              <AlertTriangle className="w-4 h-4" />
+                              <span>Error</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Right: agent selector + send button */}
