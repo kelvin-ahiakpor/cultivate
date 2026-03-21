@@ -235,6 +235,8 @@
 /* PWA / Mobile optimizations */
 html,
 body {
+  /* Dark background for safe area / status bar */
+  background-color: #1E1E1E;
   /* Prevent iOS rubber-band scroll on the root */
   overscroll-behavior: none;
   /* Remove tap highlight on touchable elements */

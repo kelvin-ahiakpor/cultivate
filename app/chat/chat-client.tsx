@@ -645,18 +645,52 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
             {/* Chat Messages Area */}
             <div className="flex-1 overflow-y-auto flex flex-col">
               {messages.length === 0 && !isStreaming && !currentConversationId && !messagesLoading ? (
-                /* Welcome screen — centered greeting + input */
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="max-w-3xl w-full px-6">
-                    <div className="text-center mb-8">
-                      <h1 className="text-4xl font-serif text-cultivate-text-primary mb-3 flex items-center justify-center gap-3">
-                        <Sprout className="w-10 h-10 text-cultivate-green-light" />
-                        Hey there, {user.name?.split(" ")[0]}
-                      </h1>
-                    </div>
+                /* Welcome screen — centered greeting + sticky-bottom input (mobile parity with ConversationView) */
+                <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+                  <div className="flex-1 flex items-center justify-center px-6">
+                    <div className="max-w-3xl w-full">
+                      <div className="text-center mb-8">
+                        <h1 className="text-4xl font-serif text-cultivate-text-primary mb-3 flex items-center justify-center gap-3">
+                          <Sprout className="w-10 h-10 text-cultivate-green-light" />
+                          Hey there, {user.name?.split(" ")[0]}
+                        </h1>
+                      </div>
 
-                    {/* Input Area - Positioned close to greeting */}
-                    <div className="mb-6">
+                      {/* Action Buttons */}
+                      <div className="flex justify-center gap-2 flex-wrap">
+                      <Tooltip content="Best practices for your crops">
+                        <button onClick={() => setInputValue("What are the best practices for my crops?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-[#141413] transition-colors flex items-center gap-2">
+                          <Leaf className="w-4 h-4 text-cultivate-text-primary" />
+                          <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-primary">Crops</span>
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="Identify and manage pests">
+                        <button onClick={() => setInputValue("How do I identify and manage pests on my farm?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-[#141413] transition-colors flex items-center gap-2">
+                          <Bug className="w-4 h-4 text-cultivate-text-primary" />
+                          <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-primary">Pests</span>
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="Plan based on weather">
+                        <button onClick={() => setInputValue("How should I plan my farming around the weather?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-[#141413] transition-colors flex items-center gap-2">
+                          <CloudRain className="w-4 h-4 text-cultivate-text-primary" />
+                          <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-primary">Weather</span>
+                        </button>
+                      </Tooltip>
+                      <Tooltip content="When to plant and harvest">
+                        <button onClick={() => setInputValue("When should I plant and harvest my crops?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-[#141413] transition-colors flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-cultivate-text-primary" />
+                          <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-primary">Planting</span>
+                        </button>
+                      </Tooltip>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={`sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-cultivate-bg-main pb-2"}`}>
+                    {isStandalone && (
+                      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent backdrop-blur-[0.5px]" />
+                    )}
+                    <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-auto w-full max-w-3xl px-6 mb-2"}`}>
                       <div className="relative bg-cultivate-bg-elevated rounded-2xl shadow-sm p-4">
                         <textarea
                           placeholder="How can I help you today?"
@@ -673,7 +707,6 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                             </button>
                           </div>
                           <div className="flex items-center gap-2">
-                            {/* Agent Selector */}
                             <div className="relative">
                               <button
                                 onClick={() => setShowAgentMenu(!showAgentMenu)}
@@ -711,34 +744,6 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                           </div>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Action Buttons Below Input */}
-                    <div className="flex justify-center gap-2 flex-wrap">
-                      <Tooltip content="Best practices for your crops">
-                        <button onClick={() => setInputValue("What are the best practices for my crops?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-[#141413] transition-colors flex items-center gap-2">
-                          <Leaf className="w-4 h-4 text-cultivate-text-primary" />
-                          <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-primary">Crops</span>
-                        </button>
-                      </Tooltip>
-                      <Tooltip content="Identify and manage pests">
-                        <button onClick={() => setInputValue("How do I identify and manage pests on my farm?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-[#141413] transition-colors flex items-center gap-2">
-                          <Bug className="w-4 h-4 text-cultivate-text-primary" />
-                          <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-primary">Pests</span>
-                        </button>
-                      </Tooltip>
-                      <Tooltip content="Plan based on weather">
-                        <button onClick={() => setInputValue("How should I plan my farming around the weather?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-[#141413] transition-colors flex items-center gap-2">
-                          <CloudRain className="w-4 h-4 text-cultivate-text-primary" />
-                          <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-primary">Weather</span>
-                        </button>
-                      </Tooltip>
-                      <Tooltip content="When to plant and harvest">
-                        <button onClick={() => setInputValue("When should I plant and harvest my crops?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-[#141413] transition-colors flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-cultivate-text-primary" />
-                          <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-primary">Planting</span>
-                        </button>
-                      </Tooltip>
                     </div>
                   </div>
                 </div>
