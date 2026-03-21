@@ -125,9 +125,9 @@ export function useSpeechRecognition(
     recognition.interimResults = interimResults;
     recognition.lang = lang;
 
-    // Log when recognition starts
+    // onstart event (recognition successfully started)
     (recognition as any).onstart = () => {
-      console.log("Speech recognition ACTUALLY started (onstart event fired)");
+      // Recognition started successfully
     };
 
     // Handle results
@@ -193,7 +193,6 @@ export function useSpeechRecognition(
 
     // Handle end of recognition
     recognition.onend = () => {
-      console.log("Speech recognition ended (onend fired)");
       setIsListening(false);
       if (onEnd) {
         onEnd();
@@ -211,7 +210,6 @@ export function useSpeechRecognition(
   }, [isSupported, lang, continuous, interimResults, onTranscript, onEnd]);
 
   const startListening = () => {
-    console.log("startListening called - isSupported:", isSupported, "recognitionRef:", !!recognitionRef.current);
     if (!isSupported || !recognitionRef.current) {
       console.error("Speech recognition not available");
       setError("Speech recognition not available");
@@ -221,9 +219,7 @@ export function useSpeechRecognition(
     try {
       setError(null);
       setTranscript("");
-      console.log("Calling recognition.start()...");
       recognitionRef.current.start();
-      console.log("recognition.start() called successfully, setting isListening to true");
       setIsListening(true);
     } catch (err) {
       console.error("Failed to start recognition:", err);

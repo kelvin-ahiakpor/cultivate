@@ -160,15 +160,12 @@ export default function ConversationView({
 
   // Handle voice button click
   const handleVoiceClick = async () => {
-    console.log("handleVoiceClick - current state:", voiceState);
     if (voiceState === "listening") {
       // Stop listening
-      console.log("Stopping listening...");
       stopListening();
       setVoiceState("idle");
     } else if (voiceState === "idle") {
       // Start listening IMMEDIATELY (mic access must be from direct user click)
-      console.log("Starting listening NOW...");
       startListening();
 
       // Show "connecting" animation briefly for UX polish
@@ -178,7 +175,6 @@ export default function ConversationView({
       }, 300); // Quick 300ms animation
     } else if (voiceState === "connecting") {
       // Cancel during connecting animation
-      console.log("Canceling...");
       if (connectingTimeoutRef.current) {
         clearTimeout(connectingTimeoutRef.current);
         connectingTimeoutRef.current = null;
@@ -187,7 +183,6 @@ export default function ConversationView({
       setVoiceState("idle");
     } else if (voiceState === "error") {
       // Reset from error
-      console.log("Resetting from error...");
       setVoiceState("idle");
     }
   };
@@ -213,14 +208,10 @@ export default function ConversationView({
 
   // Reset to idle when speech stops unexpectedly
   useEffect(() => {
-    console.log("Speech state check - isListening:", isListening, "voiceState:", voiceState);
     if (!isListening && voiceState === "listening") {
-      console.log("Speech stopped unexpectedly - resetting to idle");
       setVoiceState("idle");
     }
   }, [isListening, voiceState]);
-
-  console.log("ConversationView render - headerMenuOpen:", headerMenuOpen);
 
   // Initialize flaggedMessages from messages prop
   useEffect(() => {
@@ -826,7 +817,7 @@ export default function ConversationView({
                           {voiceState === "error" && (
                             <button
                               onClick={handleVoiceClick}
-                              className="px-3 py-1.5 bg-red-500 rounded-lg flex items-center gap-2 text-white text-sm"
+                              className="px-3 py-1.5 bg-cultivate-error rounded-lg flex items-center gap-2 text-white text-sm"
                               title={speechError || "Error"}
                             >
                               <AlertTriangle className="w-4 h-4" />

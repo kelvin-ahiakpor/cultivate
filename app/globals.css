@@ -39,6 +39,10 @@
   /* UI Border Colors */
   --cultivate-border-subtle: #2B2B2B;     /* Subtle borders and dividers */
   --cultivate-border-element: #3B3B3B;    /* Element borders (buttons, inputs) */
+
+  /* UI State Colors */
+  --cultivate-error: #c0392b;             /* Error state (voice input, alerts) */
+
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -98,6 +102,7 @@
   --color-cultivate-bg-hover-extreme: var(--cultivate-bg-hover-extreme);
   --color-cultivate-border-subtle: var(--cultivate-border-subtle);
   --color-cultivate-border-element: var(--cultivate-border-element);
+  --color-cultivate-error: var(--cultivate-error);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
