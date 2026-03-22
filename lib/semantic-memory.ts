@@ -7,19 +7,41 @@
  * STATUS: Infrastructure complete, implementation in progress.
  * Set ENABLE_SEMANTIC_MEMORY=true in .env to activate.
  *
+ * DUAL-PURPOSE STRATEGY (Farmitecture-specific):
+ *
+ * 1. **Individual Farmer Learning** (Personalization)
+ *    - Learn preferences, growing conditions, past issues
+ *    - Example: Farmer mentioned lettuce bolting issue 2 weeks ago
+ *    - Agent recalls: "Last time you had bolting, we discussed lowering temps..."
+ *
+ * 2. **Cross-Farmer Knowledge Aggregation** (Collective Intelligence)
+ *    - Use insights from ALL Farmitecture farmers to improve advice for everyone
+ *    - Example: Multiple farmers report aphids on kale in Accra (March-April)
+ *    - Agent proactively warns new farmers: "It's aphid season - check your kale daily"
+ *    - Privacy-preserving: only aggregate patterns, not individual details
+ *
  * Architecture:
- * - All messages are embedded and stored in pgvector (separate from KB chunks)
- * - When user asks a question, we search past conversations for relevant context
+ * - All assistant messages are embedded and stored in pgvector (separate from KB chunks)
+ * - When farmer asks a question, we search:
+ *   a) Their own past conversations (personalization)
+ *   b) Other Farmitecture farmers' conversations (collective insights) - FUTURE
  * - Top-K relevant messages are injected into the prompt alongside recent messages
  *
- * Example:
- * - User asks: "Should I plant maize today?"
- * - Recent context (last 20 messages): Last week's chat about weather
- * - Semantic recall: 3 weeks ago discussed NPK fertilizer for maize
- * - Combined context: Weather + fertilizer info → more informed response
+ * Example Flow:
+ * - Farmer asks: "My hydroponic lettuce leaves are yellowing"
+ * - Recent context (last 20 messages): Last week's pH discussion
+ * - Semantic recall (own): 3 weeks ago discussed nutrient deficiency
+ * - Semantic recall (others - future): Other farmers fixed this with iron supplement
+ * - Combined context: pH + nutrients + collective solution → comprehensive answer
  *
- * Activation threshold: Only activates when user has 100+ total messages
- * (avoids overhead for new users, valuable for experienced farmers)
+ * Activation threshold: Only activates when farmer has 100+ total messages
+ * (avoids overhead for new farmers, valuable for experienced urban farmers)
+ *
+ * Production Optimizations:
+ * - Only embed assistant messages (user messages are in the query anyway)
+ * - Skip short/trivial messages (<50 chars)
+ * - Threshold-gated (100+ messages before activation)
+ * - Cache recent searches to avoid duplicate embedding/search costs
  */
 
 import { embed } from "ai";
@@ -31,10 +53,10 @@ const ACTIVATION_THRESHOLD = parseInt(process.env.SEMANTIC_MEMORY_THRESHOLD || "
 const VOYAGE_MODEL = "voyage-3.5-lite";
 
 // Separate vector store for message history (org-specific indexes)
+// Note: dimensions are specified per-index in createIndex(), not in constructor
 const messageVectorStore = new PgVector({
   id: "cultivate-message-history",
   connectionString: process.env.DATABASE_URL!,
-  dimensions: 1024,
 });
 
 /**
@@ -59,9 +81,9 @@ export async function storeMessageEmbedding(
       value: content,
     });
 
-    const embedding = Array.isArray(result.embedding)
+    const embedding = (Array.isArray(result.embedding)
       ? result.embedding
-      : Array.from(result.embedding);
+      : Array.from(result.embedding)) as number[];
 
     // Store in org-specific index
     const indexName = `messages_org_${organizationId}`;
@@ -147,9 +169,9 @@ export async function retrieveSemanticMemory(
       value: query,
     });
 
-    const queryEmbedding = Array.isArray(result.embedding)
+    const queryEmbedding = (Array.isArray(result.embedding)
       ? result.embedding
-      : Array.from(result.embedding);
+      : Array.from(result.embedding)) as number[];
 
     const indexName = `messages_org_${organizationId}`;
 
@@ -165,12 +187,12 @@ export async function retrieveSemanticMemory(
 
     // Filter out messages from current conversation (we already have those in sliding window)
     const relevantMemories = results
-      .filter((r) => r.metadata.conversationId !== currentConversationId)
+      .filter((r) => r.metadata && r.metadata.conversationId !== currentConversationId)
       .slice(0, topK)
       .map((r) => ({
-        content: r.metadata.content as string,
-        conversationId: r.metadata.conversationId as string,
-        timestamp: r.metadata.timestamp as string,
+        content: r.metadata!.content as string,
+        conversationId: r.metadata!.conversationId as string,
+        timestamp: r.metadata!.timestamp as string,
         score: r.score,
       }));
 
