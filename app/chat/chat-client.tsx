@@ -11,6 +11,7 @@ import ConversationView from "@/components/conversation-view";
 import { Tooltip } from "@/components/tooltip";
 import ChatsView, { mockChats } from "./views/chats-view";
 import SystemsView from "./views/systems-view";
+import SettingsView from "./views/settings-view";
 import { useConversations } from "@/lib/hooks/use-conversations";
 import { useAgents } from "@/lib/hooks/use-agents";
 import { DEMO_FARMER_CONVO_MESSAGES } from "@/lib/demo-data";
@@ -20,9 +21,12 @@ import { AnimatedDots } from "@/components/wave-icon";
 
 interface ChatPageProps {
   user: {
+    id: string;
     name: string;
     email: string;
     role: string;
+    location?: string | null;
+    gpsCoordinates?: string | null;
   };
   // demoMode: uses mockChats, makes zero API requests. See BACKEND-PROGRESS.md § Phase 5.
   demoMode?: boolean;
@@ -50,7 +54,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
   const [showAgentMenu, setShowAgentMenu] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState("General Farm Advisor");
   const [sendIcon, setSendIcon] = useState<"cabbage" | "plane" | "sprout">("cabbage");
-  const [activeView, setActiveView] = useState<"chat" | "chats" | "systems">("chat");
+  const [activeView, setActiveView] = useState<"chat" | "chats" | "systems" | "settings">("chat");
 
   // Translation state
   const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>('en');
@@ -648,7 +652,14 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                 <div className="px-3 py-2 mb-1">
                   <p className="text-xs text-cultivate-text-secondary truncate">{user.email}</p>
                 </div>
-                <button className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors rounded">
+                <button
+                  onClick={() => {
+                    setActiveView("settings");
+                    setShowUserMenu(false);
+                    if (window.innerWidth < 1024) setSidebarOpen(false);
+                  }}
+                  className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors rounded"
+                >
                   <Settings className="w-4 h-4" />
                   Settings
                 </button>
@@ -702,6 +713,22 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
               setSidebarOpen={setSidebarOpen}
               onBackToChat={() => setActiveView("chat")}
               demoMode={demoMode}
+            />
+          </div>
+        )}
+
+        {activeView === "settings" && (
+          <div className="max-w-5xl w-full mx-auto px-4 sm:px-8 py-8 flex-1 min-h-0 overflow-hidden">
+            <SettingsView
+              user={user}
+              sidebarOpen={sidebarOpen}
+              setSidebarOpen={setSidebarOpen}
+              onBack={() => setActiveView("chat")}
+              onLocationUpdate={(location, gpsCoordinates) => {
+                // Update local user state if needed
+                // The API handles the actual DB update
+                console.log("Location updated:", location, gpsCoordinates);
+              }}
             />
           </div>
         )}

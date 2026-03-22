@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
 import { deleteFile } from "@/lib/supabase-storage";
-import { deleteEmbeddings } from "@/lib/mastra-rag"; // Fixed: use Mastra RAG utilities
+import { deleteChunks } from "@/lib/mastra-rag"; // Mastra PgVector
 
 // GET /api/knowledge-bases/:id — Get document details
 export async function GET(
@@ -63,8 +63,8 @@ export async function DELETE(
       return apiError("Forbidden", 403);
     }
 
-    // 1. Delete vector embeddings from pgvector (before Prisma cascade removes chunk rows)
-    await deleteEmbeddings(id);
+    // 1. Delete vector embeddings from Mastra PgVector
+    await deleteChunks(id, doc.organizationId);
 
     // 2. Delete file from Supabase Storage (non-blocking — won't fail the request)
     await deleteFile(doc.organizationId, id, doc.fileName);

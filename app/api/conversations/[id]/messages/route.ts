@@ -195,10 +195,10 @@ export async function POST(
     console.log(`[Conversation ${id}] Step 3: Loaded ${conversationHistory.length} messages from history`);
 
     // 4. Retrieve relevant knowledge context via RAG
-    //    Embeds the farmer's question, searches pgvector for similar chunks,
+    //    Embeds the farmer's question, searches Mastra vector store for similar chunks,
     //    and formats them as context for Claude's system prompt.
     console.log(`[Conversation ${id}] Step 4: Retrieving RAG context for query...`);
-    const rag = await retrieveContext(trimmedContent, conversation.agent.id);
+    const rag = await retrieveContext(trimmedContent, conversation.agent.id, conversation.agent.organizationId);
     if (rag.hasContext) {
       console.log(`[Conversation ${id}] ✅ Found ${rag.chunks.length} relevant chunks from knowledge bases`);
     } else {

@@ -38,6 +38,8 @@ model User {
   emailVerified  DateTime?
   name           String
   phone          String?
+  location       String?  // City/region (e.g., "Accra, Ghana" or "Volta Region")
+  gpsCoordinates String?  // GPS coords in "lat,lon" format (e.g., "5.6037,-0.1870")
   password       String   // Hashed password for credentials auth
   role           UserRole @default(FARMER)
   createdAt      DateTime @default(now())
@@ -167,7 +169,8 @@ model KnowledgeBase {
   agentId String
   agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
-  chunks DocumentChunk[]
+  // Note: Document chunks are now managed by Mastra PgVector (@mastra/pg)
+  // No Prisma relation needed - chunks stored in Mastra's vector store with knowledgeBaseId in metadata
 
   @@map("knowledge_bases")
 }
@@ -288,24 +291,9 @@ model OrganizationQuota {
   @@map("organization_quotas")
 }
 
-// Document chunks for RAG — vector embeddings stored via pgvector extension.
-// The actual `embedding` column (vector(1024)) is managed via raw SQL migration
-// because Prisma doesn't natively support the vector type.
-model DocumentChunk {
-  id              String   @id @default(cuid())
-  content         String   @db.Text   // The actual text of this chunk
-  chunkIndex      Int                 // Order within the document (0, 1, 2, ...)
-  tokenCount      Int      @default(0) // Approximate token count for this chunk
-  // embedding    vector(1024)        -- managed via raw SQL, not in Prisma
-  createdAt       DateTime @default(now())
-
-  // Relations
-  knowledgeBaseId String
-  knowledgeBase   KnowledgeBase @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
-
-  @@index([knowledgeBaseId])
-  @@map("document_chunks")
-}
+// Document chunks are now managed by Mastra PgVector (@mastra/pg)
+// Mastra creates its own vector store tables automatically
+// Chunks are linked to knowledge bases via metadata (not Prisma relations)
 
 // Farming systems/products a farmer has purchased (e.g. Farmitecture equipment)
 // Self-registered by farmer after purchase, or added by admin on their behalf.

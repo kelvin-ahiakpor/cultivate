@@ -1,27 +1,27 @@
 /**
- * Mastra RAG utilities — replaces 5 custom files with battle-tested implementations
+ * Mastra RAG utilities — FULL MASTRA IMPLEMENTATION (March 22, 2026)
  *
- * ✅ MIGRATION COMPLETE (March 13, 2026)
- * Replaced: document-parser.ts, chunker.ts, chunker-simple.ts, embeddings.ts, vector-db.ts, rag.ts
- * With: Single file using Mastra's official utilities
+ * ✅ USING @mastra/pg PgVector (proper way)
+ * Replaces manual pgvector SQL with Mastra's built-in vector store
  *
  * Tech Stack:
- * - @mastra/rag v2.1.2 — Document parsing + recursive chunking (500 tokens, 100 overlap)
- * - voyage-ai-provider v3.0.0 — Voyage 3.5-lite embeddings via Vercel AI SDK
- * - ai SDK v6.0.116 — embedMany() and embed() functions
- * - pgvector (Supabase) — 1024-dim vector storage with cosine similarity search
+ * - @mastra/rag — Document parsing + recursive chunking (500 tokens, 100 overlap)
+ * - @mastra/pg — PgVector for automatic vector storage management
+ * - voyage-ai-provider — Voyage 3.5-lite embeddings (1024 dims)
+ * - ai SDK — embedMany() and embed() functions
  *
  * Pipeline Flow:
  * 1. Upload PDF → Supabase Storage
- * 2. Extract text → pdftotext (system binary, zero Node heap cost)
- * 3. Chunk → MDocument.chunk() recursive strategy (23 chunks from 8.8KB)
- * 4. Embed → Voyage AI (1024-dim vectors, $0.02/1M tokens)
- * 5. Store → pgvector via raw Prisma SQL
- * 6. Query → Embed farmer's question → cosine similarity search → top 10 chunks
+ * 2. Extract text → pdftotext (system binary)
+ * 3. Chunk → MDocument.chunk() recursive strategy
+ * 4. Embed → Voyage AI (1024-dim vectors)
+ * 5. Store → Mastra PgVector (creates tables automatically)
+ * 6. Query → vectorStore.query() with cosine similarity
  * 7. Inject → Claude's system prompt with knowledge context
  */
 
 import { MDocument } from "@mastra/rag";
+import { PgVector } from "@mastra/pg";
 import { embedMany, embed } from "ai";
 import { voyage } from "voyage-ai-provider";
 import { prisma } from "@/lib/prisma";
@@ -30,12 +30,17 @@ import { prisma } from "@/lib/prisma";
 // CONFIGURATION
 // ============================================================================
 
-const VOYAGE_MODEL = "voyage-3.5-lite"; // $0.02/1M tokens, 1024 dims (default)
+const VOYAGE_MODEL = "voyage-3.5-lite"; // $0.02/1M tokens, 1024 dims
 const CHUNK_SIZE = 500; // tokens per chunk
 const CHUNK_OVERLAP = 100; // token overlap between chunks
+const EMBEDDING_DIMENSION = 1024; // Voyage 3.5-lite default
 
-// Note: We use raw Prisma SQL for vector operations instead of @mastra/pg
-// because our schema (document_chunks table) is already set up
+// Initialize Mastra PgVector
+const vectorStore = new PgVector({
+  id: "cultivate-vectors",
+  connectionString: process.env.DATABASE_URL!,
+  dimensions: EMBEDDING_DIMENSION,
+});
 
 // ============================================================================
 // DOCUMENT PARSING
@@ -48,8 +53,6 @@ const CHUNK_OVERLAP = 100; // token overlap between chunks
  * - pdf-parse, pdfjs-dist, unpdf all cause Turbopack OOM (4-8GB heap) in dev
  * - pdftotext runs in separate OS process → zero Node.js heap cost
  * - Requires: `brew install poppler` (Mac) or `poppler-utils` (Linux/Vercel)
- *
- * MDocument doesn't have fromPDF, so we extract text first then use fromText
  */
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   const { execFile } = await import("child_process");
@@ -62,19 +65,16 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   const tmpPath = join(tmpdir(), `cultivate-pdf-${Date.now()}.pdf`);
 
   try {
-    // Write buffer to temp file (pdftotext needs file path, not stdin)
     await writeFile(tmpPath, buffer);
-    // Run pdftotext with -layout flag to preserve formatting, output to stdout (-)
     const { stdout } = await execFileAsync("pdftotext", ["-layout", tmpPath, "-"]);
     return stdout;
   } finally {
-    // Clean up temp file (ignore errors if already deleted)
     await unlink(tmpPath).catch(() => {});
   }
 }
 
 /**
- * Extract text from any supported file type (PDF, DOCX, TXT)
+ * Extract text from any supported file type
  */
 export async function extractText(
   buffer: Buffer,
@@ -84,7 +84,6 @@ export async function extractText(
     case "pdf":
       return extractTextFromPDF(buffer);
     case "docx":
-      // Use mammoth for DOCX
       const mammoth = await import("mammoth");
       const result = await mammoth.extractRawText({ buffer });
       return result.value;
@@ -99,9 +98,6 @@ export async function extractText(
 // CHUNKING
 // ============================================================================
 
-/**
- * Our custom Chunk type that matches our DB schema
- */
 export interface Chunk {
   content: string;
   chunkIndex: number;
@@ -110,24 +106,20 @@ export interface Chunk {
 
 /**
  * Chunk text using Mastra's recursive chunker
- * Returns chunks with content, chunkIndex, and tokenCount
  */
 export async function chunkText(text: string): Promise<Chunk[]> {
-  // Create MDocument from text
   const doc = MDocument.fromText(text);
 
-  // Chunk using Mastra's recursive strategy - returns Chunk[] (Document objects)
   const mastraChunks = await doc.chunk({
     strategy: "recursive",
     maxSize: CHUNK_SIZE,
     overlap: CHUNK_OVERLAP,
   });
 
-  // Map Mastra's Document chunks to our Chunk[] format
   return mastraChunks.map((chunk, index) => ({
-    content: chunk.text, // Document extends TextNode which has .text property
+    content: chunk.text,
     chunkIndex: index,
-    tokenCount: Math.ceil(chunk.text.length / 4), // rough estimate: 4 chars ≈ 1 token
+    tokenCount: Math.ceil(chunk.text.length / 4), // rough estimate
   }));
 }
 
@@ -137,7 +129,6 @@ export async function chunkText(text: string): Promise<Chunk[]> {
 
 /**
  * Generate embeddings for multiple text chunks (batch)
- * Used during document upload
  */
 export async function embedTexts(texts: string[]): Promise<number[][]> {
   const result = await embedMany({
@@ -145,12 +136,12 @@ export async function embedTexts(texts: string[]): Promise<number[][]> {
     values: texts,
   });
 
-  return result.embeddings;
+  // Ensure embeddings are plain arrays (not Float32Array or other typed arrays)
+  return result.embeddings.map(emb => Array.isArray(emb) ? emb : Array.from(emb));
 }
 
 /**
  * Generate embedding for a single query text
- * Used during RAG search
  */
 export async function embedQuery(text: string): Promise<number[]> {
   const result = await embed({
@@ -158,49 +149,83 @@ export async function embedQuery(text: string): Promise<number[]> {
     value: text,
   });
 
-  return result.embedding;
+  // Ensure embedding is a plain array (not Float32Array or other typed array)
+  return Array.isArray(result.embedding) ? result.embedding : Array.from(result.embedding);
 }
 
 // ============================================================================
-// VECTOR STORAGE (pgvector)
+// VECTOR STORAGE (Mastra PgVector)
 // ============================================================================
 
 /**
- * Store chunk embeddings in pgvector
- * Uses raw Prisma SQL since @mastra/pg expects different schema
+ * Store chunks in Mastra's vector store
+ * Creates index if it doesn't exist, then upserts vectors
  */
-export async function storeEmbeddings(
-  items: Array<{ chunkId: string; embedding: number[] }>
+export async function storeChunks(
+  knowledgeBaseId: string,
+  organizationId: string,
+  fileName: string,
+  chunks: Chunk[],
+  embeddings: number[][]
 ): Promise<void> {
-  for (const { chunkId, embedding } of items) {
-    await prisma.$executeRaw`
-      UPDATE document_chunks
-      SET embedding = ${JSON.stringify(embedding)}::vector
-      WHERE id = ${chunkId}
-    `;
-  }
-}
+  // Use org-specific index name for multi-tenant isolation
+  const indexName = `org_${organizationId}`;
 
-/**
- * Batch store embeddings (50 at a time)
- */
-export async function batchStoreEmbeddings(
-  items: Array<{ chunkId: string; embedding: number[] }>
-): Promise<void> {
-  const batchSize = 50;
-  for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize);
-    await storeEmbeddings(batch);
+  // Ensure index exists before upserting
+  try {
+    await vectorStore.getIndexInfo({ indexName });
+  } catch (error: any) {
+    // Index doesn't exist - create it
+    if (error.message?.includes("does not exist")) {
+      await vectorStore.createIndex({
+        indexName,
+        dimension: EMBEDDING_DIMENSION,
+        metric: "cosine",
+      });
+    } else {
+      throw error;
+    }
   }
-}
 
-/**
- * Delete embeddings for a knowledge base
- */
-export async function deleteEmbeddings(knowledgeBaseId: string): Promise<void> {
-  await prisma.documentChunk.deleteMany({
-    where: { knowledgeBaseId },
+  // Mastra expects separate arrays: vectors (just embeddings), ids, metadata
+  await vectorStore.upsert({
+    indexName,
+    vectors: embeddings, // Array of number[] - just the raw embeddings
+    ids: embeddings.map((_, i) => `${knowledgeBaseId}_chunk_${i}`),
+    metadata: chunks.map((chunk) => ({
+      knowledgeBaseId,
+      fileName,
+      content: chunk.content,
+      chunkIndex: chunk.chunkIndex,
+      tokenCount: chunk.tokenCount,
+    })),
   });
+}
+
+/**
+ * Delete all chunks for a knowledge base
+ */
+export async function deleteChunks(
+  knowledgeBaseId: string,
+  organizationId: string
+): Promise<void> {
+  const indexName = `org_${organizationId}`;
+
+  // Query to find all chunk IDs for this KB
+  const results = await vectorStore.query({
+    indexName,
+    queryVector: Array(EMBEDDING_DIMENSION).fill(0), // dummy vector
+    topK: 1000, // get all chunks
+    filter: { knowledgeBaseId },
+  });
+
+  if (results.length > 0) {
+    const ids = results.map((r) => r.id);
+    await vectorStore.delete({
+      indexName,
+      ids,
+    });
+  }
 }
 
 // ============================================================================
@@ -213,6 +238,7 @@ export interface RAGResult {
     content: string;
     knowledgeBaseId: string;
     documentName: string;
+    score: number;
   }>;
   hasContext: boolean;
 }
@@ -223,12 +249,13 @@ export interface RAGResult {
  * Steps:
  * 1. Find knowledge bases for the agent
  * 2. Embed the query
- * 3. Search pgvector for similar chunks
+ * 3. Search Mastra vector store for similar chunks
  * 4. Format results as context string
  */
 export async function retrieveContext(
   query: string,
   agentId: string,
+  organizationId: string,
   topK: number = 10
 ): Promise<RAGResult> {
   // 1. Find knowledge bases for this agent
@@ -246,38 +273,30 @@ export async function retrieveContext(
   // 2. Embed the query
   const queryEmbedding = await embedQuery(query);
 
-  // 3. Search pgvector for similar chunks using cosine similarity
-  const results = await prisma.$queryRaw<
-    Array<{
-      id: string;
-      content: string;
-      knowledgeBaseId: string;
-      similarity: number;
-    }>
-  >`
-    SELECT
-      dc.id,
-      dc.content,
-      dc."knowledgeBaseId",
-      1 - (dc.embedding <=> ${JSON.stringify(queryEmbedding)}::vector) as similarity
-    FROM document_chunks dc
-    WHERE dc."knowledgeBaseId" = ANY(${kbIds})
-      AND dc.embedding IS NOT NULL
-    ORDER BY dc.embedding <=> ${JSON.stringify(queryEmbedding)}::vector
-    LIMIT ${topK}
-  `;
+  // 3. Search Mastra vector store
+  const indexName = `org_${organizationId}`;
+
+  const results = await vectorStore.query({
+    indexName,
+    queryVector: queryEmbedding,
+    topK,
+    filter: {
+      knowledgeBaseId: { $in: kbIds },
+    },
+  });
 
   if (results.length === 0) {
     return { context: "", chunks: [], hasContext: false };
   }
 
-  // 4. Format as context string
+  // 4. Format results as context string
   const chunks = results.map((r) => {
-    const kb = knowledgeBases.find((kb) => kb.id === r.knowledgeBaseId);
+    const kb = knowledgeBases.find((kb) => kb.id === r.metadata.knowledgeBaseId);
     return {
-      content: r.content,
-      knowledgeBaseId: r.knowledgeBaseId,
+      content: r.metadata.content as string,
+      knowledgeBaseId: r.metadata.knowledgeBaseId as string,
       documentName: kb?.fileName || "Unknown",
+      score: r.score,
     };
   });
 
@@ -290,4 +309,42 @@ export async function retrieveContext(
     chunks,
     hasContext: true,
   };
+}
+
+// ============================================================================
+// COMPLETE PROCESSING PIPELINE
+// ============================================================================
+
+/**
+ * Full pipeline: parse → chunk → embed → store
+ * Used by the document upload endpoint
+ */
+export async function processAndStoreDocument(
+  buffer: Buffer,
+  fileType: string,
+  knowledgeBaseId: string,
+  organizationId: string,
+  fileName: string
+): Promise<number> {
+  // 1. Extract text
+  const text = await extractText(buffer, fileType as "pdf" | "docx" | "txt");
+
+  if (!text || text.trim().length === 0) {
+    throw new Error("No text content extracted from document");
+  }
+
+  // 2. Chunk the text
+  const chunks = await chunkText(text);
+
+  if (chunks.length === 0) {
+    throw new Error("No chunks created from document");
+  }
+
+  // 3. Generate embeddings
+  const embeddings = await embedTexts(chunks.map((c) => c.content));
+
+  // 4. Store in vector database
+  await storeChunks(knowledgeBaseId, organizationId, fileName, chunks, embeddings);
+
+  return chunks.length;
 }
