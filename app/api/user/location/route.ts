@@ -7,10 +7,8 @@ import { prisma } from "@/lib/prisma";
  * Update the authenticated user's location and GPS coordinates
  */
 export async function PATCH(request: NextRequest) {
-  const session = await requireAuth();
-  if (!session) {
-    return NextResponse.json(apiError("Unauthorized", 401), { status: 401 });
-  }
+  const { session, error } = await requireAuth();
+  if (error) return error;
 
   try {
     const body = await request.json();
@@ -44,7 +42,7 @@ export async function PATCH(request: NextRequest) {
 
     // Update user location
     const updatedUser = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: session!.user.id },
       data: {
         location: location?.trim() || null,
         gpsCoordinates: gpsCoordinates?.trim() || null,

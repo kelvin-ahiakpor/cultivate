@@ -205,6 +205,12 @@ export async function POST(
       console.log(`[Conversation ${id}] No RAG context found (agent has no knowledge or no relevant chunks)`);
     }
 
+    // 4.5. Fetch user's location from database (for weather tool)
+    const farmer = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { location: true, gpsCoordinates: true },
+    });
+
     // 5. Stream Claude response via SSE (using Mastra agent with weather tool)
     console.log(`[Conversation ${id}] Step 5: Starting Mastra agent stream...`);
     const { stream, getUsage } = await mastraStream({
@@ -213,8 +219,8 @@ export async function POST(
       conversationHistory,
       userMessage: trimmedContent,
       knowledgeContext: rag.hasContext ? rag.context : undefined,
-      // User context (Phase 6.2: location field to be added to User model)
-      userLocation: undefined, // TODO: user.location when Phase 6.2 is complete
+      // User context - location from settings for weather tool
+      userLocation: farmer?.location || undefined,
       userName: user.name,
     });
 
