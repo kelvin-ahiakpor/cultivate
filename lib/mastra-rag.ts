@@ -36,10 +36,10 @@ const CHUNK_OVERLAP = 100; // token overlap between chunks
 const EMBEDDING_DIMENSION = 1024; // Voyage 3.5-lite default
 
 // Initialize Mastra PgVector
+// Note: dimensions are specified per-index in createIndex(), not in constructor
 const vectorStore = new PgVector({
   id: "cultivate-vectors",
   connectionString: process.env.DATABASE_URL!,
-  dimensions: EMBEDDING_DIMENSION,
 });
 
 // ============================================================================
@@ -221,7 +221,7 @@ export async function deleteChunks(
 
   if (results.length > 0) {
     const ids = results.map((r) => r.id);
-    await vectorStore.delete({
+    await vectorStore.deleteVectors({
       indexName,
       ids,
     });
@@ -290,15 +290,22 @@ export async function retrieveContext(
   }
 
   // 4. Format results as context string
-  const chunks = results.map((r) => {
-    const kb = knowledgeBases.find((kb) => kb.id === r.metadata.knowledgeBaseId);
-    return {
-      content: r.metadata.content as string,
-      knowledgeBaseId: r.metadata.knowledgeBaseId as string,
-      documentName: kb?.fileName || "Unknown",
-      score: r.score,
-    };
-  });
+  const chunks = results
+    .filter((r) => r.metadata?.knowledgeBaseId && r.metadata?.content)
+    .map((r) => {
+      const metadata = r.metadata!;
+      const kb = knowledgeBases.find((kb) => kb.id === metadata.knowledgeBaseId);
+      return {
+        content: metadata.content as string,
+        knowledgeBaseId: metadata.knowledgeBaseId as string,
+        documentName: kb?.fileName || "Unknown",
+        score: r.score,
+      };
+    });
+
+  if (chunks.length === 0) {
+    return { context: "", chunks: [], hasContext: false };
+  }
 
   const context = chunks
     .map((chunk) => `[Document: ${chunk.documentName}]\n${chunk.content}`)
