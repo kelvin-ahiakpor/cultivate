@@ -43,7 +43,7 @@
  */
 
 import { useRef, useEffect, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle, Mic, MicOff, AlertTriangle, AudioLines } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle, Mic, MicOff, AlertTriangle, AudioLines, Globe } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { notify } from "@/lib/toast";
@@ -83,6 +83,12 @@ export interface InputProps {
   showAgentMenu: boolean;
   setShowAgentMenu: (v: boolean) => void;
   isStreaming: boolean;
+  // Translation
+  selectedLanguage: string;
+  onLanguageSelect: (lang: string) => void;
+  showLanguageMenu: boolean;
+  setShowLanguageMenu: (v: boolean) => void;
+  languages: readonly { code: string; name: string; flag: string }[];
 }
 
 interface ConversationViewProps {
@@ -401,16 +407,16 @@ export default function ConversationView({
   return (
     <div className="flex flex-col h-full">
       {/* ── Conversation Header ──────────────────────────────────────────
-          Mobile: [glass back] | [title + system pill centered] | [+ new chat]
-          Desktop: breadcrumb [system /] [title ▾] with dropdown
+          Mobile: [glass back] | [title + system pill centered] | [translate toggle] | [+ new chat]
+          Desktop: breadcrumb [system /] [title ▾] with dropdown | [translate toggle right edge]
           pt-16 on mobile for Dynamic Island safe area — DO NOT reduce to pt-3 alone */}
       <div className="flex-shrink-0 bg-cultivate-bg-main pt-16 lg:pt-3 pb-3 px-3 lg:pl-4 lg:pr-3">
         {/* Mobile header */}
-        <div className="lg:hidden flex items-center justify-between">
+        <div className="lg:hidden flex items-center justify-between gap-2">
           <GlassCircleButton onClick={onBack} aria-label="Back">
             <ChevronLeft className="w-5 h-5 text-white" />
           </GlassCircleButton>
-          <div className="flex flex-col items-center gap-0.5 min-w-0 flex-1 mx-3">
+          <div className="flex flex-col items-center gap-0.5 min-w-0 flex-1 mx-2">
             <span className="text-sm standalone:text-base font-medium text-white truncate">
               {title || "Untitled conversation"}
             </span>
@@ -421,6 +427,7 @@ export default function ConversationView({
               </div>
             )}
           </div>
+
           <button
             onClick={onNewChat}
             className="w-11 h-11 bg-cultivate-bg-elevated hover:bg-[#3B3B3B] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
@@ -430,7 +437,8 @@ export default function ConversationView({
         </div>
 
         {/* Desktop breadcrumb header */}
-        <div className="hidden lg:flex items-center gap-1">
+        <div className="hidden lg:flex items-center justify-between gap-1">
+          <div className="flex items-center gap-1 flex-1 min-w-0">
           {systemName && (
             <>
               <span className="text-sm text-cultivate-text-primary hover:text-white truncate cursor-pointer transition-colors">
@@ -491,6 +499,7 @@ export default function ConversationView({
                 </div>
               </>
             )}
+          </div>
           </div>
         </div>
       </div>
@@ -862,6 +871,38 @@ export default function ConversationView({
                         <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-secondary">
                           {demoAgentLabel || "General Farm Advisor"}
                         </span>
+                      )}
+
+                      {/* Language Selector (real mode only) */}
+                      {inputProps && (
+                        <div className="relative">
+                          <button
+                            onClick={() => inputProps.setShowLanguageMenu(!inputProps.showLanguageMenu)}
+                            className="flex items-center gap-1.5 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
+                            title="Select language"
+                          >
+                            <Globe className="w-4 h-4" />
+                            <span className="hidden lg:inline">{inputProps.languages.find(l => l.code === inputProps.selectedLanguage)?.name || 'English'}</span>
+                            <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
+                          </button>
+                          {inputProps.showLanguageMenu && (
+                            <>
+                              <div className="fixed inset-0 z-40" onClick={() => inputProps.setShowLanguageMenu(false)} />
+                              <div className="absolute bottom-full right-0 mb-2 bg-cultivate-bg-elevated rounded-lg shadow-lg border border-cultivate-border-element py-2 z-50 min-w-[180px]">
+                                {inputProps.languages.map((lang) => (
+                                  <button
+                                    key={lang.code}
+                                    onClick={() => { inputProps.onLanguageSelect(lang.code); inputProps.setShowLanguageMenu(false); }}
+                                    className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors flex items-center gap-2 ${inputProps.selectedLanguage === lang.code ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
+                                  >
+                                    <span>{lang.flag}</span>
+                                    <span>{lang.name}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
                       )}
 
                       {/* Send button */}

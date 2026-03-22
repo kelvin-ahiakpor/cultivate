@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Download, Share, Pencil, Unlink, Trash2 } from "lucide-react";
+import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Download, Share, Pencil, Unlink, Trash2, Globe, AudioLines, Mic, AlertTriangle } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { mutate as globalMutate } from "swr";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon } from "@/components/send-icons";
@@ -14,6 +14,9 @@ import SystemsView from "./views/systems-view";
 import { useConversations } from "@/lib/hooks/use-conversations";
 import { useAgents } from "@/lib/hooks/use-agents";
 import { DEMO_FARMER_CONVO_MESSAGES } from "@/lib/demo-data";
+import { translateToEnglish, translateFromEnglish, LANGUAGES, type SupportedLanguage } from "@/lib/translation";
+import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
+import { AnimatedDots } from "@/components/wave-icon";
 
 interface ChatPageProps {
   user: {
@@ -48,6 +51,18 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
   const [selectedAgent, setSelectedAgent] = useState("General Farm Advisor");
   const [sendIcon, setSendIcon] = useState<"cabbage" | "plane" | "sprout">("cabbage");
   const [activeView, setActiveView] = useState<"chat" | "chats" | "systems">("chat");
+
+  // Translation state
+  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>('en');
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+
+  // Voice input state
+  const [voiceState, setVoiceState] = useState<"idle" | "connecting" | "listening" | "error">("idle");
+  const { transcript, isListening, startListening, stopListening, resetTranscript } = useSpeechRecognition({
+    lang: selectedLanguage === 'en' ? 'en-US' : selectedLanguage === 'tw' ? 'tw-GH' : 'ee-GH',
+    continuous: true,
+  });
+
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [chatMenuId, setChatMenuId] = useState<string | null>(null);
   const [showInstallModal, setShowInstallModal] = useState(false);
@@ -89,6 +104,51 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
   const sidebarChats = demoMode
     ? mockChats
     : apiConversations.conversations.map(c => ({ id: c.id, title: c.title, agentName: c.agentName, lastMessage: c.lastMessage, messageCount: c.messageCount, systemName: undefined as string | undefined }));
+
+  // Load language preference from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('cultivate-language') as SupportedLanguage;
+    if (saved && LANGUAGES.some(l => l.code === saved)) {
+      setSelectedLanguage(saved);
+    }
+  }, []);
+
+  // Save language preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('cultivate-language', selectedLanguage);
+  }, [selectedLanguage]);
+
+  // Handle voice button click
+  const handleVoiceClick = async () => {
+    if (voiceState === "listening") {
+      stopListening();
+      setVoiceState("idle");
+    } else if (voiceState === "idle") {
+      startListening();
+      setVoiceState("connecting");
+      setTimeout(() => setVoiceState("listening"), 300);
+    } else if (voiceState === "connecting") {
+      stopListening();
+      setVoiceState("idle");
+    } else if (voiceState === "error") {
+      resetTranscript();
+      setVoiceState("idle");
+    }
+  };
+
+  // Update input value when transcript changes
+  useEffect(() => {
+    if (transcript) {
+      setInputValue(transcript);
+    }
+  }, [transcript]);
+
+  // Auto-stop listening when transcript stops updating
+  useEffect(() => {
+    if (!isListening && voiceState === "listening") {
+      setVoiceState("idle");
+    }
+  }, [isListening, voiceState]);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -165,7 +225,10 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
     setIsStreaming(true);
     setStreamingContent("");
 
-    // Add user message to UI immediately
+    // Translate user message to English if needed
+    const { translatedText: englishText } = await translateToEnglish(text, selectedLanguage);
+
+    // Add user message to UI immediately (show original text, not translated)
     const userMsg: ChatMessage = { id: genId(), role: "USER", content: text };
     setMessages(prev => [...prev, userMsg]);
 
@@ -188,11 +251,11 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
         setCurrentConversationId(convId);
       }
 
-      // Send message — SSE stream
+      // Send message — SSE stream (send English text to backend)
       const res = await fetch(`/api/conversations/${convId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text }),
+        body: JSON.stringify({ content: englishText }),
       });
 
       if (!res.ok) {
@@ -220,10 +283,13 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
               assistantText += event.content;
               setStreamingContent(assistantText);
             } else if (event.type === "done") {
+              // Translate assistant response to user's language
+              const translatedContent = await translateFromEnglish(assistantText, selectedLanguage);
+
               const assistantMsg: ChatMessage = {
                 id: event.message?.id || genId(),
                 role: "ASSISTANT",
-                content: assistantText,
+                content: translatedContent,
                 confidenceScore: event.message?.confidenceScore,
                 isFlagged: event.message?.isFlagged,
                 flaggedQuery: event.message?.flaggedQuery,
@@ -705,6 +771,52 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                             <button className="p-1.5 hover:bg-[#3B3B3B] rounded transition-colors">
                               <Plus className="w-5 h-5 text-cultivate-text-primary" />
                             </button>
+
+                            {/* Voice input button */}
+                            <div className="relative flex items-center">
+                              {/* Mic icon (shows when connecting/listening/error) */}
+                              {voiceState !== "idle" && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <Mic className="w-5 h-5 text-cultivate-text-secondary" />
+                                </div>
+                              )}
+                              {voiceState === "idle" && (
+                                <button
+                                  onClick={handleVoiceClick}
+                                  className="p-1.5 hover:bg-[#3B3B3B] rounded transition-colors"
+                                  title="Voice input"
+                                >
+                                  <AudioLines className="w-5 h-5 text-cultivate-text-primary" />
+                                </button>
+                              )}
+                              {voiceState === "connecting" && (
+                                <button
+                                  onClick={handleVoiceClick}
+                                  className="px-2.5 py-1.5 bg-cultivate-bg-elevated hover:bg-[#3B3B3B] rounded transition-colors flex items-center gap-1.5 text-xs text-white"
+                                >
+                                  <span>Cancel</span>
+                                  <AnimatedDots type="pulse" />
+                                </button>
+                              )}
+                              {voiceState === "listening" && (
+                                <button
+                                  onClick={handleVoiceClick}
+                                  className="px-2.5 py-1.5 bg-cultivate-bg-elevated hover:bg-[#3B3B3B] rounded transition-colors flex items-center gap-1.5 text-xs text-white"
+                                >
+                                  <span>Stop</span>
+                                  <AnimatedDots type="wave" />
+                                </button>
+                              )}
+                              {voiceState === "error" && (
+                                <button
+                                  onClick={handleVoiceClick}
+                                  className="px-2.5 py-1.5 bg-[#c0392b] hover:bg-[#a93226] rounded transition-colors flex items-center gap-1.5 text-xs text-white"
+                                >
+                                  <AlertTriangle className="w-3.5 h-3.5" />
+                                  <span>Error</span>
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="relative">
@@ -732,6 +844,37 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                                 </>
                               )}
                             </div>
+
+                            {/* Language Selector */}
+                            <div className="relative">
+                              <button
+                                onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+                                className="flex items-center gap-1.5 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
+                                title="Select language"
+                              >
+                                <Globe className="w-4 h-4" />
+                                <span className="hidden lg:inline">{LANGUAGES.find(l => l.code === selectedLanguage)?.name || 'English'}</span>
+                                <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
+                              </button>
+                              {showLanguageMenu && (
+                                <>
+                                  <div className="fixed inset-0 z-40" onClick={() => setShowLanguageMenu(false)} />
+                                  <div className="absolute bottom-full right-0 mb-2 bg-cultivate-bg-elevated rounded-lg shadow-lg border border-cultivate-border-element py-2 z-50 min-w-[180px]">
+                                    {LANGUAGES.map((lang) => (
+                                      <button
+                                        key={lang.code}
+                                        onClick={() => { setSelectedLanguage(lang.code); setShowLanguageMenu(false); }}
+                                        className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors flex items-center gap-2 ${selectedLanguage === lang.code ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
+                                      >
+                                        <span>{lang.flag}</span>
+                                        <span>{lang.name}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+
                             <button
                               onClick={() => { handleSend(); setSendIcon(s => s === "cabbage" ? "plane" : s === "plane" ? "sprout" : "cabbage"); }}
                               disabled={isStreaming || !inputValue.trim()}
@@ -774,6 +917,12 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                     showAgentMenu,
                     setShowAgentMenu,
                     isStreaming,
+                    // Translation
+                    selectedLanguage,
+                    onLanguageSelect: (lang) => setSelectedLanguage(lang as SupportedLanguage),
+                    showLanguageMenu,
+                    setShowLanguageMenu,
+                    languages: LANGUAGES,
                   }}
                 />
               )}
