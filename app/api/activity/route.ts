@@ -105,7 +105,13 @@ export async function GET(request: NextRequest) {
           uploadedAt: { gte: since },
         },
         include: {
-          agent: { select: { name: true } },
+          agents: {
+            include: {
+              agent: { select: { name: true } },
+            },
+            where: { isPrimary: true },
+            take: 1,
+          },
           agronomist: { select: { name: true } },
         },
         orderBy: { uploadedAt: "desc" },
@@ -176,7 +182,7 @@ export async function GET(request: NextRequest) {
       activities.push({
         type: "knowledge_uploaded",
         description: `${kb.agronomist.name} uploaded "${kb.title}"`,
-        agentName: kb.agent.name,
+        agentName: kb.agents[0]?.agent.name || "Unassigned",
         metadata: {
           knowledgeBaseId: kb.id,
           fileName: kb.fileName,

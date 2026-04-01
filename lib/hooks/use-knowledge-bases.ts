@@ -15,8 +15,9 @@ export interface KnowledgeDoc {
   fileName: string;
   fileType: string;      // "PDF" | "DOCX" | "TXT"
   chunkCount: number;
-  agentId: string;
-  agentName: string;
+  agentId: string;       // Primary agent ID
+  agentName: string;     // Primary agent name
+  agents: Array<{ id: string; name: string; isPrimary: boolean }>; // All agents
   uploadedAt: string;    // formatted display string e.g. "Jan 28, 2026"
   status: string;
   referencedInChats: number; // 0 for real data — API doesn't return this yet
@@ -30,7 +31,7 @@ interface RawDoc {
   chunkCount: number;
   uploadedAt: string; // ISO
   status: string;
-  agent: { id: string; name: string } | null;
+  agents: Array<{ isPrimary: boolean; agent: { id: string; name: string } }>;
 }
 
 interface KnowledgeBasesResponse {
@@ -47,14 +48,22 @@ function formatDate(iso: string): string {
 }
 
 function normalize(doc: RawDoc): KnowledgeDoc {
+  const primaryAgent = doc.agents.find((a) => a.isPrimary);
+  const agentsList = doc.agents.map((a) => ({
+    id: a.agent.id,
+    name: a.agent.name,
+    isPrimary: a.isPrimary,
+  }));
+
   return {
     id: doc.id,
     title: doc.title,
     fileName: doc.fileName,
     fileType: doc.fileType.toUpperCase(),
     chunkCount: doc.chunkCount,
-    agentId: doc.agent?.id || "",
-    agentName: doc.agent?.name || "Unassigned",
+    agentId: primaryAgent?.agent.id || "",
+    agentName: primaryAgent?.agent.name || "Unassigned",
+    agents: agentsList,
     uploadedAt: formatDate(doc.uploadedAt),
     status: doc.status,
     referencedInChats: 0, // not returned by API yet

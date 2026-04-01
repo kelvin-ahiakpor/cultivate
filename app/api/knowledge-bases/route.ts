@@ -27,15 +27,34 @@ export async function GET(request: NextRequest) {
       where.title = { contains: search, mode: "insensitive" };
     }
 
+    // Filter by agent needs to check the join table
+    let kbIds: string[] | undefined;
     if (agentId) {
-      where.agentId = agentId;
+      const agentKbs = await prisma.agentKnowledgeBase.findMany({
+        where: { agentId },
+        select: { knowledgeBaseId: true },
+      });
+      kbIds = agentKbs.map((akb) => akb.knowledgeBaseId);
+      if (kbIds.length === 0) {
+        // No KBs for this agent - return empty
+        return apiSuccess({
+          documents: [],
+          pagination: { page, limit, total: 0, totalPages: 0 },
+        });
+      }
+      where.id = { in: kbIds };
     }
 
     const [documents, total] = await Promise.all([
       prisma.knowledgeBase.findMany({
         where,
         include: {
-          agent: { select: { id: true, name: true } },
+          agents: {
+            include: {
+              agent: { select: { id: true, name: true } },
+            },
+            orderBy: { isPrimary: "desc" }, // Primary first
+          },
           agronomist: { select: { id: true, name: true } },
         },
         orderBy: { uploadedAt: "desc" },

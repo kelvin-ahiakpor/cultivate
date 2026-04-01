@@ -70,6 +70,44 @@ enum UserRole {
   ADMIN
 }
 
+// KB Categorization enums
+enum KnowledgeBaseType {
+  CORE         // Farmitecture-specific (highest priority)
+  RELATED      // Adjacent techniques
+  GENERAL      // Broad agricultural knowledge
+}
+
+enum ContentType {
+  FAQ              // Q&A format
+  MANUAL           // Step-by-step procedures
+  TROUBLESHOOTING  // Problem tables
+  GUIDE            // Comprehensive how-to
+  THEORETICAL      // Explains concepts
+  PRACTICAL        // Actionable instructions
+  MIXED            // Theory + practice
+  REFERENCE        // Quick lookup
+}
+
+enum SourceType {
+  INTERNAL_SOP     // Company SOP
+  INTERNAL_FAQ     // Company FAQ
+  INTERNAL_MANUAL  // Company manual
+  GOV_DOCUMENT     // Government docs
+  EXTENSION_GUIDE  // University extension
+  RESEARCH_PAPER   // Peer-reviewed
+  WHITE_PAPER      // Industry paper
+  TECHNICAL_MANUAL // Equipment manual
+  CASE_STUDY       // Implementation story
+  BLOG_POST        // Practitioner blog
+  FORUM_POST       // Forum discussion
+  VIDEO_TRANSCRIPT // YouTube content
+  PRODUCT_SPEC     // Product specs
+  VENDOR_GUIDE     // Supplier guide
+  PDF_UPLOAD       // Uncategorized
+  WEB_SCRAPED      // Web content
+  OTHER            // Fallback
+}
+
 // AI Agents created by agronomists
 model Agent {
   id                  String   @id @default(cuid())
@@ -91,7 +129,7 @@ model Agent {
   agronomist   User   @relation(fields: [agronomistId], references: [id], onDelete: Cascade)
 
   conversations  Conversation[]
-  knowledgeBases KnowledgeBase[]
+  knowledgeBases AgentKnowledgeBase[]
   flaggedQueries FlaggedQuery[]
 
   @@map("agents")
@@ -158,6 +196,12 @@ model KnowledgeBase {
   uploadedAt  DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // KB Categorization
+  kbType      KnowledgeBaseType @default(RELATED)
+  contentType ContentType?       // Optional
+  sourceType  SourceType         @default(PDF_UPLOAD)
+  description String?            @db.Text
+
   // Multi-tenancy - uses org's vectorDbNamespace for isolation
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -166,13 +210,27 @@ model KnowledgeBase {
   agronomistId String
   agronomist   User   @relation(fields: [agronomistId], references: [id], onDelete: Cascade)
 
-  agentId String
-  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agents AgentKnowledgeBase[]
 
   // Note: Document chunks are now managed by Mastra PgVector (@mastra/pg)
   // No Prisma relation needed - chunks stored in Mastra's vector store with knowledgeBaseId in metadata
 
   @@map("knowledge_bases")
+}
+
+// Many-to-many join table for KB-to-Agent assignments
+model AgentKnowledgeBase {
+  id              String   @id @default(cuid())
+  agentId         String
+  knowledgeBaseId String
+  isPrimary       Boolean  @default(false) // First assigned agent = primary
+  assignedAt      DateTime @default(now())
+
+  agent         Agent         @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  knowledgeBase KnowledgeBase @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, knowledgeBaseId])
+  @@map("agent_knowledge_bases")
 }
 
 // Low-confidence queries needing agronomist review

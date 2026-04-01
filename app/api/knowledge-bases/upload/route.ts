@@ -50,6 +50,10 @@ export async function POST(request: NextRequest) {
     const file = formData.get("file") as File | null;
     const title = formData.get("title") as string | null;
     const agentId = formData.get("agentId") as string | null;
+    const kbType = formData.get("kbType") as string || "RELATED";
+    const contentType = formData.get("contentType") as string || null;
+    const sourceType = formData.get("sourceType") as string || "PDF_UPLOAD";
+    const description = formData.get("description") as string || null;
 
     // Validate inputs
     if (!file || !title || !agentId) {
@@ -80,13 +84,25 @@ export async function POST(request: NextRequest) {
         fileName: file.name,
         fileUrl: "", // Will update after upload
         fileType,
+        kbType: kbType as any,
+        contentType: contentType as any,
+        sourceType: sourceType as any,
+        description,
         organizationId: orgId,
         agronomistId: session!.user.id,
-        agentId,
       },
     });
 
-    // 2. Upload file to Supabase Storage
+    // 2. Create primary agent assignment
+    await prisma.agentKnowledgeBase.create({
+      data: {
+        agentId,
+        knowledgeBaseId: knowledgeBase.id,
+        isPrimary: true,
+      },
+    });
+
+    // 3. Upload file to Supabase Storage
     const buffer = Buffer.from(await file.arrayBuffer());
     const fileUrl = await uploadFile(buffer, file.name, file.type, orgId, knowledgeBase.id);
 
@@ -95,7 +111,7 @@ export async function POST(request: NextRequest) {
       data: { fileUrl },
     });
 
-    // 3. Process the document in a separate Node process (extract → chunk → embed → store)
+    // 4. Process the document in a separate Node process (extract → chunk → embed → store)
     // This runs completely isolated from Turbopack's memory usage
     const tmpPath = join(tmpdir(), `cultivate-upload-${knowledgeBase.id}.${fileType}`);
     await writeFile(tmpPath, buffer);

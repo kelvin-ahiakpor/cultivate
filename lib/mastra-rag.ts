@@ -31,9 +31,10 @@ import { prisma } from "@/lib/prisma";
 // ============================================================================
 
 const VOYAGE_MODEL = "voyage-3.5-lite"; // $0.02/1M tokens, 1024 dims
-const CHUNK_SIZE = 500; // tokens per chunk
-const CHUNK_OVERLAP = 100; // token overlap between chunks
+const CHUNK_OVERLAP = 100; // token overlap between chunks (preserves context at boundaries)
 const EMBEDDING_DIMENSION = 1024; // Voyage 3.5-lite default
+// Note: No maxSize - Mastra's recursive chunker decides optimal chunk sizes (typically 400-800 tokens)
+// This prevents "chunk exceeds limit" errors while maintaining semantic integrity
 
 // Initialize Mastra PgVector
 // Note: dimensions are specified per-index in createIndex(), not in constructor
@@ -106,13 +107,17 @@ export interface Chunk {
 
 /**
  * Chunk text using Mastra's recursive chunker
+ *
+ * NO maxSize limit - let Mastra decide optimal chunk boundaries
+ * This prevents "chunk size exceeds limit" errors on complex docs
+ * Chunks will vary naturally (typically 400-800 tokens) based on semantic boundaries
  */
 export async function chunkText(text: string): Promise<Chunk[]> {
   const doc = MDocument.fromText(text);
 
   const mastraChunks = await doc.chunk({
     strategy: "recursive",
-    maxSize: CHUNK_SIZE,
+    // No maxSize - let Mastra's chunker decide optimal boundaries
     overlap: CHUNK_OVERLAP,
   });
 
@@ -258,28 +263,33 @@ export async function retrieveContext(
   organizationId: string,
   topK: number = 10
 ): Promise<RAGResult> {
-  // 1. Find knowledge bases for this agent
-  const knowledgeBases = await prisma.knowledgeBase.findMany({
+  // 1. Find knowledge bases for this agent (via join table)
+  const agentKbs = await prisma.agentKnowledgeBase.findMany({
     where: { agentId },
-    select: { id: true, fileName: true },
+    include: {
+      knowledgeBase: {
+        select: { id: true, fileName: true, kbType: true },
+      },
+    },
   });
 
-  if (knowledgeBases.length === 0) {
+  if (agentKbs.length === 0) {
     return { context: "", chunks: [], hasContext: false };
   }
 
-  const kbIds = knowledgeBases.map((kb) => kb.id);
+  const knowledgeBases = agentKbs.map((akb: any) => akb.knowledgeBase);
+  const kbIds = knowledgeBases.map((kb: any) => kb.id);
 
   // 2. Embed the query
   const queryEmbedding = await embedQuery(query);
 
-  // 3. Search Mastra vector store
+  // 3. Search Mastra vector store (get more results for weighted re-ranking)
   const indexName = `org_${organizationId}`;
 
   const results = await vectorStore.query({
     indexName,
     queryVector: queryEmbedding,
-    topK,
+    topK: topK * 2, // Get more results to re-rank
     filter: {
       knowledgeBaseId: { $in: kbIds },
     },
@@ -289,12 +299,42 @@ export async function retrieveContext(
     return { context: "", chunks: [], hasContext: false };
   }
 
-  // 4. Format results as context string
-  const chunks = results
+  // 4. Apply weighted scoring: CORE × 1.5, RELATED × 1.0, GENERAL × 0.7
+  console.log("\n🔍 RAG WEIGHTED RETRIEVAL:");
+  console.log(`Query embedding search returned ${results.length} results (topK × 2 = ${topK * 2})`);
+
+  const weighted = results.map((r, i) => {
+    const kbId = r.metadata?.knowledgeBaseId as string;
+    const kb = knowledgeBases.find((k: any) => k.id === kbId);
+    const weight =
+      kb?.kbType === "CORE" ? 1.5 : kb?.kbType === "RELATED" ? 1.0 : 0.7;
+    const originalScore = r.score;
+    const weightedScore = r.score * weight;
+
+    if (i < 5) {
+      // Log first 5 results before weighting
+      console.log(`  [${i + 1}] ${kb?.fileName?.slice(0, 40) || "Unknown"} (${kb?.kbType || "?"}) - Original: ${originalScore.toFixed(4)} → Weighted: ${weightedScore.toFixed(4)} (×${weight})`);
+    }
+
+    return { ...r, score: weightedScore, originalScore, kbType: kb?.kbType, fileName: kb?.fileName };
+  });
+
+  // 5. Re-sort by weighted score and take topK
+  weighted.sort((a, b) => b.score - a.score);
+  const topResults = weighted.slice(0, topK);
+
+  console.log(`\n✅ Top ${topK} after weighted re-ranking:`);
+  topResults.forEach((r, i) => {
+    console.log(`  [${i + 1}] ${(r as any).fileName?.slice(0, 40) || "Unknown"} (${(r as any).kbType || "?"}) - Score: ${r.score.toFixed(4)}`);
+  });
+  console.log("");
+
+  // 6. Format results as context string
+  const chunks = topResults
     .filter((r) => r.metadata?.knowledgeBaseId && r.metadata?.content)
     .map((r) => {
       const metadata = r.metadata!;
-      const kb = knowledgeBases.find((kb) => kb.id === metadata.knowledgeBaseId);
+      const kb = knowledgeBases.find((kb: any) => kb.id === metadata.knowledgeBaseId);
       return {
         content: metadata.content as string,
         knowledgeBaseId: metadata.knowledgeBaseId as string,

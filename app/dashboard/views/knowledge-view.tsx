@@ -6,6 +6,8 @@ import GlassCircleButton from "@/components/glass-circle-button";
 import { useKnowledgeBases, uploadDocument, deleteDocument, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
 import { useAgents } from "@/lib/hooks/use-agents";
 import { DEMO_KNOWLEDGE } from "@/lib/demo-data";
+import CustomSelect from "@/components/custom-select";
+import { notify } from "@/lib/toast";
 
 // Mock data for demo mode — sourced from lib/demo-data.ts
 const mockDocuments = DEMO_KNOWLEDGE;
@@ -37,12 +39,20 @@ export default function KnowledgeView({
   const [deleteModalDoc, setDeleteModalDoc] = useState<KnowledgeDoc | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Chunk preview state
+  const [chunks, setChunks] = useState<Array<{ chunkIndex: number; content: string; tokenCount: number; id: string }>>([]);
+  const [loadingChunks, setLoadingChunks] = useState(false);
+
   // Upload form state
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadAgentId, setUploadAgentId] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [uploadKbType, setUploadKbType] = useState("RELATED");
+  const [uploadContentType, setUploadContentType] = useState("");
+  const [uploadSourceType, setUploadSourceType] = useState("PDF_UPLOAD");
+  const [uploadDescription, setUploadDescription] = useState("");
   
   // Upload modal states
   const [uploadType, setUploadType] = useState<'new' | 'update'>('new');
@@ -123,6 +133,11 @@ export default function KnowledgeView({
     setUploadAgentId('');
     setUploadFile(null);
     setUploadError('');
+    // Reset KB categorization fields
+    setUploadKbType("RELATED");
+    setUploadContentType("");
+    setUploadSourceType("PDF_UPLOAD");
+    setUploadDescription("");
     setShowUploadModal(true);
   };
 
@@ -134,6 +149,11 @@ export default function KnowledgeView({
     setUploadAgentId('');
     setUploadFile(null);
     setUploadError('');
+    // Reset KB categorization fields
+    setUploadKbType("RELATED");
+    setUploadContentType("");
+    setUploadSourceType("PDF_UPLOAD");
+    setUploadDescription("");
     setShowUploadModal(false);
   };
 
@@ -143,12 +163,28 @@ export default function KnowledgeView({
       setUploadError("Please fill in the title, assign an agent, and select a file.");
       return;
     }
+
+    // Check for duplicate file name
+    const duplicate = apiData.documents.find(
+      (doc) => doc.fileName.toLowerCase() === uploadFile.name.toLowerCase()
+    );
+    if (duplicate) {
+      notify.error(
+        `A file named "${uploadFile.name}" already exists. Use "Update Existing" to replace it.`
+      );
+      return;
+    }
+
     setUploading(true);
     setUploadError("");
     try {
       const fd = new FormData();
       fd.append("title", uploadTitle.trim());
       fd.append("agentId", uploadAgentId);
+      fd.append("kbType", uploadKbType);
+      if (uploadContentType) fd.append("contentType", uploadContentType);
+      fd.append("sourceType", uploadSourceType);
+      if (uploadDescription.trim()) fd.append("description", uploadDescription.trim());
       fd.append("file", uploadFile);
       await uploadDocument(fd);
       apiData.mutate();
@@ -424,127 +460,223 @@ export default function KnowledgeView({
         <>
           <div className="fixed inset-0 bg-black/60 z-40" onClick={handleCloseUploadModal} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-lg p-6">
-              <h2 className="text-lg font-medium text-white mb-4">Upload Knowledge Base</h2>
-
-              <div className="space-y-4">
-                {/* Update or New Document */}
-                <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg p-3">
-                  <label className="block text-sm text-cultivate-text-secondary mb-2">What are you doing?</label>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="uploadType" 
-                        value="new" 
-                        checked={uploadType === 'new'}
-                        onChange={() => setUploadType('new')}
-                        className="accent-[#5a7048]" 
-                      />
-                      <span className="text-sm text-white">Uploading a new document</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="uploadType" 
-                        value="update" 
-                        checked={uploadType === 'update'}
-                        onChange={() => setUploadType('update')}
-                        className="accent-[#5a7048]" 
-                      />
-                      <span className="text-sm text-white">Updating an existing document</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Show document selector when updating */}
-                {uploadType === 'update' && (
-                  <div>
-                    <label className="block text-sm text-cultivate-text-secondary mb-1.5">Select document to update</label>
-                    <button
-                      type="button"
-                      onClick={() => setShowDocSelectorModal(true)}
-                      className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-left hover:border-[#5a7048] transition-colors"
-                    >
-                      {updateDocId ? (
-                        <span className="text-white">{sortedDocuments.find(d => d.id === updateDocId)?.title}</span>
-                      ) : (
-                        <span className="text-cultivate-text-tertiary">Click to select a document...</span>
-                      )}
-                    </button>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm text-cultivate-text-secondary mb-1.5">Document Title</label>
-                  <input
-                    type="text"
-                    value={uploadTitle}
-                    onChange={(e) => setUploadTitle(e.target.value)}
-                    placeholder="e.g. Maize Farming Best Practices"
-                    className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-cultivate-text-secondary mb-1.5">Assign to Agent</label>
-                  <div className="relative">
-                    <select
-                      value={uploadAgentId}
-                      onChange={(e) => setUploadAgentId(e.target.value)}
-                      className="w-full px-3 py-2.5 pr-10 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white focus:outline-none focus:border-[#5a7048] appearance-none"
-                    >
-                      <option value="">Select an agent...</option>
-                      {demoMode
-                        ? demoAgentNames.slice(1).map(name => <option key={name} value={name}>{name}</option>)
-                        : realAgents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)
-                      }
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Drop Zone */}
-                <div
-                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                  onDragLeave={() => setDragOver(false)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setDragOver(false);
-                    const file = e.dataTransfer.files[0];
-                    if (file) setUploadFile(file);
-                  }}
-                  className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-                    dragOver ? 'border-[#85b878] bg-cultivate-green-light/5' : 'border-cultivate-border-element'
-                  }`}
-                >
-                  <Upload className="w-8 h-8 text-cultivate-text-tertiary mx-auto mb-3" />
-                  {uploadFile ? (
-                    <p className="text-sm text-cultivate-green-light">{uploadFile.name}</p>
-                  ) : (
-                    <>
-                      <p className="text-sm text-cultivate-text-primary mb-1">Drag and drop your file here</p>
-                      <p className="text-xs text-cultivate-text-tertiary mb-3">or</p>
-                      <label className="px-4 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-cultivate-text-primary hover:border-[#85b878] transition-colors cursor-pointer">
-                        Browse Files
-                        <input
-                          type="file"
-                          accept=".pdf,.docx,.txt"
-                          className="hidden"
-                          onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                        />
-                      </label>
-                    </>
-                  )}
-                  <p className="text-xs text-cultivate-text-tertiary mt-3">Supports PDF, DOCX, TXT (max 25MB)</p>
-                </div>
-
-                {uploadError && (
-                  <p className="text-sm text-red-400">{uploadError}</p>
-                )}
+            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-lg max-h-[90vh] flex flex-col">
+              {/* Fixed header */}
+              <div className="px-6 pt-5 pb-4 flex-shrink-0">
+                <h2 className="text-lg font-medium text-white">Upload Knowledge Base</h2>
               </div>
 
-              <div className="flex items-center justify-end gap-3 mt-6">
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-y-auto px-6 pb-4 thin-scrollbar">
+                <div className="space-y-3">
+                  {/* Update or New Document */}
+                  <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg p-2.5">
+                    <label className="block text-sm text-cultivate-text-secondary mb-1.5">What are you doing?</label>
+                    <div className="space-y-1.5">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="uploadType"
+                          value="new"
+                          checked={uploadType === 'new'}
+                          onChange={() => setUploadType('new')}
+                          className="accent-[#5a7048]"
+                        />
+                        <span className="text-sm text-white">Uploading a new document</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="uploadType"
+                          value="update"
+                          checked={uploadType === 'update'}
+                          onChange={() => setUploadType('update')}
+                          className="accent-[#5a7048]"
+                        />
+                        <span className="text-sm text-white">Updating an existing document</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Show document selector when updating */}
+                  {uploadType === 'update' && (
+                    <div>
+                      <label className="block text-sm text-cultivate-text-secondary mb-1.5">Select document to update</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowDocSelectorModal(true)}
+                        className="w-full px-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-left hover:border-[#5a7048] transition-colors"
+                      >
+                        {updateDocId ? (
+                          <span className="text-white">{sortedDocuments.find(d => d.id === updateDocId)?.title}</span>
+                        ) : (
+                          <span className="text-cultivate-text-tertiary">Click to select a document...</span>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm text-cultivate-text-secondary mb-1.5">Document Title</label>
+                    <input
+                      type="text"
+                      value={uploadTitle}
+                      onChange={(e) => setUploadTitle(e.target.value)}
+                      placeholder="e.g. Maize Farming Best Practices"
+                      className="w-full px-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-cultivate-text-secondary mb-1.5">Assign to Agent</label>
+                    <div className="relative">
+                      <select
+                        value={uploadAgentId}
+                        onChange={(e) => setUploadAgentId(e.target.value)}
+                        className="w-full px-3 py-2 pr-10 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white focus:outline-none focus:border-[#5a7048] appearance-none"
+                      >
+                        <option value="">Select an agent...</option>
+                        {demoMode
+                          ? demoAgentNames.slice(1).map(name => <option key={name} value={name}>{name}</option>)
+                          : realAgents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)
+                        }
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* KB Type */}
+                  <div>
+                    <label className="block text-sm text-cultivate-text-secondary mb-1.5">Knowledge Type</label>
+                    <CustomSelect
+                      variant="field"
+                      value={uploadKbType}
+                      onChange={setUploadKbType}
+                      options={[
+                        { value: "CORE", label: "Core — Farmitecture-specific" },
+                        { value: "RELATED", label: "Related — Adjacent techniques" },
+                        { value: "GENERAL", label: "General — Broad ag knowledge" },
+                      ]}
+                    />
+                  </div>
+
+                  {/* Content Type */}
+                  <div>
+                    <label className="block text-sm text-cultivate-text-secondary mb-1.5">Content Type (Optional)</label>
+                    <CustomSelect
+                      variant="field"
+                      value={uploadContentType}
+                      onChange={setUploadContentType}
+                      options={[
+                        { value: "", label: "Not specified" },
+                        { value: "FAQ", label: "FAQ" },
+                        { value: "MANUAL", label: "Manual" },
+                        { value: "TROUBLESHOOTING", label: "Troubleshooting" },
+                        { value: "GUIDE", label: "Guide" },
+                        { value: "THEORETICAL", label: "Theoretical" },
+                        { value: "PRACTICAL", label: "Practical" },
+                        { value: "MIXED", label: "Mixed" },
+                        { value: "REFERENCE", label: "Reference" },
+                      ]}
+                    />
+                  </div>
+
+                  {/* Source Type */}
+                  <div>
+                    <label className="block text-sm text-cultivate-text-secondary mb-1.5">Source Type</label>
+                    <CustomSelect
+                      variant="field"
+                      value={uploadSourceType}
+                      onChange={setUploadSourceType}
+                      options={[
+                        { value: "INTERNAL_SOP", label: "Internal SOP" },
+                        { value: "INTERNAL_FAQ", label: "Internal FAQ" },
+                        { value: "INTERNAL_MANUAL", label: "Internal Manual" },
+                        { value: "GOV_DOCUMENT", label: "Government Doc" },
+                        { value: "EXTENSION_GUIDE", label: "University Extension" },
+                        { value: "RESEARCH_PAPER", label: "Research Paper" },
+                        { value: "WHITE_PAPER", label: "White Paper" },
+                        { value: "BLOG_POST", label: "Blog Post" },
+                        { value: "PDF_UPLOAD", label: "PDF Upload" },
+                        { value: "OTHER", label: "Other" },
+                      ]}
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-sm text-cultivate-text-secondary mb-1.5">Description (Optional)</label>
+                    <textarea
+                      value={uploadDescription}
+                      onChange={(e) => setUploadDescription(e.target.value)}
+                      placeholder="What does this document cover?"
+                      rows={3}
+                      className="w-full px-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048] resize-none"
+                    />
+                  </div>
+
+                  {/* Drop Zone - Compact version */}
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragOver(false);
+                      const file = e.dataTransfer.files[0];
+                      if (file) {
+                        setUploadFile(file);
+                        // Auto-fill title from filename (remove extension)
+                        if (!uploadTitle) {
+                          const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+                          setUploadTitle(nameWithoutExt);
+                        }
+                      }
+                    }}
+                    className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
+                      dragOver ? 'border-[#85b878] bg-cultivate-green-light/5' : 'border-cultivate-border-element'
+                    }`}
+                  >
+                    {uploadFile ? (
+                      <>
+                        <Upload className="w-6 h-6 text-cultivate-green-light mx-auto mb-2" />
+                        <p className="text-sm text-cultivate-green-light mb-1">{uploadFile.name}</p>
+                        <p className="text-xs text-cultivate-text-tertiary">Ready to upload</p>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-6 h-6 text-cultivate-text-tertiary mx-auto mb-2" />
+                        <p className="text-sm text-cultivate-text-primary mb-1">Drag and drop your file here</p>
+                        <p className="text-xs text-cultivate-text-tertiary mb-2">or</p>
+                        <label className="inline-block px-3 py-1.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-xs text-cultivate-text-primary hover:border-[#85b878] transition-colors cursor-pointer">
+                          Browse Files
+                          <input
+                            type="file"
+                            accept=".pdf,.docx,.txt"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0] || null;
+                              setUploadFile(file);
+                              // Auto-fill title from filename (remove extension)
+                              if (file && !uploadTitle) {
+                                const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+                                setUploadTitle(nameWithoutExt);
+                              }
+                            }}
+                          />
+                        </label>
+                        <p className="text-xs text-cultivate-text-tertiary mt-2">PDF, DOCX, TXT (max 25MB)</p>
+                      </>
+                    )}
+                  </div>
+
+                  {uploadError && (
+                    <p className="text-sm text-red-400">{uploadError}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Fixed footer */}
+              <div className="px-6 py-3 flex items-center justify-end gap-3 flex-shrink-0">
                 <button
                   onClick={handleCloseUploadModal}
                   disabled={uploading}
