@@ -22,7 +22,12 @@ export async function GET(
     const doc = await prisma.knowledgeBase.findUnique({
       where: { id },
       include: {
-        agent: { select: { id: true, name: true } },
+        agents: {
+          include: {
+            agent: { select: { id: true, name: true } }
+          },
+          orderBy: { isPrimary: "desc" },
+        },
         agronomist: { select: { id: true, name: true } },
       },
     });
