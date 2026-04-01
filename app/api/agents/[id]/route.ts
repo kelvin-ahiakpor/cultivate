@@ -31,8 +31,12 @@ export async function GET(
           select: { id: true, name: true, email: true },
         },
         knowledgeBases: {
-          select: { id: true, title: true, fileName: true, fileType: true, chunkCount: true },
-          orderBy: { uploadedAt: "desc" },
+          include: {
+            knowledgeBase: {
+              select: { id: true, title: true, fileName: true, fileType: true, chunkCount: true }
+            }
+          },
+          orderBy: { assignedAt: "desc" },
         },
       },
     });
