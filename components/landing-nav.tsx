@@ -25,16 +25,14 @@ export function LandingNav({ session }: LandingNavProps) {
     <nav className="px-4 lg:px-12 pt-12 pb-4 lg:pt-6 lg:pb-6 relative">
       <div className="flex justify-between items-center">
         {/* Logo */}
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <Sprout className="w-8 h-8 text-[#536d3d]" />
-        </div>
+        </Link>
 
         {/* Desktop nav links */}
         <div className="hidden lg:flex items-center gap-10 text-[15px]">
-          <a href="/" className="text-gray-800 hover:text-[#536d3d] transition-colors font-medium">Homepage</a>
           <a href="#platform" className="text-gray-800 hover:text-[#536d3d] transition-colors font-medium">Platform</a>
           <a href="#about" className="text-gray-800 hover:text-[#536d3d] transition-colors font-medium">About Us</a>
-          <a href="#careers" className="text-gray-800 hover:text-[#536d3d] transition-colors font-medium">Careers</a>
           <a href="#contact" className="text-gray-800 hover:text-[#536d3d] transition-colors font-medium">Contact Us</a>
         </div>
 
@@ -104,10 +102,8 @@ export function LandingNav({ session }: LandingNavProps) {
         }`}
       >
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-4 space-y-1">
-          <a href="/" onClick={() => setOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-[#536d3d] hover:bg-gray-50 rounded-xl transition-colors font-medium">Homepage</a>
           <a href="#platform" onClick={() => setOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-[#536d3d] hover:bg-gray-50 rounded-xl transition-colors font-medium">Platform</a>
           <a href="#about" onClick={() => setOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-[#536d3d] hover:bg-gray-50 rounded-xl transition-colors font-medium">About Us</a>
-          <a href="#careers" onClick={() => setOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-[#536d3d] hover:bg-gray-50 rounded-xl transition-colors font-medium">Careers</a>
           <a href="#contact" onClick={() => setOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-[#536d3d] hover:bg-gray-50 rounded-xl transition-colors font-medium">Contact Us</a>
 
           <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">

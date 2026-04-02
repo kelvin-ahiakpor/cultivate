@@ -73,8 +73,9 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* Second Page - Benefits Section */}
+      {/* Platform Section */}
       <section
+        id="platform"
         className="relative"
         style={{
           backgroundImage: 'url(/images/landing-bg-2.png)',
@@ -211,6 +212,84 @@ export default async function HomePage() {
                 </div>
               </div>
 
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* About Us Section */}
+      <section id="about" className="bg-[#F9F7F8] py-24 px-4 lg:px-16">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <h3 className="text-2xl lg:text-3xl font-bold text-[#01605E] uppercase tracking-wide mb-3">About Us</h3>
+            <h2 className="text-5xl lg:text-6xl font-black text-[#c89960] font-serif">The Story</h2>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <p className="text-lg text-[#4a3728] leading-relaxed">
+                Ghana has one of the most severe agricultural extension gaps in West Africa — with a ratio of <strong>1 agronomist for every 10,000 farmers</strong>, most smallholders go weeks or months without expert guidance during critical growing seasons.
+              </p>
+              <p className="text-lg text-[#4a3728] leading-relaxed">
+                Cultivate was built to change that. Developed as a capstone project at <strong>Ashesi University</strong> in partnership with <strong>Farmitecture</strong> — an Accra-based urban farming startup — the platform lets agronomists train AI agents with their own knowledge, so farmers can get expert advice 24/7.
+              </p>
+              <p className="text-lg text-[#4a3728] leading-relaxed">
+                Farmitecture serves over 70 customers across Greater Accra with a team of 2 agronomists. Cultivate lets those agronomists scale their expertise to every farmer on the platform, without being stretched thin.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {[
+                { label: "Ashesi University", desc: "Built as a Computer Science capstone project, Spring 2026" },
+                { label: "Farmitecture", desc: "Accra-based urban farming startup, pilot partner" },
+                { label: "1 : 10,000", desc: "Agronomist-to-farmer ratio in Ghana — the problem we're solving" },
+                { label: "Ghana-first", desc: "Designed for Ghanaian crops, climate, and farming seasons" },
+              ].map(({ label, desc }) => (
+                <div key={label} className="bg-white rounded-2xl p-5 shadow-sm border border-[#e8c8ab]/40">
+                  <p className="font-bold text-[#536d3d] text-base">{label}</p>
+                  <p className="text-[#4a3728]/80 text-sm mt-1">{desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Us Section */}
+      <section id="contact" className="bg-[#536d3d] py-24 px-4 lg:px-16">
+        <div className="max-w-3xl mx-auto text-center">
+          <h3 className="text-2xl lg:text-3xl font-bold text-[#85b878] uppercase tracking-wide mb-3">Contact Us</h3>
+          <h2 className="text-5xl lg:text-6xl font-black text-white font-serif mb-8">Get in Touch</h2>
+          <p className="text-[#e8c8ab] text-lg leading-relaxed mb-12">
+            Interested in bringing Cultivate to your organization, or want to learn more about the project?
+            We&apos;d love to hear from you.
+          </p>
+
+          <div className="grid sm:grid-cols-2 gap-6 text-left">
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm">
+              <p className="text-[#85b878] font-bold uppercase tracking-wide text-sm mb-2">Developer</p>
+              <p className="text-white font-semibold text-lg">Kelvin Ahiakpor</p>
+              <p className="text-[#e8c8ab]/80 text-sm mt-1">Computer Science, Ashesi University</p>
+              <a
+                href="mailto:kelvin.ahiakpor@ashesi.edu.gh"
+                className="inline-block mt-3 text-[#85b878] hover:text-white transition-colors text-sm font-medium"
+              >
+                kelvin.ahiakpor@ashesi.edu.gh
+              </a>
+            </div>
+
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm">
+              <p className="text-[#85b878] font-bold uppercase tracking-wide text-sm mb-2">Partner Organization</p>
+              <p className="text-white font-semibold text-lg">Farmitecture</p>
+              <p className="text-[#e8c8ab]/80 text-sm mt-1">Urban farming startup, Accra, Ghana</p>
+              <a
+                href="https://farmitecture.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-3 text-[#85b878] hover:text-white transition-colors text-sm font-medium"
+              >
+                farmitecture.com
+              </a>
             </div>
           </div>
         </div>

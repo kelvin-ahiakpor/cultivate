@@ -629,7 +629,7 @@ export default function ConversationView({
                         {voiceState === "error" && (
                           <button
                             onClick={handleVoiceClick}
-                            className="px-3 py-1.5 bg-[#c0392b] rounded-lg flex items-center gap-2 text-white text-sm"
+                            className="px-3 py-1.5 bg-cultivate-error rounded-lg flex items-center gap-2 text-white text-sm"
                             title={speechError || "Error"}
                           >
                             <AlertTriangle className="w-4 h-4" />
