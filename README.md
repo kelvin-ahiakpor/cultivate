@@ -58,7 +58,7 @@ For detailed setup instructions, see [SETUP.md](./SETUP.md).
 
 | Component | Technology | Reason |
 |-----------|-----------|--------|
-| Framework | Next.js 14 App Router | SSR, API routes, TypeScript |
+| Framework | Next.js 16 App Router | SSR, API routes, TypeScript |
 | Database | Supabase PostgreSQL | Managed, Session Pooler |
 | ORM | Prisma 7 + PrismaPg | Type-safe DB access |
 | Auth | NextAuth.js v5 | Email/password, role-based |
@@ -66,8 +66,8 @@ For detailed setup instructions, see [SETUP.md](./SETUP.md).
 | UI Components | Radix UI + shadcn/ui | Accessible, customizable |
 | Icons | Lucide React | Consistent icon system |
 | LLM | Claude Sonnet 4.5 | Via Anthropic SDK |
-| AI Framework | Mastra | RAG pipeline (TBD) |
-| Vector DB | TBD (Pinecone/Weaviate) | Multi-tenant namespacing |
+| AI Framework | Mastra | Agent orchestration, tool calling, RAG pipeline |
+| Vector DB | Mastra PgVector on PostgreSQL | Multi-tenant vector search by organization |
 | Deployment | PWA (mobile-first) | No app store needed |
 
 ---
@@ -77,7 +77,7 @@ For detailed setup instructions, see [SETUP.md](./SETUP.md).
 ### ✅ Completed
 
 #### Core Infrastructure
-- [x] Next.js 14 project with TypeScript
+- [x] Next.js 16 project with TypeScript
 - [x] Prisma 7 schema with 10 tables (migrated to Supabase)
 - [x] Database connection working (Session Pooler)
 - [x] Environment configuration
@@ -139,11 +139,16 @@ For detailed setup instructions, see [SETUP.md](./SETUP.md).
   - Slider with live value updates and gradient fill
   - Slider hover brightness effect
 
-#### Farmer Chat Interface (Initial UI)
+#### Farmer Chat Interface
 - [x] Chat layout with agent selector dropdown
 - [x] Message list area
 - [x] Message input with send button
 - [x] Agent-specific UI indicators
+- [x] Streaming AI responses via SSE
+- [x] Conversation history and rename/delete flows
+- [x] Manual flagging, updates, and unflagging for assistant messages
+- [x] Translation and speech-input support
+- [x] Farmer systems and settings views
 
 ### 🚧 In Progress / Next Steps
 
@@ -174,8 +179,10 @@ cultivate/
 ├── components/                   # React components
 │   ├── ui/                       # shadcn/ui components
 │   └── cultivate-ui.tsx          # Custom UI components
-├── lib/                          # Utilities
+├── lib/                          # Utilities and service layer
 │   ├── prisma.ts                 # Prisma client singleton
+│   ├── claude.ts                 # Claude + Mastra chat integration
+│   ├── mastra-rag.ts             # RAG extraction/chunking/embedding/retrieval
 │   └── utils.ts                  # Helper functions
 ├── prisma/                       # Database
 │   ├── schema.prisma             # Database schema
@@ -238,17 +245,18 @@ See [SCROLLING-LAYOUT.md](./SCROLLING-LAYOUT.md) for implementation guide.
 
 ---
 
-## 🗄️ Database Schema (10 Tables)
+## 🗄️ Database Schema
 
 ```
 User → Organization (many-to-one)
 User → Agent (one-to-many)
-Agent → KnowledgeDocument (many-to-many via AgentKnowledgeBase)
+Agent → KnowledgeBase (many-to-many via AgentKnowledgeBase)
 Agent → Conversation (one-to-many)
 Conversation → Message (one-to-many)
-Conversation → FlaggedQuery (one-to-one, optional)
-Agent → ApiUsage (one-to-many)
+Message → FlaggedQuery (one-to-one, optional)
+Organization → ApiUsage (one-to-many)
 Organization → OrganizationQuota (one-to-one)
+User → FarmerSystem (one-to-many)
 ```
 
 All schema details in [prisma/schema.prisma](./prisma/schema.prisma).

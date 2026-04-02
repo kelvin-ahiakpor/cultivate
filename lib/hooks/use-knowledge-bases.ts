@@ -135,3 +135,22 @@ export async function deleteDocument(id: string) {
   }
   return res.json();
 }
+
+/**
+ * Rename a knowledge base document by ID.
+ * Updates only the human-readable title, not the underlying file name.
+ */
+export async function renameDocument(id: string, title: string) {
+  const res = await fetch(`/api/knowledge-bases/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Rename failed");
+  }
+
+  return res.json();
+}

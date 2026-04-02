@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, ChevronDown, PanelLeft, Loader2 } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
-import { useKnowledgeBases, uploadDocument, deleteDocument, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
+import { useKnowledgeBases, uploadDocument, deleteDocument, renameDocument, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
 import { useAgents } from "@/lib/hooks/use-agents";
 import { DEMO_KNOWLEDGE } from "@/lib/demo-data";
 import CustomSelect from "@/components/custom-select";
@@ -38,6 +38,9 @@ export default function KnowledgeView({
   const [viewPanelDoc, setViewPanelDoc] = useState<KnowledgeDoc | null>(null);
   const [deleteModalDoc, setDeleteModalDoc] = useState<KnowledgeDoc | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [renameModalDoc, setRenameModalDoc] = useState<KnowledgeDoc | null>(null);
+  const [renameTitle, setRenameTitle] = useState("");
+  const [renaming, setRenaming] = useState(false);
 
   // Chunk preview state
   const [chunks, setChunks] = useState<Array<{ chunkIndex: number; content: string; tokenCount: number; id: string }>>([]);
@@ -123,6 +126,50 @@ export default function KnowledgeView({
     } finally {
       setDeleting(false);
       setDeleteModalDoc(null);
+    }
+  };
+
+  const handleOpenRenameModal = (doc: KnowledgeDoc) => {
+    setRenameModalDoc(doc);
+    setRenameTitle(doc.title);
+    setOpenMenuId(null);
+  };
+
+  const handleRenameConfirm = async () => {
+    if (!renameModalDoc) return;
+
+    const trimmedTitle = renameTitle.trim();
+    if (!trimmedTitle) {
+      notify.error("Document title cannot be empty.");
+      return;
+    }
+
+    if (trimmedTitle === renameModalDoc.title) {
+      setRenameModalDoc(null);
+      return;
+    }
+
+    if (demoMode) {
+      notify.success("Rename is disabled in demo mode.");
+      setRenameModalDoc(null);
+      return;
+    }
+
+    setRenaming(true);
+    try {
+      await renameDocument(renameModalDoc.id, trimmedTitle);
+      await apiData.mutate();
+      notify.success("Document name updated.");
+
+      if (viewPanelDoc?.id === renameModalDoc.id) {
+        setViewPanelDoc({ ...viewPanelDoc, title: trimmedTitle });
+      }
+
+      setRenameModalDoc(null);
+    } catch (e) {
+      notify.error(e instanceof Error ? e.message : "Rename failed");
+    } finally {
+      setRenaming(false);
     }
   };
 
@@ -396,6 +443,13 @@ export default function KnowledgeView({
                     >
                       <Download className="w-3.5 h-3.5" />
                       Download
+                    </button>
+                    <button 
+                      onClick={() => handleOpenRenameModal(doc)}
+                      className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      Edit Name
                     </button>
                     <button 
                       onClick={() => { /* Handle update */ setOpenMenuId(null); }}
@@ -924,6 +978,61 @@ export default function KnowledgeView({
                 >
                   {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
                   {deleting ? "Deleting..." : "Delete Document"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Rename Document Modal */}
+      {renameModalDoc && (
+        <>
+          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => !renaming && setRenameModalDoc(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-10 h-10 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-5 h-5 text-cultivate-green-light" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-medium text-white">Edit Document Name</h2>
+                  <p className="text-sm text-cultivate-text-secondary mt-1">
+                    Change the display name for this knowledge-base document.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-5">
+                <label className="block text-sm text-cultivate-text-secondary mb-1.5">Document Title</label>
+                <input
+                  type="text"
+                  value={renameTitle}
+                  onChange={(e) => setRenameTitle(e.target.value)}
+                  placeholder="Enter a new document title"
+                  className="w-full px-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
+                  autoFocus
+                />
+                <p className="text-xs text-cultivate-text-tertiary mt-2">
+                  Change the title shown in the dashboard. The original stays the same.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setRenameModalDoc(null)}
+                  disabled={renaming}
+                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleRenameConfirm}
+                  disabled={renaming}
+                  className="px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
+                >
+                  {renaming && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {renaming ? "Saving..." : "Save Name"}
                 </button>
               </div>
             </div>

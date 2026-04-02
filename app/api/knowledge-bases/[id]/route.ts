@@ -45,6 +45,57 @@ export async function GET(
   }
 }
 
+// PATCH /api/knowledge-bases/:id — Rename document title
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { session, error } = await requireAuth();
+  if (error) return error;
+
+  if (!hasRole(session!.user.role, "AGRONOMIST", "ADMIN")) {
+    return apiError("Forbidden", 403);
+  }
+
+  const { id } = await params;
+
+  try {
+    const doc = await prisma.knowledgeBase.findUnique({ where: { id } });
+
+    if (!doc) return apiError("Document not found", 404);
+
+    if (doc.organizationId !== session!.user.organizationId) {
+      return apiError("Forbidden", 403);
+    }
+
+    const body = await request.json();
+    const title = typeof body?.title === "string" ? body.title.trim() : "";
+
+    if (!title) {
+      return apiError("Title is required", 400);
+    }
+
+    const updated = await prisma.knowledgeBase.update({
+      where: { id },
+      data: { title },
+      include: {
+        agents: {
+          include: {
+            agent: { select: { id: true, name: true } }
+          },
+          orderBy: { isPrimary: "desc" },
+        },
+        agronomist: { select: { id: true, name: true } },
+      },
+    });
+
+    return apiSuccess(updated);
+  } catch (err) {
+    console.error("PATCH /api/knowledge-bases/[id] error:", err);
+    return apiError("Failed to rename document", 500);
+  }
+}
+
 // DELETE /api/knowledge-bases/:id — Delete document + file from storage + vector embeddings
 export async function DELETE(
   request: NextRequest,
