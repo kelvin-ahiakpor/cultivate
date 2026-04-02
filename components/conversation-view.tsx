@@ -964,8 +964,8 @@ export default function ConversationView({
                     </div>
                   )}
 
-                  {/* Disclaimer — in-flow on standalone, under input otherwise (only show when messages exist) */}
-                  {isStandalone && messages.length > 0 && (
+                  {/* Disclaimer — in-flow on standalone, under input otherwise (only show when messages exist or are loading) */}
+                  {isStandalone && (messages.length > 0 || messagesLoading) && (
                     <div className="mt-6 ">
                       <p className="text-sm text-cultivate-text-primary text-right leading-snug max-w-[250px] ml-auto">
                         AI can make mistakes.<br />Please verify important information.
@@ -993,7 +993,7 @@ export default function ConversationView({
                           ? "Connecting..."
                           : voiceState === "listening"
                             ? "Listening..."
-                            : messages.length === 0
+                            : messages.length === 0 && !messagesLoading
                               ? "How can I help you today?"
                               : "Ask a follow-up..."
                         : "Reply..."
@@ -1221,7 +1221,7 @@ export default function ConversationView({
                     </div>
                   </div>
                 </div>
-                {!isStandalone && messages.length > 0 && (
+                {!isStandalone && (messages.length > 0 || messagesLoading) && (
                   <p className="mt-2 text-xs text-cultivate-text-secondary text-center leading-snug">
                     AI can make mistakes. Please verify important information.
                   </p>
