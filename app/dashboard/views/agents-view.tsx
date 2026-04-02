@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown, X, AlertTriangle, PanelLeft, Eye, Loader2 } from "lucide-react";
+import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown, AlertTriangle, PanelLeft, Eye, Loader2 } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
-import { useAgents, createAgent, updateAgent, toggleAgentStatus, deleteAgent, type Agent } from "@/lib/hooks/use-agents";
+import { useAgents, createAgent, toggleAgentStatus, deleteAgent, type Agent } from "@/lib/hooks/use-agents";
 import { DEMO_AGENTS } from "@/lib/demo-data";
 
 // Helper to format relative time
@@ -27,11 +27,13 @@ const mockAgents = DEMO_AGENTS;
 export default function AgentsView({
   sidebarOpen,
   setSidebarOpen,
-  demoMode = false
+  demoMode = false,
+  onEditAgent,
 }: {
   sidebarOpen: boolean;
   setSidebarOpen: (v: boolean) => void;
   demoMode?: boolean;
+  onEditAgent?: (id: string) => void;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -56,8 +58,7 @@ export default function AgentsView({
 
   // View, Edit, Deactivate, Delete modals
   const [viewAgentModal, setViewAgentModal] = useState<Agent | null>(null);
-  const [editModalAgent, setEditModalAgent] = useState<Agent | null>(null);
-  const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(null);
+const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(null);
   const [deleteModalAgent, setDeleteModalAgent] = useState<Agent | null>(null);
   const [deleteNameConfirm, setDeleteNameConfirm] = useState("");
   const [deleteReason, setDeleteReason] = useState("");
@@ -68,18 +69,10 @@ export default function AgentsView({
   const [createStyle, setCreateStyle] = useState("");
   const [createThreshold, setCreateThreshold] = useState(0.7);
 
-  const [editName, setEditName] = useState("");
-  const [editPrompt, setEditPrompt] = useState("");
-  const [editStyle, setEditStyle] = useState("");
-  const [editThreshold, setEditThreshold] = useState(0.7);
 
   const handleEditAgent = (agent: Agent) => {
-    setEditModalAgent(agent);
-    setEditName(agent.name);
-    setEditPrompt(agent.systemPrompt);
-    setEditStyle(agent.responseStyle || "");
-    setEditThreshold(agent.confidenceThreshold);
     setOpenMenuId(null);
+    onEditAgent?.(agent.id);
   };
 
   const handleToggleActivation = async (agent: Agent) => {
@@ -164,30 +157,6 @@ export default function AgentsView({
     } catch (error) {
       console.error("Failed to create agent:", error);
       alert("Failed to create agent. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEditSubmit = async () => {
-    if (!editModalAgent || !editName.trim() || !editPrompt.trim()) {
-      alert("Please fill in all required fields");
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      await updateAgent(editModalAgent.id, {
-        name: editName,
-        systemPrompt: editPrompt,
-        responseStyle: editStyle || undefined,
-        confidenceThreshold: editThreshold,
-      });
-      mutate(); // Refresh list
-      setEditModalAgent(null);
-    } catch (error) {
-      console.error("Failed to update agent:", error);
-      alert("Failed to update agent. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -279,8 +248,11 @@ export default function AgentsView({
           <div className="space-y-3 mr-3">
         {agents.map((agent) => (
           <div key={agent.id}>
-            {/* Mobile: Simplified card with eye icon only */}
-            <div className="lg:hidden bg-cultivate-bg-elevated rounded-xl p-4 border border-cultivate-border-element hover:border-[#85b878]/30 transition-colors">
+            {/* Mobile: Simplified card — tap to edit */}
+            <div
+              onClick={() => onEditAgent?.(agent.id)}
+              className="lg:hidden bg-cultivate-bg-elevated rounded-xl p-4 border border-cultivate-border-element hover:border-[#85b878]/30 transition-colors cursor-pointer"
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${agent.isActive ? 'bg-cultivate-green-light/20' : 'bg-[#3B3B3B]'}`}>
@@ -299,7 +271,7 @@ export default function AgentsView({
                   </div>
                 </div>
                 <button
-                  onClick={() => setViewAgentModal(agent)}
+                  onClick={(e) => { e.stopPropagation(); setViewAgentModal(agent); }}
                   className="w-8 h-8 bg-[#3B3B3B] hover:bg-[#4B4B4B] rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
                   aria-label="View details"
                 >
@@ -308,8 +280,11 @@ export default function AgentsView({
               </div>
             </div>
 
-            {/* Desktop: Original card with all stats */}
-            <div className="hidden lg:block bg-cultivate-bg-elevated rounded-xl p-5 border border-cultivate-border-element hover:border-[#85b878]/30 transition-colors">
+            {/* Desktop: Original card with all stats — click to edit */}
+            <div
+              onClick={() => onEditAgent?.(agent.id)}
+              className="hidden lg:block bg-cultivate-bg-elevated rounded-xl p-5 border border-cultivate-border-element hover:border-[#85b878]/30 transition-colors cursor-pointer"
+            >
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${agent.isActive ? 'bg-cultivate-green-light/20' : 'bg-[#3B3B3B]'}`}>
@@ -336,7 +311,7 @@ export default function AgentsView({
 
                 <div className="relative">
                   <button
-                    onClick={() => setOpenMenuId(openMenuId === agent.id ? null : agent.id)}
+                    onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === agent.id ? null : agent.id); }}
                     className="p-1.5 hover:bg-[#3B3B3B] rounded-lg transition-colors"
                   >
                     <MoreHorizontal className="w-4 h-4 text-cultivate-text-primary" />
@@ -345,7 +320,7 @@ export default function AgentsView({
                   {openMenuId === agent.id && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                      <div className="absolute right-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-cultivate-border-subtle py-1 z-50 min-w-[160px]">
+                      <div onClick={(e) => e.stopPropagation()} className="absolute right-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-cultivate-border-subtle py-1 z-50 min-w-[160px]">
                         <button
                           onClick={() => handleEditAgent(agent)}
                           className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors"
@@ -683,128 +658,6 @@ export default function AgentsView({
                 >
                   {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {submitting ? "Creating..." : "Create Agent"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Edit Agent Modal */}
-      {editModalAgent && (
-        <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => !submitting && setEditModalAgent(null)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto thin-scrollbar">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-medium text-white">Edit Agent</h2>
-                <button
-                  type="button"
-                  onClick={() => setEditModalAgent(null)}
-                  disabled={submitting}
-                  className="p-1.5 hover:bg-cultivate-bg-elevated rounded-lg transition-colors disabled:opacity-40"
-                >
-                  <X className="w-4 h-4 text-cultivate-text-secondary" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-cultivate-text-secondary mb-1.5">Agent Name</label>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder="e.g. Maize Expert"
-                    className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
-                    disabled={submitting}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-cultivate-text-secondary mb-1.5">System Prompt</label>
-                  <textarea
-                    rows={5}
-                    value={editPrompt}
-                    onChange={(e) => setEditPrompt(e.target.value)}
-                    placeholder="Describe the agent's role, expertise, and how it should respond..."
-                    className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none"
-                    disabled={submitting}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-cultivate-text-secondary mb-1.5">Response Style (optional)</label>
-                  <input
-                    type="text"
-                    value={editStyle}
-                    onChange={(e) => setEditStyle(e.target.value)}
-                    placeholder="e.g. Friendly, concise, uses local examples"
-                    className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
-                    disabled={submitting}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-cultivate-text-secondary mb-1.5">Confidence Threshold</label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={editThreshold}
-                      onChange={(e) => setEditThreshold(parseFloat(e.target.value))}
-                      className="flex-1 accent-[#5a7048] hover:brightness-110 transition-all"
-                      style={{
-                        background: `linear-gradient(to right, #5a7048 0%, #5a7048 ${editThreshold * 100}%, #3B3B3B ${editThreshold * 100}%, #3B3B3B 100%)`
-                      }}
-                      disabled={submitting}
-                    />
-                    <span className="text-sm text-white w-10 text-right">{editThreshold.toFixed(2)}</span>
-                  </div>
-                  <p className="text-xs text-cultivate-text-tertiary mt-1">Queries below this confidence will be flagged for review</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm text-cultivate-text-secondary mb-1.5">Knowledge Bases</label>
-                  <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg p-3">
-                    <p className="text-xs text-cultivate-text-tertiary mb-2">{editModalAgent.knowledgeBases || 0} knowledge bases assigned</p>
-                    <button className="text-xs text-cultivate-green-light hover:text-[#9dcf84] transition-colors">
-                      Manage knowledge bases →
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg p-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-cultivate-text-secondary">Status</span>
-                    <span className={editModalAgent.isActive ? "text-cultivate-green-light" : "text-cultivate-text-tertiary"}>
-                      {editModalAgent.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm mt-2">
-                    <span className="text-cultivate-text-secondary">Conversations</span>
-                    <span className="text-white">{editModalAgent.conversations || 0}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 mt-6">
-                <button
-                  onClick={() => setEditModalAgent(null)}
-                  disabled={submitting}
-                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleEditSubmit}
-                  disabled={submitting || !editName.trim() || !editPrompt.trim()}
-                  className="px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  {submitting ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </div>

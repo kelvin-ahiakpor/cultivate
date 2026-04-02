@@ -59,7 +59,7 @@ For detailed setup instructions, see [SETUP.md](./SETUP.md).
 | Component | Technology | Reason |
 |-----------|-----------|--------|
 | Framework | Next.js 16 App Router | SSR, API routes, TypeScript |
-| Database | Supabase PostgreSQL | Managed, Session Pooler |
+| Database | Supabase PostgreSQL | Session Pooler (dev) / Transaction Pooler (prod) |
 | ORM | Prisma 7 + PrismaPg | Type-safe DB access |
 | Auth | NextAuth.js v5 | Email/password, role-based |
 | Styling | Tailwind CSS | Rapid prototyping |
@@ -79,7 +79,7 @@ For detailed setup instructions, see [SETUP.md](./SETUP.md).
 #### Core Infrastructure
 - [x] Next.js 16 project with TypeScript
 - [x] Prisma 7 schema with 10 tables (migrated to Supabase)
-- [x] Database connection working (Session Pooler)
+- [x] Database connection working (Session Pooler dev / Transaction Pooler prod, pool cached in globalThis)
 - [x] Environment configuration
 
 #### Authentication System

@@ -2,6 +2,26 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
 
+async function getReferencedInChatsCount(knowledgeBaseId: string, organizationId: string) {
+  const conversations = await prisma.message.findMany({
+    where: {
+      role: "ASSISTANT",
+      sourcesCited: { has: knowledgeBaseId },
+      conversation: {
+        agent: {
+          organizationId,
+        },
+      },
+    },
+    select: {
+      conversationId: true,
+    },
+    distinct: ["conversationId"],
+  });
+
+  return conversations.length;
+}
+
 // GET /api/knowledge-bases — List knowledge base documents for the org
 export async function GET(request: NextRequest) {
   const { session, error } = await requireAuth();
@@ -45,6 +65,8 @@ export async function GET(request: NextRequest) {
       where.id = { in: kbIds };
     }
 
+    const orgId = session!.user.organizationId;
+
     const [documents, total] = await Promise.all([
       prisma.knowledgeBase.findMany({
         where,
@@ -64,8 +86,15 @@ export async function GET(request: NextRequest) {
       prisma.knowledgeBase.count({ where }),
     ]);
 
+    const documentsWithReferences = await Promise.all(
+      documents.map(async (doc) => ({
+        ...doc,
+        referencedInChats: await getReferencedInChatsCount(doc.id, orgId),
+      }))
+    );
+
     return apiSuccess({
-      documents,
+      documents: documentsWithReferences,
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (err) {

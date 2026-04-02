@@ -4,6 +4,26 @@ import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
 import { deleteFile } from "@/lib/supabase-storage";
 import { deleteChunks } from "@/lib/mastra-rag"; // Mastra PgVector
 
+async function getReferencedInChatsCount(knowledgeBaseId: string, organizationId: string) {
+  const conversations = await prisma.message.findMany({
+    where: {
+      role: "ASSISTANT",
+      sourcesCited: { has: knowledgeBaseId },
+      conversation: {
+        agent: {
+          organizationId,
+        },
+      },
+    },
+    select: {
+      conversationId: true,
+    },
+    distinct: ["conversationId"],
+  });
+
+  return conversations.length;
+}
+
 // GET /api/knowledge-bases/:id — Get document details
 export async function GET(
   request: NextRequest,
@@ -38,7 +58,10 @@ export async function GET(
       return apiError("Forbidden", 403);
     }
 
-    return apiSuccess(doc);
+    return apiSuccess({
+      ...doc,
+      referencedInChats: await getReferencedInChatsCount(doc.id, session!.user.organizationId),
+    });
   } catch (err) {
     console.error("GET /api/knowledge-bases/[id] error:", err);
     return apiError("Failed to fetch document", 500);
@@ -89,7 +112,10 @@ export async function PATCH(
       },
     });
 
-    return apiSuccess(updated);
+    return apiSuccess({
+      ...updated,
+      referencedInChats: await getReferencedInChatsCount(updated.id, session!.user.organizationId),
+    });
   } catch (err) {
     console.error("PATCH /api/knowledge-bases/[id] error:", err);
     return apiError("Failed to rename document", 500);

@@ -31,6 +31,7 @@ interface RawDoc {
   chunkCount: number;
   uploadedAt: string; // ISO
   status: string;
+  referencedInChats?: number;
   agents: Array<{ isPrimary: boolean; agent: { id: string; name: string } }>;
 }
 
@@ -66,7 +67,7 @@ function normalize(doc: RawDoc): KnowledgeDoc {
     agents: agentsList,
     uploadedAt: formatDate(doc.uploadedAt),
     status: doc.status,
-    referencedInChats: 0, // not returned by API yet
+    referencedInChats: doc.referencedInChats ?? 0,
   };
 }
 

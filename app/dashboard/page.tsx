@@ -2,9 +2,9 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import DashboardClient from "./dashboard-client";
 
-const VALID_DASHBOARD_VIEWS = ["overview", "agents", "knowledge", "flagged", "chats", "analytics"] as const;
+const VALID_DASHBOARD_VIEWS = ["overview", "agents", "knowledge", "flagged", "chats", "analytics", "agent-edit"] as const;
 
-export default async function DashboardPage({ searchParams }: { searchParams: { view?: string } }) {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ view?: string; agent?: string }> }) {
   const session = await auth();
 
   if (!session) {
@@ -15,7 +15,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
     redirect("/chat");
   }
 
-  const rawView = searchParams.view;
+  const params = await searchParams;
+  const rawView = params.view;
   const initialView = (VALID_DASHBOARD_VIEWS as readonly string[]).includes(rawView || "")
     ? rawView!
     : "overview";
@@ -28,6 +29,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
         role: session.user.role || "AGRONOMIST",
       }}
       initialView={initialView}
+      initialAgentId={params.agent || null}
     />
   );
 }

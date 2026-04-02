@@ -11,12 +11,15 @@ import {
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import AgentsView from "./views/agents-view";
+import AgentEditView from "./views/agent-edit-view";
 import KnowledgeView from "./views/knowledge-view";
 import FlaggedView from "./views/flagged-view";
 import ChatsView from "./views/chats-view";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { useDashboardStats } from "@/lib/hooks/use-dashboard-stats";
 import { useActivity, relativeTime, type ActivityItem } from "@/lib/hooks/use-activity";
+import { useAgents } from "@/lib/hooks/use-agents";
+import { DEMO_AGENTS } from "@/lib/demo-data";
 
 interface DashboardProps {
   user: {
@@ -28,6 +31,7 @@ interface DashboardProps {
   // Passed down from /demo/dashboard/page.tsx. See BACKEND-PROGRESS.md § Phase 5 for the pattern.
   demoMode?: boolean;
   initialView?: string;
+  initialAgentId?: string | null;
 }
 
 /** Maps an API activity type to its icon + color. Used in the real-mode activity feed. */
@@ -54,7 +58,7 @@ function ActivityRow({ item, isStandalone }: { item: ActivityItem; isStandalone:
   );
 }
 
-export default function DashboardClient({ user, demoMode = false, initialView = "overview" }: DashboardProps) {
+export default function DashboardClient({ user, demoMode = false, initialView = "overview", initialAgentId = null }: DashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -109,6 +113,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
     }
   };
   const [activeNav, setActiveNav] = useState(initialView);
+  const [activeAgentId, setActiveAgentId] = useState<string | null>(initialAgentId);
   const [activityPanelOpen, setActivityPanelOpen] = useState(false);
   // Ref to measure the 8th item's bottom — makes the list snap to exactly 8 visible items
   const activityListRef = useRef<HTMLDivElement>(null);
@@ -135,14 +140,15 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
     return () => cancelAnimationFrame(frame);
   }, [activityPanelOpen]);
 
-  // Sync active nav to URL so refresh restores the current view
+  // Sync active nav (+ optional agent id) to URL so refresh restores the current view
   useEffect(() => {
     if (demoMode) return;
     const params = new URLSearchParams();
     if (activeNav !== "overview") params.set("view", activeNav);
+    if (activeNav === "agent-edit" && activeAgentId) params.set("agent", activeAgentId);
     const query = params.toString();
     window.history.replaceState(null, "", "/dashboard" + (query ? "?" + query : ""));
-  }, [activeNav, demoMode]);
+  }, [activeNav, activeAgentId, demoMode]);
 
   // Overview stats — disabled in demo mode (zero API requests)
   const { stats, isLoading: statsLoading } = useDashboardStats(demoMode);
@@ -166,12 +172,11 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
     { id: "analytics", label: "Analytics", icon: BarChart3 },
   ];
 
-  // Mock data - will be replaced with real data from API
-  const recentAgents = [
-    "General Farm Advisor",
-    "Maize Expert",
-    "Pest Management",
-  ];
+  // Recent agents — real API data in production, demo data in demo mode
+  const { agents: apiAgents } = useAgents("", 1, 5, demoMode);
+  const recentAgents = demoMode
+    ? DEMO_AGENTS.slice(0, 3)
+    : (apiAgents ?? []).slice(0, 5);
 
   return (
     <div className="flex h-screen bg-cultivate-bg-main">
@@ -236,13 +241,14 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
               {/* space-y-2 on mobile for breathing room, tight on desktop */}
               <div className="space-y-0.5 standalone:space-y-2 lg:space-y-0.5">
                 {recentAgents.map((agent) => (
-                  <div key={agent} className="group flex items-stretch rounded-lg hover:bg-cultivate-bg-hover has-[button:hover]:bg-transparent transition-colors cursor-pointer">
+                  <div
+                    key={agent.id}
+                    onClick={() => { setActiveAgentId(agent.id); setActiveNav("agent-edit"); if (window.innerWidth < 1024) setSidebarOpen(false); }}
+                    className="group flex items-stretch rounded-lg hover:bg-cultivate-bg-hover transition-colors cursor-pointer"
+                  >
                     <span className={`flex-1 truncate ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm text-cultivate-text-primary group-hover:text-white flex items-center pl-2 py-2`}>
-                      {agent}
+                      {agent.name}
                     </span>
-                    <button className="opacity-0 group-hover:opacity-100 transition-opacity px-2.5 py-2 hover:bg-cultivate-bg-hover rounded-lg flex items-center">
-                      <MoreHorizontal className="w-4 h-4 text-cultivate-text-primary" strokeWidth={2.5} />
-                    </button>
                   </div>
                 ))}
               </div>
@@ -603,7 +609,21 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
 
           {activeNav === "chats" && <ChatsView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} demoMode={demoMode} />}
           {/* demoMode disables SWR fetch — view uses local mockAgents instead */}
-          {activeNav === "agents" && <AgentsView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} demoMode={demoMode} />}
+          {activeNav === "agents" && (
+            <AgentsView
+              sidebarOpen={sidebarOpen}
+              setSidebarOpen={setSidebarOpen}
+              demoMode={demoMode}
+              onEditAgent={(id) => { setActiveAgentId(id); setActiveNav("agent-edit"); }}
+            />
+          )}
+          {activeNav === "agent-edit" && (
+            <AgentEditView
+              agentId={activeAgentId}
+              demoMode={demoMode}
+              onBack={() => { setActiveAgentId(null); setActiveNav("agents"); }}
+            />
+          )}
           {activeNav === "knowledge" && <KnowledgeView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} demoMode={demoMode} />}
           {/* demoMode disables SWR fetch — view uses initialFlagged local state */}
           {activeNav === "flagged" && <FlaggedView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} demoMode={demoMode} />}

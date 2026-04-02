@@ -72,13 +72,27 @@ export function useAgents(search?: string, page: number = 1, limit: number = 10,
  * Hook to fetch single agent details
  */
 export function useAgent(id: string | null) {
-  const { data, error, isLoading, mutate } = useSWR<Agent>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error, isLoading, mutate } = useSWR<any>(
     id ? `/api/agents/${id}` : null,
     fetcher
   );
 
+  // Normalize: single-agent GET returns knowledgeBases as an array (relation)
+  // and counts under _count. Flatten into the Agent shape so views stay simple.
+  const agent: Agent | undefined = data
+    ? {
+        ...data,
+        conversations: data._count?.conversations ?? data.conversations ?? 0,
+        knowledgeBases: Array.isArray(data.knowledgeBases)
+          ? data.knowledgeBases.length
+          : (data._count?.knowledgeBases ?? data.knowledgeBases ?? 0),
+        flaggedQueries: data._count?.flaggedQueries ?? data.flaggedQueries ?? 0,
+      }
+    : undefined;
+
   return {
-    agent: data,
+    agent,
     isLoading,
     isError: error,
     mutate,

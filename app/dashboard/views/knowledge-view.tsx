@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, ChevronDown, PanelLeft, Loader2, Pencil } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { useKnowledgeBases, uploadDocument, deleteDocument, renameDocument, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
@@ -41,6 +41,8 @@ export default function KnowledgeView({
   const [editingTitleDocId, setEditingTitleDocId] = useState<string | null>(null);
   const [renameTitle, setRenameTitle] = useState("");
   const [renaming, setRenaming] = useState(false);
+  const inlineTitleRef = useRef<HTMLDivElement | null>(null);
+  const renameDraftRef = useRef("");
 
   // Chunk preview state
   const [chunks, setChunks] = useState<Array<{ chunkIndex: number; content: string; tokenCount: number; id: string }>>([]);
@@ -139,13 +141,15 @@ export default function KnowledgeView({
     setViewPanelDoc(doc);
     setEditingTitleDocId(doc.id);
     setRenameTitle(doc.title);
+    renameDraftRef.current = doc.title;
     setOpenMenuId(null);
   };
 
   const handleRenameConfirm = async (doc: KnowledgeDoc) => {
-    const activeDoc = viewPanelDoc?.id === doc.id ? viewPanelDoc : doc;
+    if (renaming) return;
 
-    const trimmedTitle = renameTitle.trim();
+    const activeDoc = viewPanelDoc?.id === doc.id ? viewPanelDoc : doc;
+    const trimmedTitle = renameDraftRef.current.trim();
     if (!trimmedTitle) {
       notify.error("Document title cannot be empty.");
       return;
@@ -172,6 +176,7 @@ export default function KnowledgeView({
         setViewPanelDoc({ ...viewPanelDoc, title: trimmedTitle });
       }
 
+      setRenameTitle(trimmedTitle);
       setEditingTitleDocId(null);
     } catch (e) {
       notify.error(e instanceof Error ? e.message : "Rename failed");
@@ -183,7 +188,32 @@ export default function KnowledgeView({
   const handleCancelInlineRename = () => {
     setEditingTitleDocId(null);
     setRenameTitle("");
+    renameDraftRef.current = "";
   };
+
+  useEffect(() => {
+    if (!editingTitleDocId || !inlineTitleRef.current) return;
+    const el = inlineTitleRef.current;
+    el.focus();
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  }, [editingTitleDocId]);
+
+  useEffect(() => {
+    if (!editingTitleDocId || renaming) return;
+    const currentDoc = viewPanelDoc;
+    if (!currentDoc || currentDoc.id !== editingTitleDocId) return;
+
+    const timeout = window.setTimeout(() => {
+      void handleRenameConfirm(currentDoc);
+    }, 3200);
+
+    return () => window.clearTimeout(timeout);
+  }, [renameTitle, editingTitleDocId, renaming, viewPanelDoc]);
 
   const handleStartUpdate = (doc: KnowledgeDoc) => {
     setOpenMenuId(null);
@@ -417,9 +447,9 @@ export default function KnowledgeView({
               key={doc.id}
               className={`grid grid-cols-[1fr_120px_80px_140px_40px] gap-4 px-5 py-3.5 mr-3 hover:bg-cultivate-bg-elevated/30 transition-colors ${
                 index === paginatedDocs.length - 1 ? '' : 'border-b border-cultivate-border-element'
-              }`}
+              } cursor-pointer`}
             >
-              <div className="flex items-center gap-3 min-w-0">
+              <div onClick={() => handleViewDocument(doc)} className="flex items-center gap-3 min-w-0">
                 <div className="w-8 h-8 bg-[#3B3B3B] rounded-lg flex items-center justify-center flex-shrink-0">
                   {doc.fileType === "PDF" ? (
                     <FileText className="w-4 h-4 text-[#e8c8ab]" />
@@ -432,18 +462,21 @@ export default function KnowledgeView({
                   <p className="text-xs text-cultivate-text-tertiary truncate">{doc.fileName}</p>
                 </div>
               </div>
-              <div className="flex items-center">
+              <div onClick={() => handleViewDocument(doc)} className="flex items-center">
                 <span className="text-xs text-cultivate-text-secondary truncate">{doc.agentName}</span>
               </div>
-              <div className="flex items-center">
+              <div onClick={() => handleViewDocument(doc)} className="flex items-center">
                 <span className="text-xs text-cultivate-text-secondary">{doc.chunkCount}</span>
               </div>
-              <div className="flex items-center">
+              <div onClick={() => handleViewDocument(doc)} className="flex items-center">
                 <span className="text-xs text-cultivate-text-tertiary">{doc.uploadedAt}</span>
               </div>
               <div className="flex items-center relative">
               <button
-                onClick={() => setOpenMenuId(openMenuId === doc.id ? null : doc.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenMenuId(openMenuId === doc.id ? null : doc.id);
+                }}
                 className="p-1 hover:bg-[#3B3B3B] rounded transition-colors"
               >
                 <MoreHorizontal className="w-4 h-4 text-cultivate-text-primary" />
@@ -454,21 +487,30 @@ export default function KnowledgeView({
                   <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
                   <div className="absolute right-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-cultivate-border-subtle py-1 z-50 min-w-[140px]">
                     <button 
-                      onClick={() => handleViewDocument(doc)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewDocument(doc);
+                      }}
                       className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       View
                     </button>
                     <button 
-                      onClick={() => handleDownloadDocument(doc)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadDocument(doc);
+                      }}
                       className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors"
                     >
                       <Download className="w-3.5 h-3.5" />
                       Download
                     </button>
                     <button 
-                      onClick={() => handleStartUpdate(doc)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStartUpdate(doc);
+                      }}
                       className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors"
                     >
                       <FileText className="w-3.5 h-3.5" />
@@ -476,7 +518,11 @@ export default function KnowledgeView({
                     </button>
                     <div className="border-t border-cultivate-border-subtle my-1" />
                     <button 
-                      onClick={() => { setDeleteModalDoc(doc); setOpenMenuId(null); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteModalDoc(doc);
+                        setOpenMenuId(null);
+                      }}
                       className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-cultivate-bg-hover hover:text-red-300 flex items-center gap-2 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -786,37 +832,37 @@ export default function KnowledgeView({
               <div className="flex-1 min-w-0 pr-2">
                 {editingTitleDocId === viewPanelDoc.id ? (
                   <div className="flex items-center gap-2 min-w-0">
-                    <input
-                      type="text"
-                      value={renameTitle}
-                      onChange={(e) => setRenameTitle(e.target.value)}
+                    <div
+                      ref={inlineTitleRef}
+                      contentEditable
+                      suppressContentEditableWarning
+                      onInput={(e) => {
+                        const nextValue = e.currentTarget.textContent || "";
+                        renameDraftRef.current = nextValue;
+                        setRenameTitle(nextValue);
+                      }}
                       onBlur={() => {
                         if (!renaming) void handleRenameConfirm(viewPanelDoc);
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") void handleRenameConfirm(viewPanelDoc);
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void handleRenameConfirm(viewPanelDoc);
+                        }
                         if (e.key === "Escape") handleCancelInlineRename();
                       }}
-                      className="min-w-0 flex-1 bg-transparent border-0 p-0 m-0 text-sm font-medium text-white truncate focus:outline-none focus:ring-0"
-                      autoFocus
-                    />
+                      className="min-w-0 flex-1 bg-transparent p-0 m-0 font-sans text-[0.875rem] leading-[1.25rem] font-medium text-white outline-none"
+                    >
+                      {renameTitle}
+                    </div>
                     {renaming ? (
                       <Loader2 className="w-3.5 h-3.5 text-cultivate-text-secondary animate-spin flex-shrink-0" />
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => void handleRenameConfirm(viewPanelDoc)}
-                        className="p-1 hover:bg-cultivate-bg-elevated rounded-md transition-colors flex-shrink-0"
-                        aria-label="Save document name"
-                      >
-                        <Pencil className="w-3.5 h-3.5 text-cultivate-green-light" />
-                      </button>
-                    )}
+                    ) : null}
                   </div>
                 ) : (
                   <>
                     <div className="flex items-center gap-2 min-w-0">
-                      <h2 className="text-sm font-medium text-white truncate">{viewPanelDoc.title}</h2>
+                      <h2 className="text-[0.875rem] leading-[1.25rem] font-medium text-white truncate">{viewPanelDoc.title}</h2>
                       <button
                         type="button"
                         onClick={() => handleStartInlineRename(viewPanelDoc)}
@@ -914,36 +960,36 @@ export default function KnowledgeView({
               <div>
                 {editingTitleDocId === viewPanelDoc.id ? (
                   <div className="flex items-center gap-2 min-w-0 max-w-[420px]">
-                    <input
-                      type="text"
-                      value={renameTitle}
-                      onChange={(e) => setRenameTitle(e.target.value)}
+                    <div
+                      ref={inlineTitleRef}
+                      contentEditable
+                      suppressContentEditableWarning
+                      onInput={(e) => {
+                        const nextValue = e.currentTarget.textContent || "";
+                        renameDraftRef.current = nextValue;
+                        setRenameTitle(nextValue);
+                      }}
                       onBlur={() => {
                         if (!renaming) void handleRenameConfirm(viewPanelDoc);
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") void handleRenameConfirm(viewPanelDoc);
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void handleRenameConfirm(viewPanelDoc);
+                        }
                         if (e.key === "Escape") handleCancelInlineRename();
                       }}
-                      className="min-w-0 flex-1 bg-transparent border-0 p-0 m-0 text-sm font-medium text-white focus:outline-none focus:ring-0"
-                      autoFocus
-                    />
+                      className="min-w-0 flex-1 bg-transparent p-0 m-0 font-sans text-[0.875rem] leading-[1.25rem] font-medium text-white outline-none"
+                    >
+                      {renameTitle}
+                    </div>
                     {renaming ? (
                       <Loader2 className="w-3.5 h-3.5 text-cultivate-text-secondary animate-spin flex-shrink-0" />
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => void handleRenameConfirm(viewPanelDoc)}
-                        className="p-1 hover:bg-cultivate-bg-elevated rounded-md transition-colors flex-shrink-0"
-                        aria-label="Save document name"
-                      >
-                        <Pencil className="w-3.5 h-3.5 text-cultivate-green-light" />
-                      </button>
-                    )}
+                    ) : null}
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 min-w-0 max-w-[420px]">
-                    <h2 className="text-sm font-medium text-white truncate">{viewPanelDoc.title}</h2>
+                    <h2 className="text-[0.875rem] leading-[1.25rem] font-medium text-white truncate">{viewPanelDoc.title}</h2>
                     <button
                       type="button"
                       onClick={() => handleStartInlineRename(viewPanelDoc)}

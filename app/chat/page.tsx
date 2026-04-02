@@ -6,7 +6,7 @@ import ChatPageClient from "./chat-client";
 const VALID_CHAT_VIEWS = ["chat", "chats", "systems", "settings"] as const;
 type ChatView = typeof VALID_CHAT_VIEWS[number];
 
-export default async function ChatPage({ searchParams }: { searchParams: { view?: string; c?: string } }) {
+export default async function ChatPage({ searchParams }: { searchParams: Promise<{ view?: string; c?: string }> }) {
   const session = await auth();
 
   if (!session) {
@@ -34,11 +34,12 @@ export default async function ChatPage({ searchParams }: { searchParams: { view?
     redirect("/login");
   }
 
-  const rawView = searchParams.view;
+  const params = await searchParams;
+  const rawView = params.view;
   const initialView = (VALID_CHAT_VIEWS as readonly string[]).includes(rawView || "")
     ? (rawView as ChatView)
     : "chat";
-  const initialConversationId = searchParams.c || null;
+  const initialConversationId = params.c || null;
 
   return (
     <ChatPageClient
