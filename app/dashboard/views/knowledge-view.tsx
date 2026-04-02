@@ -785,36 +785,33 @@ export default function KnowledgeView({
             <div className="flex items-center justify-between px-4 py-3 border-b border-cultivate-border-subtle">
               <div className="flex-1 min-w-0 pr-2">
                 {editingTitleDocId === viewPanelDoc.id ? (
-                  <div className="space-y-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <input
                       type="text"
                       value={renameTitle}
                       onChange={(e) => setRenameTitle(e.target.value)}
+                      onBlur={() => {
+                        if (!renaming) void handleRenameConfirm(viewPanelDoc);
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") void handleRenameConfirm(viewPanelDoc);
                         if (e.key === "Escape") handleCancelInlineRename();
                       }}
-                      className="w-full px-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
+                      className="min-w-0 flex-1 bg-transparent border-0 p-0 m-0 text-sm font-medium text-white truncate focus:outline-none focus:ring-0"
                       autoFocus
                     />
-                    <div className="flex items-center gap-2">
+                    {renaming ? (
+                      <Loader2 className="w-3.5 h-3.5 text-cultivate-text-secondary animate-spin flex-shrink-0" />
+                    ) : (
                       <button
                         type="button"
                         onClick={() => void handleRenameConfirm(viewPanelDoc)}
-                        disabled={renaming}
-                        className="px-2.5 py-1 text-xs bg-[#5a7048] text-white rounded-md hover:bg-[#4a5d38] transition-colors disabled:opacity-50"
+                        className="p-1 hover:bg-cultivate-bg-elevated rounded-md transition-colors flex-shrink-0"
+                        aria-label="Save document name"
                       >
-                        Save
+                        <Pencil className="w-3.5 h-3.5 text-cultivate-green-light" />
                       </button>
-                      <button
-                        type="button"
-                        onClick={handleCancelInlineRename}
-                        disabled={renaming}
-                        className="px-2.5 py-1 text-xs text-cultivate-text-primary border border-cultivate-border-element rounded-md hover:text-white transition-colors disabled:opacity-50"
-                      >
-                        Cancel
-                      </button>
-                    </div>
+                    )}
                   </div>
                 ) : (
                   <>
@@ -915,7 +912,48 @@ export default function KnowledgeView({
             {/* Panel Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-cultivate-border-subtle">
               <div>
-                <h2 className="text-sm font-medium text-white">{viewPanelDoc.title}</h2>
+                {editingTitleDocId === viewPanelDoc.id ? (
+                  <div className="flex items-center gap-2 min-w-0 max-w-[420px]">
+                    <input
+                      type="text"
+                      value={renameTitle}
+                      onChange={(e) => setRenameTitle(e.target.value)}
+                      onBlur={() => {
+                        if (!renaming) void handleRenameConfirm(viewPanelDoc);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") void handleRenameConfirm(viewPanelDoc);
+                        if (e.key === "Escape") handleCancelInlineRename();
+                      }}
+                      className="min-w-0 flex-1 bg-transparent border-0 p-0 m-0 text-sm font-medium text-white focus:outline-none focus:ring-0"
+                      autoFocus
+                    />
+                    {renaming ? (
+                      <Loader2 className="w-3.5 h-3.5 text-cultivate-text-secondary animate-spin flex-shrink-0" />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => void handleRenameConfirm(viewPanelDoc)}
+                        className="p-1 hover:bg-cultivate-bg-elevated rounded-md transition-colors flex-shrink-0"
+                        aria-label="Save document name"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-cultivate-green-light" />
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 min-w-0 max-w-[420px]">
+                    <h2 className="text-sm font-medium text-white truncate">{viewPanelDoc.title}</h2>
+                    <button
+                      type="button"
+                      onClick={() => handleStartInlineRename(viewPanelDoc)}
+                      className="p-1 hover:bg-cultivate-bg-elevated rounded-md transition-colors flex-shrink-0"
+                      aria-label="Edit document name"
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-cultivate-text-secondary" />
+                    </button>
+                  </div>
+                )}
                 <p className="text-xs text-cultivate-text-secondary mt-0.5">{viewPanelDoc.fileName} · {viewPanelDoc.fileType}</p>
               </div>
               <button
