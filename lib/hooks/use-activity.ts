@@ -54,7 +54,7 @@ export function useActivity(
   );
 
   return {
-    activities: data?.data?.activities ?? [],
+    activities: data?.activities ?? [],
     isLoading,
   };
 }

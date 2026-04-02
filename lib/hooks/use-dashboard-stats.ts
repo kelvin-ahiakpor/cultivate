@@ -31,7 +31,7 @@ export function useDashboardStats(
   );
 
   return {
-    stats: data?.data ?? null,
+    stats: data ?? null,
     isLoading,
     mutate,
   };
