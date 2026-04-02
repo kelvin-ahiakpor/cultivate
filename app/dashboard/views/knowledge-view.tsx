@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, ChevronDown, PanelLeft, Loader2 } from "lucide-react";
+import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, ChevronDown, PanelLeft, Loader2, Pencil } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { useKnowledgeBases, uploadDocument, deleteDocument, renameDocument, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
 import { useAgents } from "@/lib/hooks/use-agents";
@@ -38,7 +38,7 @@ export default function KnowledgeView({
   const [viewPanelDoc, setViewPanelDoc] = useState<KnowledgeDoc | null>(null);
   const [deleteModalDoc, setDeleteModalDoc] = useState<KnowledgeDoc | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [renameModalDoc, setRenameModalDoc] = useState<KnowledgeDoc | null>(null);
+  const [editingTitleDocId, setEditingTitleDocId] = useState<string | null>(null);
   const [renameTitle, setRenameTitle] = useState("");
   const [renaming, setRenaming] = useState(false);
 
@@ -103,6 +103,12 @@ export default function KnowledgeView({
     setOpenMenuId(null);
   };
 
+  const handleCloseViewPanel = () => {
+    setViewPanelDoc(null);
+    setEditingTitleDocId(null);
+    setRenameTitle("");
+  };
+
   const handleDownloadDocument = (doc: KnowledgeDoc) => {
     // No file URL available yet — placeholder
     const link = document.createElement('a');
@@ -129,14 +135,15 @@ export default function KnowledgeView({
     }
   };
 
-  const handleOpenRenameModal = (doc: KnowledgeDoc) => {
-    setRenameModalDoc(doc);
+  const handleStartInlineRename = (doc: KnowledgeDoc) => {
+    setViewPanelDoc(doc);
+    setEditingTitleDocId(doc.id);
     setRenameTitle(doc.title);
     setOpenMenuId(null);
   };
 
-  const handleRenameConfirm = async () => {
-    if (!renameModalDoc) return;
+  const handleRenameConfirm = async (doc: KnowledgeDoc) => {
+    const activeDoc = viewPanelDoc?.id === doc.id ? viewPanelDoc : doc;
 
     const trimmedTitle = renameTitle.trim();
     if (!trimmedTitle) {
@@ -144,33 +151,50 @@ export default function KnowledgeView({
       return;
     }
 
-    if (trimmedTitle === renameModalDoc.title) {
-      setRenameModalDoc(null);
+    if (trimmedTitle === activeDoc.title) {
+      setEditingTitleDocId(null);
       return;
     }
 
     if (demoMode) {
       notify.success("Rename is disabled in demo mode.");
-      setRenameModalDoc(null);
+      setEditingTitleDocId(null);
       return;
     }
 
     setRenaming(true);
     try {
-      await renameDocument(renameModalDoc.id, trimmedTitle);
+      await renameDocument(doc.id, trimmedTitle);
       await apiData.mutate();
       notify.success("Document name updated.");
 
-      if (viewPanelDoc?.id === renameModalDoc.id) {
+      if (viewPanelDoc?.id === doc.id) {
         setViewPanelDoc({ ...viewPanelDoc, title: trimmedTitle });
       }
 
-      setRenameModalDoc(null);
+      setEditingTitleDocId(null);
     } catch (e) {
       notify.error(e instanceof Error ? e.message : "Rename failed");
     } finally {
       setRenaming(false);
     }
+  };
+
+  const handleCancelInlineRename = () => {
+    setEditingTitleDocId(null);
+    setRenameTitle("");
+  };
+
+  const handleStartUpdate = (doc: KnowledgeDoc) => {
+    setOpenMenuId(null);
+    handleCloseViewPanel();
+    setUploadType('update');
+    setUpdateDocId(doc.id);
+    setUploadTitle(doc.title);
+    setUploadAgentId(doc.agentId);
+    setUploadFile(null);
+    setUploadError('');
+    setShowUploadModal(true);
   };
 
   const handleOpenUploadModal = () => {
@@ -376,7 +400,6 @@ export default function KnowledgeView({
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white truncate mb-1">{doc.title}</p>
-                  <p className="text-xs text-cultivate-text-tertiary truncate">{doc.fileName}</p>
                 </div>
                 <div className="w-8 h-8 bg-[#3B3B3B] rounded-lg flex items-center justify-center flex-shrink-0">
                   <Eye className="w-4 h-4 text-cultivate-green-light" />
@@ -445,14 +468,7 @@ export default function KnowledgeView({
                       Download
                     </button>
                     <button 
-                      onClick={() => handleOpenRenameModal(doc)}
-                      className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors"
-                    >
-                      <FileText className="w-3.5 h-3.5" />
-                      Edit Name
-                    </button>
-                    <button 
-                      onClick={() => { /* Handle update */ setOpenMenuId(null); }}
+                      onClick={() => handleStartUpdate(doc)}
                       className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors"
                     >
                       <FileText className="w-3.5 h-3.5" />
@@ -757,7 +773,7 @@ export default function KnowledgeView({
         <>
           <div
             className="fixed inset-0 bg-black/60 z-40"
-            onClick={() => setViewPanelDoc(null)}
+            onClick={handleCloseViewPanel}
           />
           {/* Mobile: Centered modal */}
           <div className="lg:hidden fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-none">
@@ -768,12 +784,58 @@ export default function KnowledgeView({
             {/* Panel Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-cultivate-border-subtle">
               <div className="flex-1 min-w-0 pr-2">
-                <h2 className="text-sm font-medium text-white truncate">{viewPanelDoc.title}</h2>
-                <p className="text-xs text-cultivate-text-secondary mt-0.5 truncate">{viewPanelDoc.fileName}</p>
+                {editingTitleDocId === viewPanelDoc.id ? (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={renameTitle}
+                      onChange={(e) => setRenameTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") void handleRenameConfirm(viewPanelDoc);
+                        if (e.key === "Escape") handleCancelInlineRename();
+                      }}
+                      className="w-full px-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
+                      autoFocus
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleRenameConfirm(viewPanelDoc)}
+                        disabled={renaming}
+                        className="px-2.5 py-1 text-xs bg-[#5a7048] text-white rounded-md hover:bg-[#4a5d38] transition-colors disabled:opacity-50"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelInlineRename}
+                        disabled={renaming}
+                        className="px-2.5 py-1 text-xs text-cultivate-text-primary border border-cultivate-border-element rounded-md hover:text-white transition-colors disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <h2 className="text-sm font-medium text-white truncate">{viewPanelDoc.title}</h2>
+                      <button
+                        type="button"
+                        onClick={() => handleStartInlineRename(viewPanelDoc)}
+                        className="p-1 hover:bg-cultivate-bg-elevated rounded-md transition-colors flex-shrink-0"
+                        aria-label="Edit document name"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-cultivate-text-secondary" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-cultivate-text-secondary mt-0.5 truncate">{viewPanelDoc.fileType}</p>
+                  </>
+                )}
               </div>
               <button
                 type="button"
-                onClick={() => setViewPanelDoc(null)}
+                onClick={handleCloseViewPanel}
                 className="p-1.5 hover:bg-cultivate-bg-elevated rounded-lg transition-colors flex-shrink-0"
               >
                 <X className="w-4 h-4 text-cultivate-text-secondary" />
@@ -818,12 +880,32 @@ export default function KnowledgeView({
 
             {/* Footer */}
             <div className="px-4 py-3 border-t border-cultivate-border-subtle">
-              <button
-                onClick={() => setViewPanelDoc(null)}
-                className="w-full px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
-              >
-                Close
-              </button>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDownloadDocument(viewPanelDoc)}
+                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#85b878] transition-colors flex items-center justify-center gap-2"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Download
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleStartUpdate(viewPanelDoc)}
+                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#85b878] transition-colors flex items-center justify-center gap-2"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  Update
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleteModalDoc(viewPanelDoc)}
+                  className="px-4 py-2 text-sm text-red-400 hover:text-red-300 border border-red-500/30 rounded-lg hover:border-red-500/60 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
+                </button>
+              </div>
             </div>
             </div>
           </div>
@@ -838,7 +920,7 @@ export default function KnowledgeView({
               </div>
               <button
                 type="button"
-                onClick={() => setViewPanelDoc(null)}
+                onClick={handleCloseViewPanel}
                 className="p-1.5 hover:bg-cultivate-bg-elevated rounded-lg transition-colors"
               >
                 <X className="w-4 h-4 text-cultivate-text-secondary" />
@@ -920,10 +1002,19 @@ export default function KnowledgeView({
               </button>
               <button
                 type="button"
-                onClick={() => setViewPanelDoc(null)}
-                className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
+                onClick={() => handleStartUpdate(viewPanelDoc)}
+                className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#85b878] transition-colors flex items-center justify-center gap-2"
               >
-                Close
+                <Upload className="w-3.5 h-3.5" />
+                Update
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeleteModalDoc(viewPanelDoc)}
+                className="flex-1 px-4 py-2 text-sm text-red-400 hover:text-red-300 border border-red-500/30 rounded-lg hover:border-red-500/60 transition-colors flex items-center justify-center gap-2"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete
               </button>
             </div>
           </div>
@@ -978,61 +1069,6 @@ export default function KnowledgeView({
                 >
                   {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
                   {deleting ? "Deleting..." : "Delete Document"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Rename Document Modal */}
-      {renameModalDoc && (
-        <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => !renaming && setRenameModalDoc(null)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
-              <div className="flex items-start gap-3 mb-4">
-                <div className="w-10 h-10 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-5 h-5 text-cultivate-green-light" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-medium text-white">Edit Document Name</h2>
-                  <p className="text-sm text-cultivate-text-secondary mt-1">
-                    Change the display name for this knowledge-base document.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mb-5">
-                <label className="block text-sm text-cultivate-text-secondary mb-1.5">Document Title</label>
-                <input
-                  type="text"
-                  value={renameTitle}
-                  onChange={(e) => setRenameTitle(e.target.value)}
-                  placeholder="Enter a new document title"
-                  className="w-full px-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
-                  autoFocus
-                />
-                <p className="text-xs text-cultivate-text-tertiary mt-2">
-                  Change the title shown in the dashboard. The original stays the same.
-                </p>
-              </div>
-
-              <div className="flex items-center justify-end gap-3">
-                <button
-                  onClick={() => setRenameModalDoc(null)}
-                  disabled={renaming}
-                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleRenameConfirm}
-                  disabled={renaming}
-                  className="px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
-                >
-                  {renaming && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {renaming ? "Saving..." : "Save Name"}
                 </button>
               </div>
             </div>
