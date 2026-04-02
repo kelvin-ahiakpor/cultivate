@@ -593,7 +593,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
             <button
               onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); setSelectedChatId(null); setMessagesLoading(false); setHeaderMenuOpen(false); setActiveView("chat"); if (window.innerWidth < 1024) setSidebarOpen(false); }}
               className={`group relative w-full flex items-center gap-3 pl-3 pr-2 py-1 rounded-lg transition-colors ${!sidebarOpen ? 'justify-center' : ''} ${
-                activeView === "chat" ? "bg-cultivate-bg-hover text-white" : "text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white"
+                activeView === "chat" && !currentConversationId ? "bg-cultivate-bg-hover text-white" : "text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white"
               }`}
             >
               <div className="w-5 h-5 standalone:w-6 standalone:h-6 lg:w-5 lg:h-5 bg-cultivate-bg-elevated rounded-full flex items-center justify-center flex-shrink-0">
@@ -1071,7 +1071,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                   systemName={conversationSystem}
                   headerMenuOpen={headerMenuOpen}
                   setHeaderMenuOpen={setHeaderMenuOpen}
-                  onBack={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); setSelectedChatId(null); setActiveView("chat"); }}
+                  onBack={() => setSidebarOpen(true)}
                   onNewChat={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); }}
                   messages={messages}
                   messagesLoading={messagesLoading}

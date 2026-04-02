@@ -43,11 +43,10 @@
  */
 
 import { useRef, useEffect, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle, Mic, MicOff, AlertTriangle, AudioLines, Globe, Image, FileText, FolderPlus } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle, Mic, MicOff, AlertTriangle, AudioLines, Globe, Image, FileText, FolderPlus, PanelLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { notify } from "@/lib/toast";
-import GlassCircleButton from "@/components/glass-circle-button";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon } from "@/components/send-icons";
 import { Tooltip } from "@/components/tooltip";
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
@@ -417,11 +416,15 @@ export default function ConversationView({
         <div className="flex-shrink-0 bg-cultivate-bg-main pt-16 lg:pt-3 pb-3 px-3 lg:pl-4 lg:pr-3">
         {/* Mobile header */}
         <div className="lg:hidden flex items-center justify-between gap-2">
-          <GlassCircleButton onClick={onBack} aria-label="Back">
-            <ChevronLeft className="w-5 h-5 text-white" />
-          </GlassCircleButton>
+          <button
+            onClick={onBack}
+            aria-label="Open menu"
+            className="w-9 h-9 flex items-center justify-center bg-cultivate-bg-elevated hover:bg-[#3B3B3B] rounded-lg transition-colors flex-shrink-0"
+          >
+            <PanelLeft className="w-4 h-4 text-cultivate-text-primary rotate-180" />
+          </button>
           <div className="flex flex-col items-center gap-0.5 min-w-0 flex-1 mx-2">
-            <span className="text-sm standalone:text-base font-medium text-white truncate">
+            <span className="text-sm standalone:text-base font-medium text-white truncate w-full text-center">
               {title || "Untitled conversation"}
             </span>
             {systemName && (
@@ -452,10 +455,10 @@ export default function ConversationView({
             </>
           )}
           {/* Title + chevron — independent hover zones */}
-          <div className={`inline-flex items-stretch rounded-lg overflow-hidden cursor-pointer relative ${
+          <div className={`flex min-w-0 items-stretch rounded-lg overflow-hidden cursor-pointer relative ${
             headerMenuOpen ? "bg-cultivate-bg-hover" : "hover:bg-cultivate-bg-hover"
           }`}>
-            <span className="text-sm text-cultivate-text-primary truncate max-w-[800px] py-1 pl-2 pr-1 hover:bg-cultivate-bg-hover-dark transition-colors">
+            <span className="text-sm text-cultivate-text-primary truncate min-w-0 flex-1 py-1 pl-2 pr-1 hover:bg-cultivate-bg-hover-dark transition-colors">
               {title || "Untitled conversation"}
             </span>
             <button
@@ -852,7 +855,7 @@ export default function ConversationView({
                           {/* Message actions — copy, thumbs up, flag, retry */}
                           {/* Actions row: icons fade on hover, badge always visible */}
                           <div className="flex items-center mt-2">
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                               <Tooltip content="Copy">
                                 <button
                                   onClick={() => handleCopy(msg.id, msg.content)}
@@ -930,7 +933,7 @@ export default function ConversationView({
                           {/* Badge is a sibling — shows on hover like action icons */}
                           {msg.role === "ASSISTANT" && msg.confidenceScore !== undefined && msg.confidenceScore !== null && (
                             <Tooltip content="Confidence Score">
-                              <div className={`ml-2 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity ${
+                              <div className={`ml-2 text-xs font-medium lg:opacity-0 lg:group-hover:opacity-100 transition-opacity ${
                                 msg.confidenceScore < 0.6
                                   ? "text-cultivate-beige"
                                   : msg.confidenceScore < 0.8
