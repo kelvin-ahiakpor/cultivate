@@ -47,6 +47,7 @@ export default function KnowledgeView({
   // Chunk preview state
   const [chunks, setChunks] = useState<Array<{ chunkIndex: number; content: string; tokenCount: number; id: string }>>([]);
   const [loadingChunks, setLoadingChunks] = useState(false);
+  const [chunksError, setChunksError] = useState("");
 
   // Upload form state
   const [uploadTitle, setUploadTitle] = useState("");
@@ -214,6 +215,44 @@ export default function KnowledgeView({
 
     return () => window.clearTimeout(timeout);
   }, [renameTitle, editingTitleDocId, renaming, viewPanelDoc]);
+
+  useEffect(() => {
+    if (!viewPanelDoc || demoMode) {
+      setChunks([]);
+      setLoadingChunks(false);
+      setChunksError("");
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingChunks(true);
+    setChunksError("");
+
+    fetch(`/api/knowledge-bases/${viewPanelDoc.id}/chunks`)
+      .then(async (res) => {
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Failed to load chunks");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setChunks(data.chunks || []);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setChunks([]);
+        setChunksError(err instanceof Error ? err.message : "Failed to load chunks");
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingChunks(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [viewPanelDoc, demoMode]);
 
   const handleStartUpdate = (doc: KnowledgeDoc) => {
     setOpenMenuId(null);
@@ -918,6 +957,40 @@ export default function KnowledgeView({
                     </div>
                   </div>
                 </div>
+
+                <div className="pt-1">
+                  <h3 className="text-xs font-medium text-cultivate-text-secondary uppercase tracking-wide mb-3">Document Chunks</h3>
+                  {loadingChunks ? (
+                    <div className="flex items-center gap-2 text-sm text-cultivate-text-secondary">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading chunk previews...
+                    </div>
+                  ) : chunksError ? (
+                    <div className="p-3 bg-cultivate-bg-hover border border-cultivate-border-subtle rounded-lg">
+                      <p className="text-sm text-red-400">{chunksError}</p>
+                    </div>
+                  ) : chunks.length === 0 ? (
+                    <div className="p-3 bg-cultivate-bg-hover border border-cultivate-border-subtle rounded-lg">
+                      <p className="text-sm text-cultivate-text-secondary">
+                        No chunk previews are available for this document yet.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {chunks.map((chunk) => (
+                        <div key={chunk.id} className="p-3 bg-cultivate-bg-hover border border-cultivate-border-subtle rounded-lg">
+                          <div className="flex items-center justify-between mb-1.5 gap-3">
+                            <span className="text-xs text-cultivate-text-tertiary">Chunk {chunk.chunkIndex + 1}</span>
+                            <span className="text-xs text-cultivate-text-tertiary">~{chunk.tokenCount} tokens</span>
+                          </div>
+                          <p className="text-xs text-cultivate-text-secondary leading-relaxed whitespace-pre-wrap">
+                            {chunk.content}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1054,22 +1127,39 @@ export default function KnowledgeView({
                   </div>
                 </div>
 
-                {/* Mock chunk preview */}
+                {/* Real chunk preview */}
                 <div className="pt-3 border-t border-cultivate-border-subtle">
-                  <h3 className="text-xs font-medium text-cultivate-text-secondary uppercase tracking-wide mb-3">Sample Chunks (Preview)</h3>
-                  <div className="space-y-2">
-                    {Array.from({ length: Math.min(5, viewPanelDoc.chunkCount) }).map((_, i) => (
-                      <div key={i} className="p-3 bg-cultivate-bg-hover border border-cultivate-border-subtle rounded-lg">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs text-cultivate-text-tertiary">Chunk {i + 1}</span>
-                          <span className="text-xs text-cultivate-text-tertiary">~250 tokens</span>
+                  <h3 className="text-xs font-medium text-cultivate-text-secondary uppercase tracking-wide mb-3">Document Chunks</h3>
+                  {loadingChunks ? (
+                    <div className="flex items-center gap-2 text-sm text-cultivate-text-secondary">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading chunk previews...
+                    </div>
+                  ) : chunksError ? (
+                    <div className="p-3 bg-cultivate-bg-hover border border-cultivate-border-subtle rounded-lg">
+                      <p className="text-sm text-red-400">{chunksError}</p>
+                    </div>
+                  ) : chunks.length === 0 ? (
+                    <div className="p-3 bg-cultivate-bg-hover border border-cultivate-border-subtle rounded-lg">
+                      <p className="text-sm text-cultivate-text-secondary">
+                        No chunk previews are available for this document yet.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {chunks.map((chunk) => (
+                        <div key={chunk.id} className="p-3 bg-cultivate-bg-hover border border-cultivate-border-subtle rounded-lg">
+                          <div className="flex items-center justify-between mb-1.5 gap-3">
+                            <span className="text-xs text-cultivate-text-tertiary">Chunk {chunk.chunkIndex + 1}</span>
+                            <span className="text-xs text-cultivate-text-tertiary">~{chunk.tokenCount} tokens</span>
+                          </div>
+                          <p className="text-xs text-cultivate-text-secondary leading-relaxed whitespace-pre-wrap">
+                            {chunk.content}
+                          </p>
                         </div>
-                        <p className="text-xs text-cultivate-text-secondary leading-relaxed">
-                          Sample content from chunk {i + 1} will appear here once the document is processed by the RAG pipeline...
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
