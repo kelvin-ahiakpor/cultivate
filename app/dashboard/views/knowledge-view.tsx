@@ -41,6 +41,7 @@ export default function KnowledgeView({
   const [editingTitleDocId, setEditingTitleDocId] = useState<string | null>(null);
   const [renameTitle, setRenameTitle] = useState("");
   const [renaming, setRenaming] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
   const inlineTitleRef = useRef<HTMLDivElement | null>(null);
   const renameDraftRef = useRef("");
 
@@ -112,11 +113,48 @@ export default function KnowledgeView({
     setRenameTitle("");
   };
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const checkStandalone = () => {
+      const iosStandalone = Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+      setIsStandalone(mediaQuery.matches || iosStandalone);
+    };
+
+    checkStandalone();
+    mediaQuery.addEventListener("change", checkStandalone);
+    return () => mediaQuery.removeEventListener("change", checkStandalone);
+  }, []);
+
+  const getPublicDocumentUrl = (doc: KnowledgeDoc) => doc.fileUrl;
+
+  const getDownloadUrl = (doc: KnowledgeDoc) => {
+    const url = new URL(getPublicDocumentUrl(doc));
+    url.searchParams.set("download", doc.fileName);
+    return url.toString();
+  };
+
+  const openDocumentInline = (doc: KnowledgeDoc) => {
+    const url = getPublicDocumentUrl(doc);
+
+    if (isStandalone) {
+      window.location.assign(url);
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleDownloadDocument = (doc: KnowledgeDoc) => {
-    // No file URL available yet — placeholder
-    const link = document.createElement('a');
-    link.href = '#';
+    const link = document.createElement("a");
+    link.href = getDownloadUrl(doc);
     link.download = doc.fileName;
+    link.rel = "noopener noreferrer";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1106,14 +1144,14 @@ export default function KnowledgeView({
                 <span className="text-cultivate-text-secondary">Referenced in chats</span>
                 <span className="text-white">{viewPanelDoc.referencedInChats} conversations</span>
               </div>
-              <a
-                href="#"
-                onClick={(e) => { e.preventDefault(); /* Open actual file when backend ready */ }}
+              <button
+                type="button"
+                onClick={() => openDocumentInline(viewPanelDoc)}
                 className="flex items-center gap-2 text-sm text-cultivate-green-light hover:text-[#9dcf84] transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 Open original document
-              </a>
+              </button>
             </div>
 
             {/* Scrollable Document Preview/Content */}

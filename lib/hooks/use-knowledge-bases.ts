@@ -13,6 +13,7 @@ export interface KnowledgeDoc {
   id: string;
   title: string;
   fileName: string;
+  fileUrl: string;
   fileType: string;      // "PDF" | "DOCX" | "TXT"
   chunkCount: number;
   agentId: string;       // Primary agent ID
@@ -27,6 +28,7 @@ interface RawDoc {
   id: string;
   title: string;
   fileName: string;
+  fileUrl: string;
   fileType: string;
   chunkCount: number;
   uploadedAt: string; // ISO
@@ -60,6 +62,7 @@ function normalize(doc: RawDoc): KnowledgeDoc {
     id: doc.id,
     title: doc.title,
     fileName: doc.fileName,
+    fileUrl: doc.fileUrl,
     fileType: doc.fileType.toUpperCase(),
     chunkCount: doc.chunkCount,
     agentId: primaryAgent?.agent.id || "",

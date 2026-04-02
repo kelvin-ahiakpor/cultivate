@@ -94,6 +94,7 @@ interface ConversationViewProps {
   // Header data
   title: string;
   systemName?: string | null;
+  subtitle?: string | null;
   // Header state / callbacks
   headerMenuOpen: boolean;
   setHeaderMenuOpen: (v: boolean) => void;
@@ -111,11 +112,16 @@ interface ConversationViewProps {
   inputProps?: InputProps;
   // Optional demo agent label (shown in place of agent dropdown)
   demoAgentLabel?: string;
+  showComposer?: boolean;
+  showNewChatButton?: boolean;
+  showMessageActions?: boolean;
+  highlightFlaggedMessages?: boolean;
 }
 
 export default function ConversationView({
   title,
   systemName,
+  subtitle,
   headerMenuOpen,
   setHeaderMenuOpen,
   onBack,
@@ -127,6 +133,10 @@ export default function ConversationView({
   isStandalone,
   inputProps,
   demoAgentLabel,
+  showComposer = true,
+  showNewChatButton = true,
+  showMessageActions = true,
+  highlightFlaggedMessages = false,
 }: ConversationViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [flaggedMessages, setFlaggedMessages] = useState<Set<string>>(new Set());
@@ -406,6 +416,10 @@ export default function ConversationView({
     }
   };
 
+  const flaggedCount = messages.filter(
+    (msg) => msg.role === "ASSISTANT" && msg.isFlagged
+  ).length;
+
   return (
     <div className="flex flex-col h-full">
       {/* ── Conversation Header ──────────────────────────────────────────
@@ -427,6 +441,11 @@ export default function ConversationView({
             <span className="text-sm standalone:text-base font-medium text-white truncate w-full text-center">
               {title || "Untitled conversation"}
             </span>
+            {subtitle && (
+              <span className="text-xs text-cultivate-text-secondary truncate w-full text-center">
+                {subtitle}
+              </span>
+            )}
             {systemName && (
               <div className="inline-flex items-center gap-1 bg-cultivate-bg-elevated rounded-full px-2.5 py-0.5">
                 <Box className="w-3 h-3 text-cultivate-text-secondary" />
@@ -435,21 +454,25 @@ export default function ConversationView({
             )}
           </div>
 
-          <button
-            onClick={onNewChat}
-            className="w-11 h-11 bg-cultivate-bg-elevated hover:bg-[#3B3B3B] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-          >
-            <Plus className="w-5 h-5 text-cultivate-green-light" />
-          </button>
+          {showNewChatButton ? (
+            <button
+              onClick={onNewChat}
+              className="w-11 h-11 bg-cultivate-bg-elevated hover:bg-[#3B3B3B] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+            >
+              <Plus className="w-5 h-5 text-cultivate-green-light" />
+            </button>
+          ) : (
+            <div className="w-11 h-11 flex-shrink-0" />
+          )}
         </div>
 
         {/* Desktop breadcrumb header */}
         <div className="hidden lg:flex items-center justify-between gap-1">
           <div className="flex items-center gap-1 flex-1 min-w-0">
-          {systemName && (
+          {(systemName || subtitle) && (
             <>
               <span className="text-sm text-cultivate-text-primary hover:text-white truncate cursor-pointer transition-colors">
-                {systemName}
+                {systemName || subtitle}
               </span>
               <span className="text-sm text-cultivate-text-tertiary flex-shrink-0">/</span>
             </>
@@ -510,6 +533,17 @@ export default function ConversationView({
           </div>
         </div>
       </div>
+      )}
+
+      {highlightFlaggedMessages && flaggedCount > 0 && (
+        <div className="flex-shrink-0 px-3 lg:px-4 py-2 bg-[#e8c8ab]/5 border-y border-[#e8c8ab]/10 flex items-center gap-2">
+          <Flag className="w-3.5 h-3.5 text-[#e8c8ab]" />
+          <span className="text-xs text-[#e8c8ab]">
+            {flaggedCount === 1
+              ? "1 flagged assistant message highlighted below"
+              : `${flaggedCount} flagged assistant messages highlighted below`}
+          </span>
+        </div>
       )}
 
       {/* ── Scroll container — messages + sticky input inside ─────────────
@@ -746,7 +780,7 @@ export default function ConversationView({
             <div className="max-w-3xl standalone:max-w-4xl mx-auto flex flex-col min-h-full">
               {/* space-y-4: gap between messages.
                   pb-12 standalone: breathing room after "AI can make mistakes" before input */}
-              <div className={`flex-1 px-8 standalone:px-2 lg:px-8 pt-6 ${isStandalone ? "pb-12" : "pb-6"} space-y-4`}>
+              <div className={`flex-1 px-8 standalone:px-2 lg:px-8 pt-6 ${showComposer ? (isStandalone ? "pb-12" : "pb-6") : "pb-8"} space-y-4`}>
               {messagesLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-5 h-5 text-cultivate-text-secondary animate-spin" />
@@ -763,8 +797,17 @@ export default function ConversationView({
                         </div>
                       ) : (
                         <div className="group">
-                          <div className="prose prose-base prose-invert max-w-none text-cultivate-text-primary leading-relaxed prose-p:my-1 prose-headings:text-cultivate-text-primary prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-cultivate-text-primary prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                          <div className={`rounded-2xl transition-colors ${
+                            highlightFlaggedMessages && msg.isFlagged
+                              ? "relative border border-[#e8c8ab]/20 bg-[#e8c8ab]/5 px-4 py-3"
+                              : ""
+                          }`}>
+                            {highlightFlaggedMessages && msg.isFlagged && (
+                              <div className="absolute -inset-2 rounded-[1.5rem] border-2 border-[#e8c8ab]/30 pointer-events-none" />
+                            )}
+                            <div className="prose prose-base prose-invert max-w-none text-cultivate-text-primary leading-relaxed prose-p:my-1 prose-headings:text-cultivate-text-primary prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-cultivate-text-primary prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                            </div>
                           </div>
 
                           {/* Agronomist correction (shown below message) */}
@@ -852,100 +895,116 @@ export default function ConversationView({
                               </div>
                             );
                           })()}
-                          {/* Message actions — copy, thumbs up, flag, retry */}
-                          {/* Actions row: icons fade on hover, badge always visible */}
-                          <div className="flex items-center mt-2">
-                            <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                              <Tooltip content="Copy">
-                                <button
-                                  onClick={() => handleCopy(msg.id, msg.content)}
-                                  className="p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors"
-                                >
-                                {copiedMessages.has(msg.id) ? (
-                                  <Check className="w-3.5 h-3.5 text-cultivate-text-primary transition-colors" />
-                                ) : (
-                                  <Copy className="w-3.5 h-3.5 text-cultivate-text-secondary hover:text-cultivate-text-primary transition-colors" />
-                                )}
-                              </button>
-                            </Tooltip>
-                            <Tooltip content="Give positive feedback">
-                              <button
-                                onClick={() => {
-                                  // TODO: Implement thumbs up feedback
-                                  console.log("Thumbs up for message:", msg.id);
-                                }}
-                                className="p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors"
-                              >
-                                <ThumbsUp className="w-3.5 h-3.5 text-cultivate-text-secondary hover:text-cultivate-text-primary transition-colors" />
-                              </button>
-                            </Tooltip>
-                            <Tooltip content={
-                              msg.flaggedQuery?.status === "VERIFIED" ? "Resolved by agronomist" :
-                              msg.flaggedQuery?.status === "CORRECTED" ? "Corrected by agronomist" :
-                              flaggedMessages.has(msg.id) ? "Update flag" :
-                              "Flag for review"
-                            }>
-                              <button
-                                onClick={() => handleFlag(msg)}
-                                disabled={
-                                  flaggingInProgress.has(msg.id) ||
-                                  (msg.flaggedQuery?.status !== undefined && msg.flaggedQuery.status !== "PENDING")
-                                }
-                                className={`p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors ${
-                                  flaggingInProgress.has(msg.id)
-                                    ? "opacity-50"
-                                    : ""
-                                }`}
-                              >
-                                <Flag
-                                  fill={
-                                    msg.flaggedQuery?.status === "VERIFIED"
-                                      ? "currentColor"  // filled green
-                                      : msg.flaggedQuery?.status === "CORRECTED"
-                                        ? "none"  // outline green
-                                        : flaggedMessages.has(msg.id)
-                                          ? "currentColor"  // filled red (pending)
-                                          : "none"  // not flagged
-                                  }
-                                  className={`w-3.5 h-3.5 transition-colors ${
-                                    msg.flaggedQuery?.status === "VERIFIED" || msg.flaggedQuery?.status === "CORRECTED"
-                                      ? "text-cultivate-green-light"  // green for both verified and corrected
-                                      : flaggedMessages.has(msg.id)
-                                        ? "text-red-400"  // red for pending
-                                        : "text-cultivate-text-secondary hover:text-cultivate-text-primary"  // default gray
-                                  }`}
-                                />
-                              </button>
-                            </Tooltip>
-                            <Tooltip content="Retry">
-                              <button
-                                onClick={() => {
-                                  // TODO: Implement retry (regenerate response)
-                                  console.log("Retry message:", msg.id);
-                                }}
-                                className="p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors"
-                              >
-                                <RotateCw className="w-3.5 h-3.5 text-cultivate-text-secondary hover:text-cultivate-text-primary transition-colors" />
-                              </button>
-                            </Tooltip>
-                          </div>{/* end icons opacity div */}
-
-                          {/* Badge is a sibling — shows on hover like action icons */}
-                          {msg.role === "ASSISTANT" && msg.confidenceScore !== undefined && msg.confidenceScore !== null && (
-                            <Tooltip content="Confidence Score">
-                              <div className={`ml-2 text-xs font-medium lg:opacity-0 lg:group-hover:opacity-100 transition-opacity ${
-                                msg.confidenceScore < 0.6
-                                  ? "text-cultivate-beige"
-                                  : msg.confidenceScore < 0.8
-                                    ? "text-cultivate-teal"
-                                    : "text-cultivate-green-light"
-                              }`}>
-                                {Math.round(msg.confidenceScore * 100)}%
+                          {showMessageActions ? (
+                            <div className="flex items-center mt-2">
+                              <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                                <Tooltip content="Copy">
+                                  <button
+                                    onClick={() => handleCopy(msg.id, msg.content)}
+                                    className="p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors"
+                                  >
+                                    {copiedMessages.has(msg.id) ? (
+                                      <Check className="w-3.5 h-3.5 text-cultivate-text-primary transition-colors" />
+                                    ) : (
+                                      <Copy className="w-3.5 h-3.5 text-cultivate-text-secondary hover:text-cultivate-text-primary transition-colors" />
+                                    )}
+                                  </button>
+                                </Tooltip>
+                                <Tooltip content="Give positive feedback">
+                                  <button
+                                    onClick={() => {
+                                      console.log("Thumbs up for message:", msg.id);
+                                    }}
+                                    className="p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors"
+                                  >
+                                    <ThumbsUp className="w-3.5 h-3.5 text-cultivate-text-secondary hover:text-cultivate-text-primary transition-colors" />
+                                  </button>
+                                </Tooltip>
+                                <Tooltip content={
+                                  msg.flaggedQuery?.status === "VERIFIED" ? "Resolved by agronomist" :
+                                  msg.flaggedQuery?.status === "CORRECTED" ? "Corrected by agronomist" :
+                                  flaggedMessages.has(msg.id) ? "Update flag" :
+                                  "Flag for review"
+                                }>
+                                  <button
+                                    onClick={() => handleFlag(msg)}
+                                    disabled={
+                                      flaggingInProgress.has(msg.id) ||
+                                      (msg.flaggedQuery?.status !== undefined && msg.flaggedQuery.status !== "PENDING")
+                                    }
+                                    className={`p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors ${
+                                      flaggingInProgress.has(msg.id)
+                                        ? "opacity-50"
+                                        : ""
+                                    }`}
+                                  >
+                                    <Flag
+                                      fill={
+                                        msg.flaggedQuery?.status === "VERIFIED"
+                                          ? "currentColor"
+                                          : msg.flaggedQuery?.status === "CORRECTED"
+                                            ? "none"
+                                            : flaggedMessages.has(msg.id)
+                                              ? "currentColor"
+                                              : "none"
+                                      }
+                                      className={`w-3.5 h-3.5 transition-colors ${
+                                        msg.flaggedQuery?.status === "VERIFIED" || msg.flaggedQuery?.status === "CORRECTED"
+                                          ? "text-cultivate-green-light"
+                                          : flaggedMessages.has(msg.id)
+                                            ? "text-red-400"
+                                            : "text-cultivate-text-secondary hover:text-cultivate-text-primary"
+                                      }`}
+                                    />
+                                  </button>
+                                </Tooltip>
+                                <Tooltip content="Retry">
+                                  <button
+                                    onClick={() => {
+                                      console.log("Retry message:", msg.id);
+                                    }}
+                                    className="p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors"
+                                  >
+                                    <RotateCw className="w-3.5 h-3.5 text-cultivate-text-secondary hover:text-cultivate-text-primary transition-colors" />
+                                  </button>
+                                </Tooltip>
                               </div>
-                            </Tooltip>
+                              {msg.role === "ASSISTANT" && msg.confidenceScore !== undefined && msg.confidenceScore !== null && (
+                                <Tooltip content="Confidence Score">
+                                  <div className={`ml-2 text-xs font-medium lg:opacity-0 lg:group-hover:opacity-100 transition-opacity ${
+                                    msg.confidenceScore < 0.6
+                                      ? "text-cultivate-beige"
+                                      : msg.confidenceScore < 0.8
+                                        ? "text-cultivate-teal"
+                                        : "text-cultivate-green-light"
+                                  }`}>
+                                    {Math.round(msg.confidenceScore * 100)}%
+                                  </div>
+                                </Tooltip>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 mt-3">
+                              {msg.confidenceScore !== undefined && msg.confidenceScore !== null && (
+                                <span className={`text-xs font-medium ${
+                                  msg.confidenceScore < 0.6
+                                    ? "text-[#e8c8ab]"
+                                    : msg.confidenceScore < 0.8
+                                      ? "text-cultivate-teal"
+                                      : "text-cultivate-green-light"
+                                }`}>
+                                  {Math.round(msg.confidenceScore * 100)}% confidence
+                                </span>
+                              )}
+                              {msg.isFlagged && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-[#e8c8ab]/10 px-2 py-0.5 text-xs text-[#e8c8ab]">
+                                  <Flag className="w-3 h-3" />
+                                  Flagged
+                                </span>
+                              )}
+                            </div>
                           )}
-                        </div>{/* end actions row */}
-                      </div>
+                        </div>
                     )}
                   </div>
                 ))}
@@ -983,7 +1042,7 @@ export default function ConversationView({
             {/* ── Sticky Input ────────────────────────────────────────────
                 Standalone: glass gradient overlay, transparent bg, -mt-10 to overlap messages
                 Desktop/web: solid bg, centered max width */}
-            <div className={`sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-cultivate-bg-main pb-2"}`}>
+            <div className={`${showComposer ? `sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-cultivate-bg-main pb-2"}` : "hidden"}`}>
               {isStandalone && (
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent backdrop-blur-[0.5px]" />
               )}
@@ -1229,11 +1288,11 @@ export default function ConversationView({
                     AI can make mistakes. Please verify important information.
                   </p>
                 )}
+                </div>
               </div>
-            </div>
           </div>
         </div>
-        </div>
+      </div>
       )}
 
       {/* Flag modal */}
