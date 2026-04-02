@@ -1,25 +1,33 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
+import { Prisma } from "@prisma/client";
 
-async function getReferencedInChatsCount(knowledgeBaseId: string, organizationId: string) {
-  const conversations = await prisma.message.findMany({
-    where: {
-      role: "ASSISTANT",
-      sourcesCited: { has: knowledgeBaseId },
-      conversation: {
-        agent: {
-          organizationId,
-        },
-      },
-    },
-    select: {
-      conversationId: true,
-    },
-    distinct: ["conversationId"],
-  });
+async function getReferencedInChatsCounts(
+  knowledgeBaseIds: string[],
+  organizationId: string
+) {
+  if (knowledgeBaseIds.length === 0) return new Map<string, number>();
 
-  return conversations.length;
+  const rows = await prisma.$queryRaw<Array<{ knowledgeBaseId: string; count: bigint | number }>>(
+    Prisma.sql`
+      SELECT
+        cited.kb_id AS "knowledgeBaseId",
+        COUNT(DISTINCT m."conversationId") AS count
+      FROM "messages" m
+      INNER JOIN "conversations" c ON c."id" = m."conversationId"
+      INNER JOIN "agents" a ON a."id" = c."agentId"
+      CROSS JOIN LATERAL unnest(m."sourcesCited") AS cited(kb_id)
+      WHERE m."role" = CAST('ASSISTANT' AS "MessageRole")
+        AND a."organizationId" = ${organizationId}
+        AND cited.kb_id IN (${Prisma.join(knowledgeBaseIds)})
+      GROUP BY cited.kb_id
+    `
+  );
+
+  return new Map(
+    rows.map((row) => [row.knowledgeBaseId, Number(row.count)])
+  );
 }
 
 // GET /api/knowledge-bases — List knowledge base documents for the org
@@ -86,12 +94,15 @@ export async function GET(request: NextRequest) {
       prisma.knowledgeBase.count({ where }),
     ]);
 
-    const documentsWithReferences = await Promise.all(
-      documents.map(async (doc) => ({
-        ...doc,
-        referencedInChats: await getReferencedInChatsCount(doc.id, orgId),
-      }))
+    const referenceCounts = await getReferencedInChatsCounts(
+      documents.map((doc) => doc.id),
+      orgId
     );
+
+    const documentsWithReferences = documents.map((doc) => ({
+      ...doc,
+      referencedInChats: referenceCounts.get(doc.id) ?? 0,
+    }));
 
     return apiSuccess({
       documents: documentsWithReferences,

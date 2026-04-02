@@ -3,25 +3,23 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
 import { deleteFile } from "@/lib/supabase-storage";
 import { deleteChunks } from "@/lib/mastra-rag"; // Mastra PgVector
+import { Prisma } from "@prisma/client";
 
 async function getReferencedInChatsCount(knowledgeBaseId: string, organizationId: string) {
-  const conversations = await prisma.message.findMany({
-    where: {
-      role: "ASSISTANT",
-      sourcesCited: { has: knowledgeBaseId },
-      conversation: {
-        agent: {
-          organizationId,
-        },
-      },
-    },
-    select: {
-      conversationId: true,
-    },
-    distinct: ["conversationId"],
-  });
+  const rows = await prisma.$queryRaw<Array<{ count: bigint | number }>>(
+    Prisma.sql`
+      SELECT COUNT(DISTINCT m."conversationId") AS count
+      FROM "messages" m
+      INNER JOIN "conversations" c ON c."id" = m."conversationId"
+      INNER JOIN "agents" a ON a."id" = c."agentId"
+      CROSS JOIN LATERAL unnest(m."sourcesCited") AS cited(kb_id)
+      WHERE m."role" = CAST('ASSISTANT' AS "MessageRole")
+        AND a."organizationId" = ${organizationId}
+        AND cited.kb_id = ${knowledgeBaseId}
+    `
+  );
 
-  return conversations.length;
+  return Number(rows[0]?.count ?? 0);
 }
 
 // GET /api/knowledge-bases/:id — Get document details
