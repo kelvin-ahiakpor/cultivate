@@ -18,6 +18,7 @@ import { DEMO_FARMER_CONVO_MESSAGES } from "@/lib/demo-data";
 import { translateToEnglish, translateFromEnglish, LANGUAGES, type SupportedLanguage } from "@/lib/translation";
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
 import { AnimatedDots } from "@/components/wave-icon";
+import { notify } from "@/lib/toast";
 
 interface ChatPageProps {
   user: {
