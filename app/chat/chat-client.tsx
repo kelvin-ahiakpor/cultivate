@@ -30,9 +30,11 @@ interface ChatPageProps {
   };
   // demoMode: uses mockChats, makes zero API requests. See BACKEND-PROGRESS.md § Phase 5.
   demoMode?: boolean;
+  initialView?: "chat" | "chats" | "systems" | "settings";
+  initialConversationId?: string | null;
 }
 
-export default function ChatPageClient({ user, demoMode = false }: ChatPageProps) {
+export default function ChatPageClient({ user, demoMode = false, initialView = "chat", initialConversationId = null }: ChatPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -54,7 +56,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
   const [showAgentMenu, setShowAgentMenu] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState("General Farm Advisor");
   const [sendIcon, setSendIcon] = useState<"cabbage" | "plane" | "sprout">("cabbage");
-  const [activeView, setActiveView] = useState<"chat" | "chats" | "systems" | "settings">("chat");
+  const [activeView, setActiveView] = useState<"chat" | "chats" | "systems" | "settings">(initialView);
 
   // Translation state
   const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>('en');
@@ -102,14 +104,15 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(initialConversationId);
   const [conversationTitle, setConversationTitle] = useState<string | null>(null);
   const [conversationSystem, setConversationSystem] = useState<string | null>(null);
-  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [messagesLoading, setMessagesLoading] = useState(!!initialConversationId);
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const [chatsViewOpen, setChatsViewOpen] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null); // kept for welcome-screen scroll if needed
+  const chatDropdownRef = useRef<HTMLDivElement>(null);
 
   // Sidebar conversation list — disabled in demo mode (zero API requests)
   const apiConversations = useConversations("", 1, 30, demoMode);
@@ -130,6 +133,64 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
   useEffect(() => {
     localStorage.setItem('cultivate-language', selectedLanguage);
   }, [selectedLanguage]);
+
+  // Sync active view + conversation ID to URL so refresh restores state
+  useEffect(() => {
+    if (demoMode) return;
+    const params = new URLSearchParams();
+    if (activeView === "chat" && currentConversationId) {
+      params.set("c", currentConversationId);
+    } else if (activeView !== "chat") {
+      params.set("view", activeView);
+    }
+    const query = params.toString();
+    window.history.replaceState(null, "", "/chat" + (query ? "?" + query : ""));
+  }, [activeView, currentConversationId, demoMode]);
+
+  // Close the chat item dropdown when clicking anywhere outside it
+  useEffect(() => {
+    if (!chatMenuId) return;
+    const handleMouseDown = (e: MouseEvent) => {
+      if (chatDropdownRef.current && !chatDropdownRef.current.contains(e.target as Node)) {
+        setChatMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, [chatMenuId]);
+
+  // On mount: if a conversation ID was in the URL, restore it (fetch title + messages in parallel)
+  useEffect(() => {
+    if (!initialConversationId || demoMode) return;
+    let cancelled = false;
+    Promise.all([
+      fetch(`/api/conversations/${initialConversationId}`).then(r => r.json()),
+      fetch(`/api/conversations/${initialConversationId}/messages`).then(r => r.json()),
+    ]).then(([convData, msgData]) => {
+      if (cancelled) return;
+      setConversationTitle(convData?.title || null);
+      setConversationSystem(convData?.agent?.name || null);
+      setSelectedChatId(initialConversationId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (msgData?.messages) setMessages(msgData.messages.map((m: any) => ({
+        id: m.id,
+        role: m.role as "USER" | "ASSISTANT",
+        content: m.content,
+        confidenceScore: m.confidenceScore,
+        isFlagged: m.isFlagged,
+        flaggedQuery: m.flaggedQuery,
+      })));
+    }).catch(() => {
+      if (cancelled) return;
+      // Conversation gone — reset to clean state
+      setCurrentConversationId(null);
+      window.history.replaceState(null, "", "/chat");
+    }).finally(() => {
+      if (!cancelled) setMessagesLoading(false);
+    });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle voice button click
   const handleVoiceClick = async () => {
@@ -628,7 +689,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
 
                         {/* Dropdown: Share, Rename, [Remove from system], Delete */}
                         {isMenuOpen && (
-                          <div className="absolute right-0 top-full mt-1.5 bg-cultivate-bg-elevated rounded-xl shadow-xl border border-cultivate-border-element py-1.5 z-[101] min-w-[180px] whitespace-nowrap">
+                          <div ref={chatDropdownRef} className="absolute right-0 top-full mt-1.5 bg-cultivate-bg-elevated rounded-xl shadow-xl border border-cultivate-border-element py-1.5 z-[101] min-w-[180px] whitespace-nowrap">
                               <div className="px-1.5">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}

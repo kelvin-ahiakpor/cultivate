@@ -3,7 +3,10 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import ChatPageClient from "./chat-client";
 
-export default async function ChatPage() {
+const VALID_CHAT_VIEWS = ["chat", "chats", "systems", "settings"] as const;
+type ChatView = typeof VALID_CHAT_VIEWS[number];
+
+export default async function ChatPage({ searchParams }: { searchParams: { view?: string; c?: string } }) {
   const session = await auth();
 
   if (!session) {
@@ -31,6 +34,12 @@ export default async function ChatPage() {
     redirect("/login");
   }
 
+  const rawView = searchParams.view;
+  const initialView = (VALID_CHAT_VIEWS as readonly string[]).includes(rawView || "")
+    ? (rawView as ChatView)
+    : "chat";
+  const initialConversationId = searchParams.c || null;
+
   return (
     <ChatPageClient
       user={{
@@ -41,6 +50,8 @@ export default async function ChatPage() {
         location: user.location,
         gpsCoordinates: user.gpsCoordinates,
       }}
+      initialView={initialView}
+      initialConversationId={initialConversationId}
     />
   );
 }

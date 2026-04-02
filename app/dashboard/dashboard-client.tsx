@@ -27,6 +27,7 @@ interface DashboardProps {
   // demoMode: when true, all child views use local mock data and make zero API requests.
   // Passed down from /demo/dashboard/page.tsx. See BACKEND-PROGRESS.md § Phase 5 for the pattern.
   demoMode?: boolean;
+  initialView?: string;
 }
 
 /** Maps an API activity type to its icon + color. Used in the real-mode activity feed. */
@@ -53,7 +54,7 @@ function ActivityRow({ item, isStandalone }: { item: ActivityItem; isStandalone:
   );
 }
 
-export default function DashboardClient({ user, demoMode = false }: DashboardProps) {
+export default function DashboardClient({ user, demoMode = false, initialView = "overview" }: DashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -107,7 +108,7 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
       window.location.href = `${window.location.origin}/`;
     }
   };
-  const [activeNav, setActiveNav] = useState("overview");
+  const [activeNav, setActiveNav] = useState(initialView);
   const [activityPanelOpen, setActivityPanelOpen] = useState(false);
   // Ref to measure the 8th item's bottom — makes the list snap to exactly 8 visible items
   const activityListRef = useRef<HTMLDivElement>(null);
@@ -133,6 +134,15 @@ export default function DashboardClient({ user, demoMode = false }: DashboardPro
     });
     return () => cancelAnimationFrame(frame);
   }, [activityPanelOpen]);
+
+  // Sync active nav to URL so refresh restores the current view
+  useEffect(() => {
+    if (demoMode) return;
+    const params = new URLSearchParams();
+    if (activeNav !== "overview") params.set("view", activeNav);
+    const query = params.toString();
+    window.history.replaceState(null, "", "/dashboard" + (query ? "?" + query : ""));
+  }, [activeNav, demoMode]);
 
   // Overview stats — disabled in demo mode (zero API requests)
   const { stats, isLoading: statsLoading } = useDashboardStats(demoMode);
