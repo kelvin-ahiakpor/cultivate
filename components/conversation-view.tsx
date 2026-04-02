@@ -43,7 +43,7 @@
  */
 
 import { useRef, useEffect, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle, Mic, MicOff, AlertTriangle, AudioLines, Globe } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle, Mic, MicOff, AlertTriangle, AudioLines, Globe, Image, FileText, FolderPlus } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { notify } from "@/lib/toast";
@@ -148,6 +148,9 @@ export default function ConversationView({
   // Voice input state
   const [voiceState, setVoiceState] = useState<"idle" | "connecting" | "listening" | "error">("idle");
   const connectingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Attachment menu state
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
 
   // Stable callback to prevent recognition from restarting on every render
   const handleTranscript = useCallback((text: string, isFinal: boolean) => {
@@ -410,7 +413,8 @@ export default function ConversationView({
           Mobile: [glass back] | [title + system pill centered] | [translate toggle] | [+ new chat]
           Desktop: breadcrumb [system /] [title ▾] with dropdown | [translate toggle right edge]
           pt-16 on mobile for Dynamic Island safe area — DO NOT reduce to pt-3 alone */}
-      <div className="flex-shrink-0 bg-cultivate-bg-main pt-16 lg:pt-3 pb-3 px-3 lg:pl-4 lg:pr-3">
+      {title && (
+        <div className="flex-shrink-0 bg-cultivate-bg-main pt-16 lg:pt-3 pb-3 px-3 lg:pl-4 lg:pr-3">
         {/* Mobile header */}
         <div className="lg:hidden flex items-center justify-between gap-2">
           <GlassCircleButton onClick={onBack} aria-label="Back">
@@ -451,7 +455,7 @@ export default function ConversationView({
           <div className={`inline-flex items-stretch rounded-lg overflow-hidden cursor-pointer relative ${
             headerMenuOpen ? "bg-cultivate-bg-hover" : "hover:bg-cultivate-bg-hover"
           }`}>
-            <span className="text-sm text-cultivate-text-primary truncate max-w-[220px] py-1 pl-2 pr-1 hover:bg-[#0a0a0a] transition-colors">
+            <span className="text-sm text-cultivate-text-primary truncate max-w-[800px] py-1 pl-2 pr-1 hover:bg-cultivate-bg-hover-dark transition-colors">
               {title || "Untitled conversation"}
             </span>
             <button
@@ -460,15 +464,14 @@ export default function ConversationView({
                 console.log("Chevron clicked! Current state:", headerMenuOpen, "Setting to:", !headerMenuOpen);
                 setHeaderMenuOpen(!headerMenuOpen);
               }}
-              className={`${headerMenuOpen ? "bg-[#0a0a0a]" : "hover:bg-[#0a0a0a]"} transition-all px-1.5 self-stretch flex items-center`}
+              className={`${headerMenuOpen ? "bg-cultivate-bg-hover-dark" : "hover:bg-cultivate-bg-hover-dark"} transition-all px-1.5 self-stretch flex items-center`}
             >
               <ChevronDown className="w-3.5 h-3.5 text-cultivate-text-secondary hover:text-white transition-colors" strokeWidth={1.5} />
             </button>
 
             {headerMenuOpen && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setHeaderMenuOpen(false)} />
-                <div className="absolute left-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-cultivate-border-subtle py-1 z-50 min-w-[200px] whitespace-nowrap">
+                <div className="absolute left-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-cultivate-border-subtle py-1 z-[101] min-w-[200px] whitespace-nowrap">
                   <button
                     onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
                     className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2.5 transition-colors"
@@ -497,22 +500,250 @@ export default function ConversationView({
                     <Trash2 className="w-3.5 h-3.5" />Delete
                   </button>
                 </div>
+                <div className="fixed inset-0 z-[100]" onClick={() => setHeaderMenuOpen(false)} />
               </>
             )}
           </div>
           </div>
         </div>
       </div>
+      )}
 
       {/* ── Scroll container — messages + sticky input inside ─────────────
           Input is INSIDE this scroll container (not a flex sibling) so that
-          sticky bottom-0 actually works and the gradient overlaps messages. */}
-      <div className="flex-1 min-h-0 relative">
-        <div className="h-full overflow-y-auto thin-scrollbar">
-          <div className="max-w-3xl standalone:max-w-4xl mx-auto flex flex-col min-h-full">
-            {/* space-y-4: gap between messages.
-                pb-12 standalone: breathing room after "AI can make mistakes" before input */}
-            <div className={`flex-1 px-8 standalone:px-2 lg:px-8 pt-6 ${isStandalone ? "pb-12" : "pb-6"} space-y-4`}>
+          sticky bottom-0 actually works and the gradient overlaps messages.
+          When no title AND no messages (welcome screen), skip scroll wrapper - just render input */}
+      {!title && messages.length === 0 ? (
+        // Welcome screen: only render the sticky input (caller handles layout)
+        <>
+          {/* ── Sticky Input ────────────────────────────────────────────
+              Standalone: glass gradient overlay, transparent bg
+              Desktop/web: solid bg, centered max width */}
+          <div className={`${isStandalone ? "relative z-30 bg-transparent pb-4 pt-0" : "bg-cultivate-bg-main pb-2 lg:pb-6"}`}>
+            {isStandalone && (
+              <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent backdrop-blur-[0.5px]" />
+            )}
+            <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-3.5 mb-1 lg:max-w-3xl lg:mx-auto"}`}>
+              <div className="bg-cultivate-bg-elevated rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
+                <textarea
+                  placeholder="How can I help you today?"
+                  rows={1}
+                  value={inputProps?.value ?? ""}
+                  onChange={inputProps ? (e) => inputProps.onChange(e.target.value) : undefined}
+                  onKeyDown={inputProps ? (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); inputProps.onSend(); } } : undefined}
+                  readOnly={!inputProps || voiceState !== "idle"}
+                  className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-[#6B6B6B] bg-transparent text-sm standalone:text-base lg:text-sm"
+                />
+                <div className="flex items-center justify-between mt-2">
+                  {/* Left: attachment menu + voice input (only in real mode) */}
+                  <div className="flex items-center gap-2">
+                    {/* Attachment menu (images, docs, systems) - only in real mode */}
+                    {inputProps && (
+                      <div className="relative">
+                        <button
+                          onClick={() => setShowAttachMenu(!showAttachMenu)}
+                          className="p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors"
+                          title="Attach"
+                        >
+                          <Plus className="w-5 h-5 text-cultivate-text-primary" />
+                        </button>
+
+                        {/* Attachment dropdown */}
+                        {showAttachMenu && (
+                        <>
+                          {/* Menu */}
+                          <div className="absolute left-0 bottom-full mb-1 bg-cultivate-bg-elevated rounded-xl shadow-xl border border-cultivate-border-element py-1.5 z-[101] min-w-[220px] whitespace-nowrap">
+                            <div className="px-1.5">
+                              <button
+                                onClick={() => {
+                                  setShowAttachMenu(false);
+                                  // TODO: Implement image upload
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                              >
+                                <Image className="w-4 h-4" />
+                                Upload image
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShowAttachMenu(false);
+                                  // TODO: Implement document upload
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                              >
+                                <FileText className="w-4 h-4" />
+                                Upload document
+                              </button>
+                            </div>
+                          </div>
+                          {/* Backdrop (after menu so menu is clickable) */}
+                          <div
+                            className="fixed inset-0 z-[100]"
+                            onClick={() => setShowAttachMenu(false)}
+                          />
+                        </>
+                      )}
+                      </div>
+                    )}
+
+                    {/* Voice input button (Claude-style, only in real mode) */}
+                    {inputProps && isSpeechSupported && (
+                      <div className="flex items-center gap-2">
+                        {/* Mic icon (shows when connecting/listening/error) */}
+                        {voiceState !== "idle" && (
+                          <Mic className="w-5 h-5 text-cultivate-text-secondary" />
+                        )}
+
+                        {/* State-based button */}
+                        {voiceState === "idle" && (
+                          <button
+                            onClick={handleVoiceClick}
+                            disabled={inputProps.isStreaming}
+                            className="p-2 hover:bg-cultivate-bg-hover rounded-lg transition-colors disabled:opacity-40"
+                            title="Voice input"
+                          >
+                            <AudioLines className="w-5 h-5 text-cultivate-text-primary" />
+                          </button>
+                        )}
+
+                        {voiceState === "connecting" && (
+                          <button
+                            onClick={handleVoiceClick}
+                            className="px-3 py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
+                          >
+                            <AnimatedDots type="pulse" />
+                            <span>Cancel</span>
+                          </button>
+                        )}
+
+                        {voiceState === "listening" && (
+                          <button
+                            onClick={handleVoiceClick}
+                            className="px-3 py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
+                          >
+                            <AnimatedDots type="wave" />
+                            <span>Stop</span>
+                          </button>
+                        )}
+
+                        {voiceState === "error" && (
+                          <button
+                            onClick={handleVoiceClick}
+                            className="px-3 py-1.5 bg-[#c0392b] rounded-lg flex items-center gap-2 text-white text-sm"
+                            title={speechError || "Error"}
+                          >
+                            <AlertTriangle className="w-4 h-4" />
+                            <span>Error</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right: agent selector + send button */}
+                  <div className="flex items-center gap-2">
+                    {inputProps ? (
+                      /* Real mode: agent dropdown */
+                      <div className="relative">
+                        <button
+                          onClick={() => inputProps.setShowAgentMenu(!inputProps.showAgentMenu)}
+                          className="flex items-center gap-1 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
+                        >
+                          <span>{inputProps.selectedAgent}</span>
+                          <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
+                        </button>
+                        {inputProps.showAgentMenu && (
+                          <>
+                            <div className="fixed inset-0 z-40" onClick={() => inputProps.setShowAgentMenu(false)} />
+                            <div className="absolute bottom-full right-0 mb-2 bg-cultivate-bg-elevated rounded-lg shadow-lg border border-cultivate-border-element py-2 z-50 min-w-[200px]">
+                              {inputProps.agents.map((agent) => (
+                                <button
+                                  key={agent.id}
+                                  onClick={() => { inputProps.onAgentSelect(agent.id, agent.name); inputProps.setShowAgentMenu(false); }}
+                                  className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors ${inputProps.selectedAgent === agent.name ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
+                                >
+                                  {agent.name}
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      /* Demo mode: static agent label */
+                      <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-secondary">
+                        {demoAgentLabel || "General Farm Advisor"}
+                      </span>
+                    )}
+
+                    {/* Language Selector (real mode only) */}
+                    {inputProps && (
+                      <div className="relative">
+                        <button
+                          onClick={() => inputProps.setShowLanguageMenu(!inputProps.showLanguageMenu)}
+                          className="flex items-center gap-1.5 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
+                          title="Select language"
+                        >
+                          <Globe className="w-4 h-4" />
+                          <span className="hidden lg:inline">{inputProps.languages.find(l => l.code === inputProps.selectedLanguage)?.name || 'English'}</span>
+                          <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
+                        </button>
+                        {inputProps.showLanguageMenu && (
+                          <>
+                            <div className="fixed inset-0 z-40" onClick={() => inputProps.setShowLanguageMenu(false)} />
+                            <div className="absolute bottom-full right-0 mb-2 bg-cultivate-bg-elevated rounded-lg shadow-lg border border-cultivate-border-element py-2 z-50 min-w-[180px]">
+                              {inputProps.languages.map((lang) => (
+                                <button
+                                  key={lang.code}
+                                  onClick={() => { inputProps.onLanguageSelect(lang.code); inputProps.setShowLanguageMenu(false); }}
+                                  className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors flex items-center gap-2 ${inputProps.selectedLanguage === lang.code ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
+                                >
+                                  <span>{lang.flag}</span>
+                                  <span>{lang.name}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Send button */}
+                    {inputProps ? (
+                      inputProps.isStreaming ? (
+                        <div className="p-2">
+                          <Loader2 className="w-5 h-5 text-cultivate-green-light animate-spin" />
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => { inputProps.onSend(); inputProps.onSendIconCycle(); }}
+                          disabled={!inputProps.value.trim()}
+                          className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-[#536d3d] transition-colors disabled:opacity-40"
+                        >
+                          {inputProps.sendIcon === "cabbage" && <CabbageIcon />}
+                          {inputProps.sendIcon === "plane" && <PaperPlaneIcon />}
+                          {inputProps.sendIcon === "sprout" && <SproutIcon />}
+                        </button>
+                      )
+                    ) : (
+                      <button className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-[#536d3d] transition-colors opacity-40 cursor-default">
+                        <CabbageIcon />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        // Normal conversation view with scroll container
+        <div className="flex-1 min-h-0 relative">
+          <div className="h-full overflow-y-auto thin-scrollbar">
+            <div className="max-w-3xl standalone:max-w-4xl mx-auto flex flex-col min-h-full">
+              {/* space-y-4: gap between messages.
+                  pb-12 standalone: breathing room after "AI can make mistakes" before input */}
+              <div className={`flex-1 px-8 standalone:px-2 lg:px-8 pt-6 ${isStandalone ? "pb-12" : "pb-6"} space-y-4`}>
               {messagesLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-5 h-5 text-cultivate-text-secondary animate-spin" />
@@ -733,8 +964,8 @@ export default function ConversationView({
                     </div>
                   )}
 
-                  {/* Disclaimer — in-flow on standalone, under input otherwise */}
-                  {isStandalone && (
+                  {/* Disclaimer — in-flow on standalone, under input otherwise (only show when messages exist) */}
+                  {isStandalone && messages.length > 0 && (
                     <div className="mt-6 ">
                       <p className="text-sm text-cultivate-text-primary text-right leading-snug max-w-[250px] ml-auto">
                         AI can make mistakes.<br />Please verify important information.
@@ -762,7 +993,9 @@ export default function ConversationView({
                           ? "Connecting..."
                           : voiceState === "listening"
                             ? "Listening..."
-                            : "Ask a follow-up..."
+                            : messages.length === 0
+                              ? "How can I help you today?"
+                              : "Ask a follow-up..."
                         : "Reply..."
                     }
                     rows={1}
@@ -773,15 +1006,73 @@ export default function ConversationView({
                     className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-[#6B6B6B] bg-transparent text-sm standalone:text-base lg:text-sm"
                   />
                   <div className="flex items-center justify-between mt-2">
-                    {/* Left: new chat button + voice input */}
+                    {/* Left: attachment menu + voice input (only in real mode) */}
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={inputProps ? inputProps.onNewChat : onNewChat}
-                        className="p-1.5 hover:bg-[#3B3B3B] rounded transition-colors"
-                        title="New chat"
-                      >
-                        <Plus className="w-5 h-5 text-cultivate-text-primary" />
-                      </button>
+                      {/* Attachment menu (images, docs, systems) - only in real mode */}
+                      {inputProps && (
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowAttachMenu(!showAttachMenu)}
+                            className="p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors"
+                            title="Attach"
+                          >
+                            <Plus className="w-5 h-5 text-cultivate-text-primary" />
+                          </button>
+
+                          {/* Attachment dropdown */}
+                          {showAttachMenu && (
+                          <>
+                            {/* Menu */}
+                            <div className="absolute left-0 bottom-full mb-1 bg-cultivate-bg-elevated rounded-xl shadow-xl border border-cultivate-border-element py-1.5 z-[101] min-w-[220px] whitespace-nowrap">
+                              <div className="px-1.5">
+                                <button
+                                  onClick={() => {
+                                    setShowAttachMenu(false);
+                                    // TODO: Implement image upload
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                                >
+                                  <Image className="w-4 h-4" />
+                                  Upload image
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setShowAttachMenu(false);
+                                    // TODO: Implement document upload
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                                >
+                                  <FileText className="w-4 h-4" />
+                                  Upload document
+                                </button>
+                              </div>
+                              {messages.length > 0 && (
+                                <>
+                                  <div className="border-t border-cultivate-border-element my-1 mx-2" />
+                                  <div className="px-1.5">
+                                    <button
+                                      onClick={() => {
+                                        setShowAttachMenu(false);
+                                        // TODO: Implement add to system
+                                      }}
+                                      className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                                    >
+                                      <FolderPlus className="w-4 h-4" />
+                                      Add to system
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                            {/* Backdrop (after menu so menu is clickable) */}
+                            <div
+                              className="fixed inset-0 z-[100]"
+                              onClick={() => setShowAttachMenu(false)}
+                            />
+                          </>
+                        )}
+                        </div>
+                      )}
 
                       {/* Voice input button (Claude-style, only in real mode) */}
                       {inputProps && isSpeechSupported && (
@@ -796,7 +1087,7 @@ export default function ConversationView({
                             <button
                               onClick={handleVoiceClick}
                               disabled={inputProps.isStreaming}
-                              className="p-2 hover:bg-[#3B3B3B] rounded-lg transition-colors disabled:opacity-40"
+                              className="p-2 hover:bg-cultivate-bg-hover rounded-lg transition-colors disabled:opacity-40"
                               title="Voice input"
                             >
                               <AudioLines className="w-5 h-5 text-cultivate-text-primary" />
@@ -930,7 +1221,7 @@ export default function ConversationView({
                     </div>
                   </div>
                 </div>
-                {!isStandalone && (
+                {!isStandalone && messages.length > 0 && (
                   <p className="mt-2 text-xs text-cultivate-text-secondary text-center leading-snug">
                     AI can make mistakes. Please verify important information.
                   </p>
@@ -939,7 +1230,8 @@ export default function ConversationView({
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Flag modal */}
       {showFlagModal && (() => {

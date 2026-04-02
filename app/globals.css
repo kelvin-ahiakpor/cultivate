@@ -35,6 +35,7 @@
   --cultivate-bg-elevated: #2B2B2B;       /* Input boxes, cards */
   --cultivate-bg-hover: #141413;          /* Hover state (darkening effect) */
   --cultivate-bg-hover-extreme: #000000;  /* User profile hover */
+  --cultivate-bg-hover-dark: #0A0A0A;     /* Darker hover for icon buttons */
 
   /* UI Border Colors */
   --cultivate-border-subtle: #2B2B2B;     /* Subtle borders and dividers */
@@ -100,6 +101,7 @@
   --color-cultivate-bg-elevated: var(--cultivate-bg-elevated);
   --color-cultivate-bg-hover: var(--cultivate-bg-hover);
   --color-cultivate-bg-hover-extreme: var(--cultivate-bg-hover-extreme);
+  --color-cultivate-bg-hover-dark: var(--cultivate-bg-hover-dark);
   --color-cultivate-border-subtle: var(--cultivate-border-subtle);
   --color-cultivate-border-element: var(--cultivate-border-element);
   --color-cultivate-error: var(--cultivate-error);

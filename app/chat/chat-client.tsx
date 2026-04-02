@@ -73,6 +73,15 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
+  // Rename/Delete modals
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [renameTargetId, setRenameTargetId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameLoading, setRenameLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   // Chat state
   interface ChatMessage {
     id: string;
@@ -339,13 +348,15 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
     setCurrentConversationId(chatId);
     setConversationTitle(chatTitle || null);
     setConversationSystem(systemName || null);
-    setMessages([]);
     setIsStreaming(false);
     setStreamingContent("");
     setSelectedChatId(chatId);
     setActiveView("chat");
     setHeaderMenuOpen(false);
     if (window.innerWidth < 1024) setSidebarOpen(false);
+
+    // Set loading state FIRST (before clearing messages) to prevent flash
+    setMessagesLoading(true);
 
     if (demoMode) {
       // Demo: load mock messages for this specific chat (or default)
@@ -358,8 +369,8 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
         isFlagged: m.isFlagged,
         flaggedQuery: m.flaggedQuery,
       })));
+      setMessagesLoading(false);
     } else {
-      setMessagesLoading(true);
       try {
         const res = await fetch(`/api/conversations/${chatId}/messages`);
         const data = await res.json();
@@ -398,6 +409,84 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
   // Keep selectedChatId in sync — no longer clear it so sidebar highlights the opened chat
   const handleChatOpened = () => {
     // intentionally kept empty
+  };
+
+  const handleNewChat = () => {
+    setMessages([]);
+    setCurrentConversationId(null);
+    setConversationTitle(null);
+    setConversationSystem(null);
+    setStreamingContent("");
+    setActiveView("chat");
+  };
+
+  const handleRenameClick = (chatId: string) => {
+    const chat = sidebarChats.find(c => c.id === chatId);
+    setRenameTargetId(chatId);
+    setRenameValue(chat?.title || "");
+    setShowRenameModal(true);
+    setChatMenuId(null);
+  };
+
+  const handleRenameSubmit = async () => {
+    if (demoMode || !renameTargetId || !renameValue.trim()) return;
+    setRenameLoading(true);
+    try {
+      const res = await fetch(`/api/conversations/${renameTargetId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: renameValue.trim() }),
+      });
+      if (!res.ok) throw new Error("Failed to rename");
+      // Refresh sidebar
+      apiConversations.mutate();
+      // Update current conversation title if this is the active one
+      if (currentConversationId === renameTargetId) {
+        setConversationTitle(renameValue.trim());
+      }
+      setShowRenameModal(false);
+      setRenameTargetId(null);
+      setRenameValue("");
+    } catch (e) {
+      notify.error("Failed to rename conversation");
+      console.error(e);
+    } finally {
+      setRenameLoading(false);
+    }
+  };
+
+  const handleDeleteClick = (chatId: string) => {
+    setDeleteTargetId(chatId);
+    setShowDeleteModal(true);
+    setChatMenuId(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (demoMode || !deleteTargetId) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`/api/conversations/${deleteTargetId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      // Refresh sidebar
+      apiConversations.mutate();
+      // If we deleted the currently open conversation, clear the view
+      if (currentConversationId === deleteTargetId) {
+        setCurrentConversationId(null);
+        setConversationTitle(null);
+        setConversationSystem(null);
+        setMessages([]);
+        setActiveView("chat");
+      }
+      setShowDeleteModal(false);
+      setDeleteTargetId(null);
+    } catch (e) {
+      notify.error("Failed to delete conversation");
+      console.error(e);
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   return (
@@ -520,28 +609,26 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                     >
                       {/* Text label — min-w-0 is critical for flex child truncation */}
                       <span
-                        className={`flex-1 min-w-0 ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm py-1.5 pl-2 overflow-hidden whitespace-nowrap ${
+                        className={`flex-1 min-w-0 ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm py-1.5 pl-2 pr-1 overflow-hidden whitespace-nowrap ${
                           isActive
-                            ? 'text-white [mask-image:linear-gradient(to_right,black_75%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_right,black_75%,transparent_100%)]'
-                            : 'text-cultivate-text-primary group-hover:text-white truncate group-hover:[text-overflow:clip] group-hover:[mask-image:linear-gradient(to_right,black_75%,transparent_100%)] group-hover:[-webkit-mask-image:linear-gradient(to_right,black_75%,transparent_100%)]'
+                            ? 'text-white [mask-image:linear-gradient(to_right,black_85%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_right,black_85%,transparent_100%)]'
+                            : 'text-cultivate-text-primary group-hover:text-white truncate group-hover:[text-overflow:clip] group-hover:[mask-image:linear-gradient(to_right,black_85%,transparent_100%)] group-hover:[-webkit-mask-image:linear-gradient(to_right,black_85%,transparent_100%)]'
                         }`}
                       >
                         {chat.title}
                       </span>
-                      {/* Three-dot menu — self-stretch fills row height via items-stretch parent */}
-                      <div className="relative flex-shrink-0 flex items-center">
+                      {/* Three-dot menu — absolute positioned so it doesn't take layout space when hidden */}
+                      <div className="relative flex-shrink-0 w-8 flex items-center">
                         <button
                           onClick={(e) => { e.stopPropagation(); setChatMenuId(isMenuOpen ? null : chat.id); }}
-                          className={`${isActive || isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} ${isMenuOpen ? 'bg-[#0a0a0a]' : 'hover:bg-cultivate-bg-hover'} transition-all px-2 self-stretch rounded-lg flex items-center`}
+                          className={`absolute right-0 ${isActive || isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} ${isMenuOpen ? 'bg-cultivate-bg-hover-dark' : 'hover:bg-cultivate-bg-hover'} transition-all w-8 h-full rounded-lg flex items-center justify-center`}
                         >
                           <MoreHorizontal className="w-4 h-4 text-cultivate-text-secondary hover:text-white transition-colors" strokeWidth={2.5} />
                         </button>
 
                         {/* Dropdown: Share, Rename, [Remove from system], Delete */}
                         {isMenuOpen && (
-                          <>
-                            <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }} />
-                            <div className="absolute right-0 top-full mt-1.5 bg-cultivate-bg-elevated rounded-xl shadow-xl border border-cultivate-border-element py-1.5 z-50 min-w-[180px] whitespace-nowrap">
+                          <div className="absolute right-0 top-full mt-1.5 bg-cultivate-bg-elevated rounded-xl shadow-xl border border-cultivate-border-element py-1.5 z-[101] min-w-[180px] whitespace-nowrap">
                               <div className="px-1.5">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}
@@ -551,7 +638,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                                   Share
                                 </button>
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}
+                                  onClick={(e) => { e.stopPropagation(); handleRenameClick(chat.id); }}
                                   className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
@@ -571,7 +658,7 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                               <div className="border-t border-cultivate-border-element my-1 mx-2" />
                               <div className="px-1.5">
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteClick(chat.id); }}
                                   className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-cultivate-bg-hover hover:text-red-300 rounded-lg flex items-center gap-2.5 transition-colors"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -579,7 +666,6 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                                 </button>
                               </div>
                             </div>
-                          </>
                         )}
                       </div>
                     </div>
@@ -989,6 +1075,77 @@ export default function ChatPageClient({ user, demoMode = false }: ChatPageProps
                 className="px-4 py-2 bg-[#5a7048] hover:bg-[#4a5d38] text-white text-sm font-medium rounded-lg transition-colors"
               >
                 Install
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Rename Conversation Modal */}
+      {showRenameModal && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowRenameModal(false)} />
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-80 shadow-xl">
+            <div className="mb-4">
+              <h2 className="text-white font-semibold text-base mb-3">Rename Conversation</h2>
+              <input
+                type="text"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !renameLoading) handleRenameSubmit(); }}
+                placeholder="Enter new title..."
+                className="w-full px-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setShowRenameModal(false)}
+                disabled={renameLoading}
+                className="px-4 py-2 text-sm text-cultivate-text-secondary hover:text-white transition-colors rounded-lg disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRenameSubmit}
+                disabled={renameLoading || !renameValue.trim()}
+                className="px-4 py-2 bg-[#5a7048] hover:bg-[#4a5d38] text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+              >
+                {renameLoading ? "Renaming..." : "Rename"}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Delete Conversation Modal */}
+      {showDeleteModal && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowDeleteModal(false)} />
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-96 shadow-xl">
+            <div className="mb-4">
+              <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center mb-3">
+                <Trash2 className="w-5 h-5 text-red-400" />
+              </div>
+              <h2 className="text-white font-semibold text-base mb-1.5">Delete Conversation</h2>
+              <p className="text-cultivate-text-secondary text-sm leading-relaxed">
+                Are you sure you want to delete this conversation? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleteLoading}
+                className="px-4 py-2 text-sm text-cultivate-text-secondary hover:text-white transition-colors rounded-lg disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deleteLoading}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+              >
+                {deleteLoading ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
