@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle, ChevronDown, ExternalLink, Flag, Loader2, PanelLeft, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, ArrowLeft, CheckCircle, ChevronDown, ExternalLink, Flag, GripVertical, Loader2, MessageCircle, PanelLeft, User, X } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { useFarmerFlaggedQueries, type FarmerFlaggedQueryItem } from "@/lib/hooks/use-farmer-flagged-queries";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import useSWR from "swr";
+import { SproutIcon } from "@/components/cultivate-ui";
 
 type Filter = "all" | "PENDING" | "VERIFIED" | "CORRECTED";
 
 const LAST_SEEN_KEY = "cultivate-farmer-flagged-last-seen";
+const DEFAULT_PANEL_WIDTH = 576;
+const MIN_PANEL_WIDTH = 400;
 
 interface FlaggedQueriesViewProps {
   sidebarOpen?: boolean;
@@ -17,6 +21,15 @@ interface FlaggedQueriesViewProps {
   onOpenConversation: (query: FarmerFlaggedQueryItem) => void;
   onViewedUpdates?: () => void;
   demoMode?: boolean;
+}
+
+interface ConversationPanelMessage {
+  id: string;
+  role: "USER" | "ASSISTANT";
+  content: string;
+  timestamp: string;
+  confidenceScore?: number;
+  isFlagged?: boolean;
 }
 
 function getStatusColor(status: Filter | FarmerFlaggedQueryItem["status"]) {
@@ -41,9 +54,22 @@ export default function FlaggedQueriesView({
 }: FlaggedQueriesViewProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const [isStandalone, setIsStandalone] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const flagReasonsRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const [chatPanelOpen, setChatPanelOpen] = useState(false);
+  const [chatPanelQuery, setChatPanelQuery] = useState<FarmerFlaggedQueryItem | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
+  const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_WIDTH);
+  const [isResizing, setIsResizing] = useState(false);
+  const flaggedMessageRef = useRef<HTMLDivElement>(null);
   const apiData = useFarmerFlaggedQueries(filter === "all" ? "" : filter, 1, 20, demoMode);
+  const { data: conversationData } = useSWR(
+    !demoMode && chatPanelQuery?.conversationId
+      ? `/api/conversations/${chatPanelQuery.conversationId}/messages`
+      : null,
+    (url: string) => fetch(url).then((res) => res.json())
+  );
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(display-mode: standalone)");
@@ -58,10 +84,56 @@ export default function FlaggedQueriesView({
   }, []);
 
   useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString());
     onViewedUpdates?.();
   }, [onViewedUpdates]);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = window.innerWidth - e.clientX;
+      const maxWidth = window.innerWidth;
+      const clamped = Math.min(Math.max(newWidth, MIN_PANEL_WIDTH), maxWidth);
+      setPanelWidth(clamped);
+    };
+
+    const handleMouseUp = () => setIsResizing(false);
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    };
+  }, [isResizing]);
+
+  useEffect(() => {
+    if (chatPanelOpen && flaggedMessageRef.current) {
+      const timer = setTimeout(() => {
+        flaggedMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [chatPanelOpen]);
 
   const reviewUpdates = useMemo(
     () => apiData.queries.filter((query) => query.reviewedAtIso),
@@ -69,6 +141,22 @@ export default function FlaggedQueriesView({
   );
 
   const flaggedCountLabel = `${apiData.total} ${apiData.total === 1 ? "question flagged" : "questions flagged"}`;
+
+  const handleOpenChatPanel = (query: FarmerFlaggedQueryItem) => {
+    setChatPanelQuery(query);
+    setChatPanelOpen(true);
+    setIsClosing(false);
+  };
+
+  const handleCloseChatPanel = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setChatPanelOpen(false);
+      setChatPanelQuery(null);
+      setIsClosing(false);
+      setPanelWidth(DEFAULT_PANEL_WIDTH);
+    }, 300);
+  };
 
   return (
     <div className="flex flex-col h-full overflow-y-hidden overflow-x-clip">
@@ -311,7 +399,7 @@ export default function FlaggedQueriesView({
                         <span>{query.reviewedAt ? `Updated ${query.reviewedAt}` : `Flagged ${query.createdAt}`}</span>
                       </div>
                       <button
-                        onClick={() => onOpenConversation(query)}
+                        onClick={() => handleOpenChatPanel(query)}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-cultivate-text-secondary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
                       >
                         <ExternalLink className="w-3 h-3" />
@@ -325,6 +413,205 @@ export default function FlaggedQueriesView({
           </div>
         )}
       </div>
+
+      {chatPanelOpen && chatPanelQuery && (() => {
+        const conversation = conversationData
+          ? {
+              title: conversationData.conversation?.title || "Conversation",
+              messages: (conversationData.messages || []).map((message: {
+                id: string;
+                role: "USER" | "ASSISTANT";
+                content: string;
+                timestamp: string;
+                confidenceScore?: number;
+                isFlagged?: boolean;
+              }) => ({
+                id: message.id,
+                role: message.role,
+                content: message.content,
+                timestamp: message.timestamp,
+                confidenceScore: message.confidenceScore,
+                isFlagged: message.isFlagged,
+              })),
+            }
+          : null;
+
+        if (!conversation) {
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+              <Loader2 className="w-8 h-8 text-white animate-spin" />
+            </div>
+          );
+        }
+
+        return (
+          <>
+            <div className="fixed inset-0 bg-black/40 z-40" onClick={handleCloseChatPanel} />
+            <div
+              className={`fixed top-0 right-0 h-full bg-[#1C1C1C] border-l border-cultivate-border-subtle z-50 flex flex-col shadow-2xl transition-transform duration-300 ${
+                isClosing ? "translate-x-full" : "translate-x-0"
+              }`}
+              style={{ width: isDesktop ? `${panelWidth}px` : "100vw" }}
+            >
+              <div
+                className="hidden lg:block absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 bg-[#1C1C1C] rounded-full p-1.5 cursor-col-resize z-10 border border-cultivate-border-subtle hover:border-white shadow-lg group"
+                onMouseDown={handleResizeStart}
+                onDoubleClick={() => setPanelWidth(DEFAULT_PANEL_WIDTH)}
+                title="Drag to resize, double-click to reset"
+              >
+                <GripVertical className="w-3.5 h-3.5 text-[#e8c8ab] group-hover:text-white transition-colors" />
+              </div>
+
+              <div className="flex items-center justify-between px-5 pt-16 pb-3 lg:py-4 border-b border-cultivate-border-subtle">
+                <div className="flex items-center gap-3">
+                  <div className="lg:hidden">
+                    <GlassCircleButton onClick={handleCloseChatPanel} aria-label="Back">
+                      <ArrowLeft className="w-4 h-4 text-white" />
+                    </GlassCircleButton>
+                  </div>
+                  <button
+                    onClick={handleCloseChatPanel}
+                    className="hidden lg:flex p-1.5 hover:bg-cultivate-bg-elevated rounded-lg transition-colors"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-cultivate-text-primary" />
+                  </button>
+                  <div>
+                    <h2 className="text-sm font-medium text-white">{conversation.title}</h2>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-cultivate-text-secondary">{chatPanelQuery.agentName}</span>
+                      <span className="text-xs text-cultivate-text-tertiary">&middot;</span>
+                      <span className="text-xs text-cultivate-text-secondary">{chatPanelQuery.status.charAt(0) + chatPanelQuery.status.slice(1).toLowerCase()}</span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={handleCloseChatPanel}
+                  className="hidden lg:flex p-1.5 hover:bg-cultivate-bg-elevated rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4 text-cultivate-text-secondary" />
+                </button>
+              </div>
+
+              <div className="px-5 py-2 bg-[#e8c8ab]/5 border-b border-[#e8c8ab]/10 flex items-center gap-2">
+                <Flag className="w-3.5 h-3.5 text-[#e8c8ab]" />
+                <span className="text-xs text-[#e8c8ab]">
+                  Flagged message highlighted below · {(chatPanelQuery.confidenceScore * 100).toFixed(0)}% confidence
+                </span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+                {conversation.messages.map((msg: ConversationPanelMessage) => (
+                  <div
+                    key={msg.id}
+                    ref={msg.isFlagged ? flaggedMessageRef : undefined}
+                    className={`flex ${msg.role === "USER" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div className={`max-w-[85%] ${msg.isFlagged ? "relative" : ""}`}>
+                      {msg.isFlagged && (
+                        <div className="absolute -left-1 -top-2 -right-2 -bottom-2 rounded-2xl border-2 border-[#e8c8ab]/30 pointer-events-none" />
+                      )}
+
+                      <div className={`flex gap-2.5 ${msg.role === "USER" ? "flex-row-reverse" : "flex-row"}`}>
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                          msg.role === "USER" ? "bg-cultivate-teal" : "bg-cultivate-green-light"
+                        }`}>
+                          {msg.role === "USER" ? (
+                            <User className="w-3.5 h-3.5 text-white" />
+                          ) : (
+                            <div className="text-white scale-75"><SproutIcon /></div>
+                          )}
+                        </div>
+
+                        <div className={`rounded-2xl px-3.5 py-2.5 ${
+                          msg.role === "USER"
+                            ? "bg-cultivate-bg-elevated text-cultivate-text-primary"
+                            : msg.isFlagged
+                              ? "bg-[#e8c8ab]/5 border border-[#e8c8ab]/20 text-cultivate-text-primary"
+                              : "bg-cultivate-bg-main text-cultivate-text-primary"
+                        }`}>
+                          {msg.role === "ASSISTANT" ? (
+                            <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary prose-p:my-1">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                            </div>
+                          ) : (
+                            <p className="text-sm whitespace-pre-line leading-relaxed">{msg.content}</p>
+                          )}
+                          <div className={`flex items-center gap-2 mt-1.5 ${msg.role === "USER" ? "justify-end" : "justify-start"}`}>
+                            <span className="text-[10px] text-cultivate-text-tertiary">{msg.timestamp}</span>
+                            {msg.confidenceScore !== undefined && (
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                                msg.confidenceScore < 0.7
+                                  ? "bg-[#e8c8ab]/20 text-[#e8c8ab]"
+                                  : "bg-cultivate-green-light/20 text-cultivate-green-light"
+                              }`}>
+                                {(msg.confidenceScore * 100).toFixed(0)}%
+                              </span>
+                            )}
+                            {msg.isFlagged && <Flag className="w-3 h-3 text-[#e8c8ab]" />}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {chatPanelQuery.status === "CORRECTED" && chatPanelQuery.agronomistResponse && (
+                  <div className="border-t border-cultivate-border-element pt-4 mt-4">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cultivate-teal" />
+                      <span className="text-xs text-cultivate-teal font-medium">Expert Correction</span>
+                    </div>
+                    <div className="bg-cultivate-teal/5 border border-[#608e96]/20 rounded-xl px-3.5 py-2.5">
+                      <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary prose-p:my-1">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{chatPanelQuery.agronomistResponse}</ReactMarkdown>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {chatPanelQuery.status === "VERIFIED" && (
+                  <div className="border-t border-cultivate-border-element pt-4 mt-4">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-cultivate-green-light" />
+                      <span className="text-xs text-cultivate-green-light font-medium">Expert Review</span>
+                    </div>
+                    <div className="bg-cultivate-green-light/5 border border-[#85b878]/20 rounded-xl px-3.5 py-2.5">
+                      <p className="text-sm text-cultivate-text-primary leading-relaxed">
+                        {chatPanelQuery.verificationNotes || "An agronomist reviewed this response and marked it accurate."}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="px-5 py-3 border-t border-cultivate-border-subtle flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <MessageCircle className="w-3.5 h-3.5 text-cultivate-text-tertiary" />
+                  <span className="text-xs text-cultivate-text-tertiary">{conversation.messages.length} messages</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleCloseChatPanel}
+                    className="px-3 py-1.5 text-xs text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleCloseChatPanel();
+                      onOpenConversation(chatPanelQuery);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-cultivate-text-secondary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Open Chat
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
 }
