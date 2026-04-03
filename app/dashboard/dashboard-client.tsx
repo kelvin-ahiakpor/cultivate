@@ -62,14 +62,29 @@ function ActivityRow({ item, isStandalone }: { item: ActivityItem; isStandalone:
 
 export default function DashboardClient({ user, demoMode = false, initialView = "overview", initialAgentId = null }: DashboardProps) {
   const recentChatsLimit = 15;
-  const [sidebarOpen, setSidebarOpen] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth >= 1024 : false
-  );
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  // Keep SSR and first client render aligned, then sync sidebar state after mount.
+  useEffect(() => {
+    let frame = 0;
+
+    const syncSidebar = () => {
+      setSidebarOpen(window.innerWidth >= 1024);
+    };
+
+    frame = window.requestAnimationFrame(syncSidebar);
+    window.addEventListener("resize", syncSidebar);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", syncSidebar);
+    };
+  }, []);
 
   // Capture the browser's PWA install prompt for the Install button
   useEffect(() => {
