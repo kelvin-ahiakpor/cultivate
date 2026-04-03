@@ -4,7 +4,7 @@ import DashboardClient from "./dashboard-client";
 
 const VALID_DASHBOARD_VIEWS = ["overview", "agents", "knowledge", "flagged", "chats", "analytics", "agent-edit"] as const;
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ view?: string; agent?: string }> }) {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ view?: string; agent?: string; c?: string }> }) {
   const session = await auth();
 
   if (!session) {
@@ -30,6 +30,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       }}
       initialView={initialView}
       initialAgentId={params.agent || null}
+      initialChatId={params.c || null}
     />
   );
 }

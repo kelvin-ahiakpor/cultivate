@@ -34,6 +34,7 @@ interface DashboardProps {
   demoMode?: boolean;
   initialView?: string;
   initialAgentId?: string | null;
+  initialChatId?: string | null;
 }
 
 /** Maps an API activity type to its icon + color. Used in the real-mode activity feed. */
@@ -60,7 +61,7 @@ function ActivityRow({ item, isStandalone }: { item: ActivityItem; isStandalone:
   );
 }
 
-export default function DashboardClient({ user, demoMode = false, initialView = "overview", initialAgentId = null }: DashboardProps) {
+export default function DashboardClient({ user, demoMode = false, initialView = "overview", initialAgentId = null, initialChatId = null }: DashboardProps) {
   const recentChatsLimit = 15;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -130,7 +131,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
   const [activeNav, setActiveNav] = useState(initialView);
   const [activeAgentId, setActiveAgentId] = useState<string | null>(initialAgentId);
   const [activeKnowledgeAgentId, setActiveKnowledgeAgentId] = useState<string | null>(null);
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [activeChatId, setActiveChatId] = useState<string | null>(initialChatId);
   const [chatListResetKey, setChatListResetKey] = useState(0);
   const [activityPanelOpen, setActivityPanelOpen] = useState(false);
   // Ref to measure the 8th item's bottom — makes the list snap to exactly 8 visible items
@@ -164,9 +165,10 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
     const params = new URLSearchParams();
     if (activeNav !== "overview") params.set("view", activeNav);
     if (activeNav === "agent-edit" && activeAgentId) params.set("agent", activeAgentId);
+    if (activeNav === "chats" && activeChatId) params.set("c", activeChatId);
     const query = params.toString();
     window.history.replaceState(null, "", "/dashboard" + (query ? "?" + query : ""));
-  }, [activeNav, activeAgentId, demoMode]);
+  }, [activeNav, activeAgentId, activeChatId, demoMode]);
 
   // Overview stats — disabled in demo mode (zero API requests)
   const { stats, isLoading: statsLoading } = useDashboardStats(demoMode);
@@ -741,7 +743,17 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
             />
           )}
           {/* demoMode disables SWR fetch — view uses initialFlagged local state */}
-          {activeNav === "flagged" && <FlaggedView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} demoMode={demoMode} />}
+          {activeNav === "flagged" && (
+            <FlaggedView
+              sidebarOpen={sidebarOpen}
+              setSidebarOpen={setSidebarOpen}
+              demoMode={demoMode}
+              onOpenChat={(conversationId) => {
+                setActiveChatId(conversationId);
+                setActiveNav("chats");
+              }}
+            />
+          )}
 
           {activeNav === "analytics" && (
             <div>

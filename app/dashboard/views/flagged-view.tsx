@@ -38,11 +38,13 @@ export default function FlaggedView({
   sidebarOpen = true,
   setSidebarOpen,
   demoMode = false,
+  onOpenChat,
 }: {
   sidebarOpen?: boolean;
   setSidebarOpen?: (v: boolean) => void;
   // demoMode: uses initialFlagged local state, makes zero API requests. See BACKEND-PROGRESS.md § Phase 5.
   demoMode?: boolean;
+  onOpenChat?: (conversationId: string) => void;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<FlagStatus>("all");
@@ -862,7 +864,13 @@ export default function FlaggedView({
           : conversationData
             ? {
                 title: conversationData.conversation?.title || "Conversation",
-                messages: conversationData.messages?.map((m: any) => ({
+                messages: conversationData.messages?.map((m: {
+                  id: string;
+                  role: "USER" | "ASSISTANT";
+                  content: string;
+                  timestamp: string;
+                  isFlagged?: boolean;
+                }) => ({
                   id: m.id,
                   role: m.role,
                   content: m.content,
@@ -1044,12 +1052,24 @@ export default function FlaggedView({
                   <MessageCircle className="w-3.5 h-3.5 text-cultivate-text-tertiary" />
                   <span className="text-xs text-cultivate-text-tertiary">{conversation.messages.length} messages</span>
                 </div>
-                <button
-                  onClick={handleCloseChatPanel}
-                  className="px-3 py-1.5 text-xs text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
-                >
-                  Close
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      handleCloseChatPanel();
+                      onOpenChat?.(chatPanelQuery.conversationId);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-cultivate-text-secondary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Open Chat
+                  </button>
+                  <button
+                    onClick={handleCloseChatPanel}
+                    className="px-3 py-1.5 text-xs text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
           </>
