@@ -111,7 +111,7 @@ export default function FlaggedQueriesView({
         </div>
 
         {reviewUpdates.length > 0 && (
-          <div className="mt-4 rounded-xl border border-cultivate-border-element bg-cultivate-bg-elevated px-4 py-3">
+          <div className="mt-4 mr-3 rounded-xl border border-cultivate-border-element bg-cultivate-bg-elevated px-4 py-3">
             <p className="text-sm text-white">
               {reviewUpdates.length === 1 ? "1 flagged query has a new expert response." : `${reviewUpdates.length} flagged queries have new expert responses.`}
             </p>
@@ -315,7 +315,7 @@ export default function FlaggedQueriesView({
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-cultivate-text-secondary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
                       >
                         <ExternalLink className="w-3 h-3" />
-                        Open Chat
+                        View Chat
                       </button>
                     </div>
                   </div>
