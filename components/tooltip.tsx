@@ -1,6 +1,11 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
+import {
+  Tooltip as TooltipPrimitive,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 interface TooltipProps {
   content: string;
@@ -8,20 +13,10 @@ interface TooltipProps {
 }
 
 export function Tooltip({ content, children }: TooltipProps) {
-  const [show, setShow] = useState(false);
-
   return (
-    <div
-      className="relative inline-flex"
-      onMouseEnter={() => setShow(true)}
-      onMouseLeave={() => setShow(false)}
-    >
-      {children}
-      {show && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 px-2.5 py-1 bg-cultivate-bg-hover-extreme rounded text-xs text-white whitespace-nowrap pointer-events-none z-50">
-          {content}
-        </div>
-      )}
-    </div>
+    <TooltipPrimitive>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent>{content}</TooltipContent>
+    </TooltipPrimitive>
   );
 }
