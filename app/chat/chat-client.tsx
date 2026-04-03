@@ -2,16 +2,18 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Download, Share, Pencil, Unlink, Trash2, Globe, AudioLines, Mic, AlertTriangle } from "lucide-react";
+import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Download, Share, Pencil, Unlink, Trash2, Globe, AudioLines, Mic, AlertTriangle, Flag } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { mutate as globalMutate } from "swr";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon, GlassCircleButton, Tooltip } from "@/components/cultivate-ui";
 import ConversationView from "@/components/conversation-view";
 import ChatsView, { mockChats } from "./views/chats-view";
+import FlaggedQueriesView from "./views/flagged-queries-view";
 import SystemsView from "./views/systems-view";
 import SettingsView from "./views/settings-view";
 import { useConversations } from "@/lib/hooks/use-conversations";
 import { useAgents } from "@/lib/hooks/use-agents";
+import { useFarmerFlaggedQueries, type FarmerFlaggedQueryItem } from "@/lib/hooks/use-farmer-flagged-queries";
 import { DEMO_FARMER_CONVO_MESSAGES } from "@/lib/demo-data";
 import { translateToEnglish, translateFromEnglish, LANGUAGES, type SupportedLanguage } from "@/lib/translation";
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
@@ -29,11 +31,12 @@ interface ChatPageProps {
   };
   // demoMode: uses mockChats, makes zero API requests. See BACKEND-PROGRESS.md § Phase 5.
   demoMode?: boolean;
-  initialView?: "chat" | "chats" | "systems" | "settings";
+  initialView?: "chat" | "chats" | "systems" | "settings" | "flagged";
   initialConversationId?: string | null;
 }
 
 export default function ChatPageClient({ user, demoMode = false, initialView = "chat", initialConversationId = null }: ChatPageProps) {
+  const FLAGGED_LAST_SEEN_KEY = "cultivate-farmer-flagged-last-seen";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -55,7 +58,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   const [showAgentMenu, setShowAgentMenu] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState("General Farm Advisor");
   const [sendIcon, setSendIcon] = useState<"cabbage" | "plane" | "sprout">("cabbage");
-  const [activeView, setActiveView] = useState<"chat" | "chats" | "systems" | "settings">(initialView);
+  const [activeView, setActiveView] = useState<"chat" | "chats" | "systems" | "settings" | "flagged">(initialView);
 
   // Translation state
   const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>('en');
@@ -69,6 +72,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   });
 
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [flaggedUpdatesSeenAt, setFlaggedUpdatesSeenAt] = useState<string | null>(null);
   const [chatMenuId, setChatMenuId] = useState<string | null>(null);
   const [showInstallModal, setShowInstallModal] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,6 +119,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
 
   // Sidebar conversation list — disabled in demo mode (zero API requests)
   const apiConversations = useConversations("", 1, 30, demoMode);
+  const farmerFlags = useFarmerFlaggedQueries("", 1, 50, demoMode);
   // Unified list: demo uses mockChats shape, real uses API data normalized to same shape
   const sidebarChats = demoMode
     ? mockChats
@@ -132,6 +137,11 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   useEffect(() => {
     localStorage.setItem('cultivate-language', selectedLanguage);
   }, [selectedLanguage]);
+
+  useEffect(() => {
+    const lastSeen = localStorage.getItem(FLAGGED_LAST_SEEN_KEY);
+    setFlaggedUpdatesSeenAt(lastSeen);
+  }, []);
 
   // Sync active view + conversation ID to URL so refresh restores state
   useEffect(() => {
@@ -466,6 +476,16 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
     if (window.innerWidth < 1024) setSidebarOpen(false);
   };
 
+  const handleOpenFlaggedConversation = (query: FarmerFlaggedQueryItem) => {
+    loadExistingConversation(query.conversationId, query.conversationTitle || "Conversation");
+  };
+
+  const unseenFlaggedUpdates = farmerFlags.queries.filter((query) => {
+    if (!query.reviewedAtIso) return false;
+    if (!flaggedUpdatesSeenAt) return true;
+    return new Date(query.reviewedAtIso).getTime() > new Date(flaggedUpdatesSeenAt).getTime();
+  }).length;
+
   // Keep selectedChatId in sync — no longer clear it so sidebar highlights the opened chat
   const handleChatOpened = () => {
     // intentionally kept empty
@@ -634,6 +654,31 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
               {!sidebarOpen && (
                 <div className="absolute left-full ml-2 px-2 py-1 bg-cultivate-bg-elevated text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                   Systems
+                </div>
+              )}
+            </button>
+
+            {/* Flagged Queries */}
+            <button
+              onClick={() => { setActiveView("flagged"); if (window.innerWidth < 1024) setSidebarOpen(false); }}
+              className={`group relative w-full flex items-center gap-3 pl-3 pr-2 py-1.5 rounded-lg transition-colors ${!sidebarOpen ? 'justify-center' : ''} ${
+                activeView === "flagged" ? "bg-cultivate-bg-hover text-white" : "text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white"
+              }`}
+            >
+              <Flag className="w-5 h-5 standalone:w-6 standalone:h-6 lg:w-5 lg:h-5 text-white flex-shrink-0" />
+              {sidebarOpen && (
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={`${isStandalone ? "text-lg" : "text-sm"} lg:text-sm`}>Flagged Queries</span>
+                  {unseenFlaggedUpdates > 0 && (
+                    <span className="inline-flex min-w-5 h-5 px-1.5 items-center justify-center rounded-full bg-cultivate-beige text-[#1C1C1C] text-[10px] font-medium">
+                      {unseenFlaggedUpdates}
+                    </span>
+                  )}
+                </div>
+              )}
+              {!sidebarOpen && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-cultivate-bg-elevated text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                  Flagged Queries
                 </div>
               )}
             </button>
@@ -858,6 +903,22 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
               sidebarOpen={sidebarOpen}
               setSidebarOpen={setSidebarOpen}
               onBackToChat={() => setActiveView("chat")}
+              demoMode={demoMode}
+            />
+          </div>
+        )}
+
+        {activeView === "flagged" && (
+          <div className="max-w-5xl w-full mx-auto px-4 sm:px-8 py-8 flex-1 min-h-0 overflow-hidden">
+            <FlaggedQueriesView
+              sidebarOpen={sidebarOpen}
+              setSidebarOpen={setSidebarOpen}
+              onOpenConversation={handleOpenFlaggedConversation}
+              onViewedUpdates={() => {
+                const now = new Date().toISOString();
+                localStorage.setItem(FLAGGED_LAST_SEEN_KEY, now);
+                setFlaggedUpdatesSeenAt(now);
+              }}
               demoMode={demoMode}
             />
           </div>
