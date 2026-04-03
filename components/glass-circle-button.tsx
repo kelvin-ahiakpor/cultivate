@@ -44,7 +44,7 @@ export default function GlassCircleButton({
   return (
     <button
       {...props}
-      className={`${sizeClasses[size]} flex items-center justify-center bg-white/[0.08] hover:bg-white/[0.13] backdrop-blur-sm border border-white/10 rounded-full transition-colors flex-shrink-0 ${className}`}
+      className={`${sizeClasses[size]} flex items-center justify-center bg-white/[0.08] hover:bg-white/[0.13] backdrop-blur-sm border border-white/10 rounded-full transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${className}`}
     >
       {children}
     </button>
