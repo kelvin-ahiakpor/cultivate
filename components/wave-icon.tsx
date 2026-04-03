@@ -12,6 +12,7 @@ export function WaveIcon({ className }: { className?: string }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      aria-hidden="true"
     >
       <path
         d="M3 10H5M8 7V13M11 4V16M14 7V13M17 10H15"
