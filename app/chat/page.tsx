@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import ChatPageClient from "./chat-client";
 
-const VALID_CHAT_VIEWS = ["chat", "chats", "systems", "settings"] as const;
+const VALID_CHAT_VIEWS = ["chat", "chats", "systems", "settings", "flagged"] as const;
 type ChatView = typeof VALID_CHAT_VIEWS[number];
 
 export default async function ChatPage({ searchParams }: { searchParams: Promise<{ view?: string; c?: string }> }) {
