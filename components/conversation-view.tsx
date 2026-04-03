@@ -95,6 +95,8 @@ interface ConversationViewProps {
   title: string;
   systemName?: string | null;
   subtitle?: string | null;
+  footerMeta?: string | null;
+  showSubtitleInHeader?: boolean;
   // Header state / callbacks
   headerMenuOpen: boolean;
   setHeaderMenuOpen: (v: boolean) => void;
@@ -122,6 +124,7 @@ export default function ConversationView({
   title,
   systemName,
   subtitle,
+  footerMeta,
   headerMenuOpen,
   setHeaderMenuOpen,
   onBack,
@@ -133,6 +136,7 @@ export default function ConversationView({
   isStandalone,
   inputProps,
   demoAgentLabel,
+  showSubtitleInHeader = true,
   showComposer = true,
   showNewChatButton = true,
   showMessageActions = true,
@@ -441,7 +445,7 @@ export default function ConversationView({
             <span className="text-sm standalone:text-base font-medium text-white truncate w-full text-center">
               {title || "Untitled conversation"}
             </span>
-            {subtitle && (
+            {showSubtitleInHeader && subtitle && (
               <span className="text-xs text-cultivate-text-secondary truncate w-full text-center">
                 {subtitle}
               </span>
@@ -469,7 +473,7 @@ export default function ConversationView({
         {/* Desktop breadcrumb header */}
         <div className="hidden lg:flex items-center justify-between gap-1">
           <div className="flex items-center gap-1 flex-1 min-w-0">
-          {(systemName || subtitle) && (
+          {(systemName || (showSubtitleInHeader && subtitle)) && (
             <>
               <span className="text-sm text-cultivate-text-primary hover:text-white truncate cursor-pointer transition-colors">
                 {systemName || subtitle}
@@ -1283,7 +1287,7 @@ export default function ConversationView({
                     </div>
                   </div>
                 </div>
-                {!isStandalone && (messages.length > 0 || messagesLoading) && (
+                {showComposer && !isStandalone && (messages.length > 0 || messagesLoading) && (
                   <p className="mt-2 text-xs text-cultivate-text-secondary text-center leading-snug">
                     AI can make mistakes. Please verify important information.
                   </p>
@@ -1292,6 +1296,13 @@ export default function ConversationView({
               </div>
           </div>
         </div>
+        {!showComposer && footerMeta && (
+          <div className="flex-shrink-0 px-3 lg:px-4 py-3 border-t border-cultivate-border-element">
+            <p className="text-xs text-cultivate-text-secondary text-center">
+              {footerMeta}
+            </p>
+          </div>
+        )}
       </div>
       )}
 

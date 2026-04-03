@@ -232,10 +232,14 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
                       : ''
                   }`}
                 >
-                  <p className="text-sm standalone:text-base lg:text-sm text-white">{chat.title}</p>
-                  <div className="flex items-center justify-between mt-1">
-                    <p className="text-xs standalone:text-sm lg:text-xs text-cultivate-text-tertiary">{isStandalone ? chat.lastMessage : `Last message ${chat.lastMessage}`}</p>
-                    <p className="text-xs standalone:text-sm lg:text-xs text-cultivate-text-secondary">{chat.agentName}</p>
+                  <p className="text-sm standalone:text-base lg:text-sm text-white truncate">{chat.title}</p>
+                  <div className="flex items-center justify-between gap-3 mt-1">
+                    <p className="min-w-0 flex-1 text-xs standalone:text-sm lg:text-xs text-cultivate-text-tertiary truncate">
+                      {isStandalone ? chat.lastMessage : `Last message ${chat.lastMessage}`}
+                    </p>
+                    <p className="min-w-0 max-w-[45%] text-xs standalone:text-sm lg:text-xs text-cultivate-text-secondary truncate text-right">
+                      {chat.agentName}
+                    </p>
                   </div>
                 </div>
               ))}

@@ -8,6 +8,7 @@ import {
   Plus, Settings, HelpCircle, LogOut,
   PanelLeft, MoreHorizontal, Upload, Eye,
   CheckCircle, Pencil, ArrowRight, MessageCircle, X, Download, Loader2,
+  CircleEllipsis,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import AgentsView from "./views/agents-view";
@@ -19,7 +20,8 @@ import GlassCircleButton from "@/components/glass-circle-button";
 import { useDashboardStats } from "@/lib/hooks/use-dashboard-stats";
 import { useActivity, relativeTime, type ActivityItem } from "@/lib/hooks/use-activity";
 import { useAgents } from "@/lib/hooks/use-agents";
-import { DEMO_AGENTS } from "@/lib/demo-data";
+import { useConversations } from "@/lib/hooks/use-conversations";
+import { DEMO_AGENTS, DEMO_DASHBOARD_CHATS } from "@/lib/demo-data";
 
 interface DashboardProps {
   user: {
@@ -59,6 +61,7 @@ function ActivityRow({ item, isStandalone }: { item: ActivityItem; isStandalone:
 }
 
 export default function DashboardClient({ user, demoMode = false, initialView = "overview", initialAgentId = null }: DashboardProps) {
+  const recentChatsLimit = 15;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -114,6 +117,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
   };
   const [activeNav, setActiveNav] = useState(initialView);
   const [activeAgentId, setActiveAgentId] = useState<string | null>(initialAgentId);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [activityPanelOpen, setActivityPanelOpen] = useState(false);
   // Ref to measure the 8th item's bottom — makes the list snap to exactly 8 visible items
   const activityListRef = useRef<HTMLDivElement>(null);
@@ -177,6 +181,17 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
   const recentAgents = demoMode
     ? DEMO_AGENTS.slice(0, 3)
     : (apiAgents ?? []).slice(0, 5);
+  const { conversations: apiRecentChats } = useConversations("", 1, recentChatsLimit + 1, demoMode);
+  const recentChats = demoMode
+    ? DEMO_DASHBOARD_CHATS.slice(0, recentChatsLimit + 1)
+    : apiRecentChats.slice(0, recentChatsLimit + 1);
+  const visibleRecentChats = recentChats.slice(0, recentChatsLimit);
+  const hasMoreRecentChats = recentChats.length > recentChatsLimit;
+
+  const handleAllChatsClick = () => {
+    setActiveNav("chats");
+    if (window.innerWidth < 1024) setSidebarOpen(false);
+  };
 
   return (
     <div className="flex h-screen bg-cultivate-bg-main">
@@ -206,7 +221,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 px-2 pt-3">
+        <div className="flex-1 min-h-0 px-2 pt-3 overflow-hidden flex flex-col">
           <div className="space-y-0.5">
             {navItems.map((item) => (
               <button
@@ -233,24 +248,64 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
 
           {/* Recent Agents Section */}
           {sidebarOpen && (
-            <div className="mt-4">
+            <div className="mt-4 min-h-0 flex-1 flex flex-col">
               {/* Recent Agents label — text-sm mobile (14px), text-[11px] desktop */}
               <div className="text-[11px] standalone:text-sm lg:text-[11px] text-cultivate-text-secondary px-2 mb-1.5">
                 Recent Agents
               </div>
               {/* space-y-2 on mobile for breathing room, tight on desktop */}
-              <div className="space-y-0.5 standalone:space-y-2 lg:space-y-0.5">
+              <div className="flex-shrink-0 space-y-0.5 standalone:space-y-2 lg:space-y-0.5">
                 {recentAgents.map((agent) => (
                   <div
                     key={agent.id}
                     onClick={() => { setActiveAgentId(agent.id); setActiveNav("agent-edit"); if (window.innerWidth < 1024) setSidebarOpen(false); }}
-                    className="group flex items-stretch rounded-lg hover:bg-cultivate-bg-hover transition-colors cursor-pointer"
+                    className="group flex items-stretch rounded-lg hover:bg-cultivate-bg-hover transition-colors cursor-pointer overflow-hidden"
                   >
-                    <span className={`flex-1 truncate ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm text-cultivate-text-primary group-hover:text-white flex items-center pl-2 py-2`}>
+                    <span className={`block flex-1 min-w-0 truncate ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm text-cultivate-text-primary group-hover:text-white pl-2 py-2`}>
                       {agent.name}
                     </span>
                   </div>
                 ))}
+              </div>
+
+              <div className="text-[11px] standalone:text-sm lg:text-[11px] text-cultivate-text-secondary px-2 mt-4 mb-1.5">
+                Recent Chats
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto thin-scrollbar">
+                <div className="space-y-0.5 standalone:space-y-2 lg:space-y-0.5">
+                {visibleRecentChats.map((chat) => (
+                  <div
+                    key={chat.id}
+                    onClick={() => {
+                      setActiveChatId(chat.id);
+                      setActiveNav("chats");
+                      if (window.innerWidth < 1024) setSidebarOpen(false);
+                    }}
+                    className={`group flex items-stretch rounded-lg transition-colors cursor-pointer overflow-hidden ${
+                      activeChatId === chat.id
+                        ? "bg-cultivate-bg-hover"
+                        : "hover:bg-cultivate-bg-hover"
+                    }`}
+                  >
+                    <span className={`block flex-1 min-w-0 truncate ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm pl-2 py-2 ${
+                      activeChatId === chat.id
+                        ? "text-white"
+                        : "text-cultivate-text-primary group-hover:text-white"
+                    }`}>
+                      {chat.title}
+                    </span>
+                  </div>
+                ))}
+                </div>
+                {hasMoreRecentChats && (
+                  <button
+                    onClick={handleAllChatsClick}
+                    className="mt-1.5 w-full flex items-center gap-2 px-2 py-1.5 text-sm standalone:text-base lg:text-sm text-cultivate-text-secondary hover:text-white hover:bg-cultivate-bg-hover rounded-lg transition-colors"
+                  >
+                    <CircleEllipsis className="w-4 h-4 flex-shrink-0" />
+                    All chats
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -607,7 +662,15 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
             </div>
           )}
 
-          {activeNav === "chats" && <ChatsView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} demoMode={demoMode} />}
+          {activeNav === "chats" && (
+            <ChatsView
+              sidebarOpen={sidebarOpen}
+              setSidebarOpen={setSidebarOpen}
+              demoMode={demoMode}
+              initialChatId={activeChatId}
+              onChatSelect={setActiveChatId}
+            />
+          )}
           {/* demoMode disables SWR fetch — view uses local mockAgents instead */}
           {activeNav === "agents" && (
             <AgentsView

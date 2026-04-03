@@ -30,10 +30,14 @@ export default function ChatsView({
   sidebarOpen,
   setSidebarOpen,
   demoMode,
+  initialChatId = null,
+  onChatSelect,
 }: {
   sidebarOpen: boolean;
   setSidebarOpen: (v: boolean) => void;
   demoMode?: boolean;
+  initialChatId?: string | null;
+  onChatSelect?: (chatId: string | null) => void;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -81,6 +85,7 @@ export default function ChatsView({
   const handleOpenChat = async (chat: OpenedChat) => {
     setOpenedChat(chat);
     setHeaderMenuOpen(false);
+    onChatSelect?.(chat.id);
 
     if (demoMode) {
       setConversationMessages(getDemoMessages(chat.id));
@@ -119,11 +124,23 @@ export default function ChatsView({
     }
   };
 
+  useEffect(() => {
+    if (!initialChatId) return;
+
+    const targetChat = filteredChats.find((chat) => chat.id === initialChatId);
+    if (!targetChat) return;
+
+    if (openedChat?.id === targetChat.id) return;
+
+    void handleOpenChat(targetChat);
+  }, [initialChatId, filteredChats, openedChat]);
+
   if (openedChat) {
     return (
       <ConversationView
         title={openedChat.title}
         subtitle={`${openedChat.agentName} · ${openedChat.farmerName}`}
+        footerMeta={`${openedChat.agentName} · ${openedChat.farmerName}`}
         headerMenuOpen={headerMenuOpen}
         setHeaderMenuOpen={setHeaderMenuOpen}
         onBack={() => {
@@ -131,12 +148,14 @@ export default function ChatsView({
           setConversationMessages([]);
           setMessagesLoading(false);
           setHeaderMenuOpen(false);
+          onChatSelect?.(null);
         }}
         onNewChat={() => {}}
         messages={conversationMessages}
         messagesLoading={messagesLoading}
         isStandalone={isStandalone}
         demoAgentLabel={openedChat.agentName}
+        showSubtitleInHeader={false}
         showComposer={false}
         showNewChatButton={false}
         showMessageActions={false}
@@ -208,10 +227,14 @@ export default function ChatsView({
                 className="cursor-pointer"
               >
                 <div className="pl-1.5 pr-1.5 py-2.5 hover:bg-cultivate-bg-hover rounded-lg transition-colors">
-                  <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-white`}>{chat.title}</p>
-                  <div className="flex items-center justify-between mt-1">
-                    <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary`}>{isStandalone ? chat.lastMessage : `Last message ${chat.lastMessage}`}</p>
-                    <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-secondary`}>{isStandalone ? chat.farmerName : `${chat.agentName} · ${chat.farmerName}`}</p>
+                  <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-white truncate`}>{chat.title}</p>
+                  <div className="flex items-center justify-between gap-3 mt-1">
+                    <p className={`min-w-0 flex-1 ${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary truncate`}>
+                      {isStandalone ? chat.lastMessage : `Last message ${chat.lastMessage}`}
+                    </p>
+                    <p className={`min-w-0 max-w-[45%] ${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-secondary truncate text-right`}>
+                      {isStandalone ? chat.farmerName : `${chat.agentName} · ${chat.farmerName}`}
+                    </p>
                   </div>
                 </div>
                 {index < paginatedChats.length - 1 && (
