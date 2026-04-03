@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown, AlertTriangle, PanelLeft, Eye, Loader2, X } from "lucide-react";
-import GlassCircleButton from "@/components/glass-circle-button";
+import { GlassCircleButton } from "@/components/cultivate-ui";
 import { useAgents, createAgent, toggleAgentStatus, deleteAgent, type Agent } from "@/lib/hooks/use-agents";
 import { DEMO_AGENTS } from "@/lib/demo-data";
 

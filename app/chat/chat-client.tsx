@@ -5,10 +5,8 @@ import Link from "next/link";
 import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Download, Share, Pencil, Unlink, Trash2, Globe, AudioLines, Mic, AlertTriangle } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { mutate as globalMutate } from "swr";
-import { CabbageIcon, PaperPlaneIcon, SproutIcon } from "@/components/send-icons";
-import GlassCircleButton from "@/components/glass-circle-button";
+import { CabbageIcon, PaperPlaneIcon, SproutIcon, GlassCircleButton, Tooltip } from "@/components/cultivate-ui";
 import ConversationView from "@/components/conversation-view";
-import { Tooltip } from "@/components/tooltip";
 import ChatsView, { mockChats } from "./views/chats-view";
 import SystemsView from "./views/systems-view";
 import SettingsView from "./views/settings-view";
@@ -17,7 +15,7 @@ import { useAgents } from "@/lib/hooks/use-agents";
 import { DEMO_FARMER_CONVO_MESSAGES } from "@/lib/demo-data";
 import { translateToEnglish, translateFromEnglish, LANGUAGES, type SupportedLanguage } from "@/lib/translation";
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
-import { AnimatedDots } from "@/components/wave-icon";
+import { AnimatedDots } from "@/components/cultivate-ui";
 import { notify } from "@/lib/toast";
 
 interface ChatPageProps {

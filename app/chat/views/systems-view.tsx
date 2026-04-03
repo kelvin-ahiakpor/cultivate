@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, ChevronLeft, Loader2, Plus, X } from "lucide-react";
-import GlassCircleButton from "@/components/glass-circle-button";
-import CustomSelect from "@/components/custom-select";
+import { GlassCircleButton, Dropdown } from "@/components/cultivate-ui";
 import { useSystems, type FarmerSystemItem } from "@/lib/hooks/use-systems";
 import { DEMO_SYSTEMS } from "@/lib/demo-data";
 import { notify } from "@/lib/toast";
@@ -232,7 +231,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-cultivate-text-secondary">Sort by</span>
-            <CustomSelect
+            <Dropdown
               variant="pill"
               value={sortBy}
               onChange={(v) => setSortBy(v as typeof sortBy)}
@@ -386,7 +385,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
               {/* Type */}
               <div>
                 <label className="block text-xs text-cultivate-text-secondary mb-1">Type <span className="text-cultivate-text-secondary">*</span></label>
-                <CustomSelect
+                <Dropdown
                   value={form.type}
                   onChange={(v) => setForm(f => ({ ...f, type: v }))}
                   placeholder="Select type..."

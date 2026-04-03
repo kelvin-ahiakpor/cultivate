@@ -2,8 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Flag, Search, CheckCircle, ChevronDown, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft, Loader2, Copy } from "lucide-react";
-import GlassCircleButton from "@/components/glass-circle-button";
-import { SproutIcon } from "@/components/send-icons";
+import { GlassCircleButton, SproutIcon } from "@/components/cultivate-ui";
 import { useFlaggedQueries, reviewFlaggedQuery, type FlaggedQueryItem as FlaggedQuery } from "@/lib/hooks/use-flagged-queries";
 import { DEMO_FLAGGED_CONVOS, DEMO_FLAGGED } from "@/lib/demo-data";
 import ReactMarkdown from "react-markdown";

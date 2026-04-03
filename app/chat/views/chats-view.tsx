@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { MessageCircle, Search, ChevronLeft, ChevronRight, Plus, PanelLeft, Loader2 } from "lucide-react";
-import GlassCircleButton from "@/components/glass-circle-button";
+import { GlassCircleButton } from "@/components/cultivate-ui";
 import ConversationView from "@/components/conversation-view";
 import { useConversations } from "@/lib/hooks/use-conversations";
 import { DEMO_FARMER_CHATS, DEMO_FARMER_CONVO_MESSAGES } from "@/lib/demo-data";

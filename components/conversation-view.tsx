@@ -47,10 +47,8 @@ import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Un
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { notify } from "@/lib/toast";
-import { CabbageIcon, PaperPlaneIcon, SproutIcon } from "@/components/send-icons";
-import { Tooltip } from "@/components/tooltip";
+import { CabbageIcon, PaperPlaneIcon, SproutIcon, Tooltip, AnimatedDots } from "@/components/cultivate-ui";
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
-import { AnimatedDots } from "@/components/wave-icon";
 
 export interface ConversationMessage {
   id: string;

@@ -2,11 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, ChevronDown, PanelLeft, Loader2, Pencil } from "lucide-react";
-import GlassCircleButton from "@/components/glass-circle-button";
+import { GlassCircleButton, Dropdown } from "@/components/cultivate-ui";
 import { useKnowledgeBases, uploadDocument, deleteDocument, renameDocument, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
 import { useAgents } from "@/lib/hooks/use-agents";
 import { DEMO_AGENTS, DEMO_KNOWLEDGE } from "@/lib/demo-data";
-import CustomSelect from "@/components/custom-select";
 import { notify } from "@/lib/toast";
 
 // Mock data for demo mode — sourced from lib/demo-data.ts
@@ -754,7 +753,7 @@ export default function KnowledgeView({
                   {/* KB Type */}
                   <div>
                     <label className="block text-sm text-cultivate-text-secondary mb-1.5">Knowledge Type</label>
-                    <CustomSelect
+                    <Dropdown
                       variant="field"
                       value={uploadKbType}
                       onChange={setUploadKbType}
@@ -769,7 +768,7 @@ export default function KnowledgeView({
                   {/* Content Type */}
                   <div>
                     <label className="block text-sm text-cultivate-text-secondary mb-1.5">Content Type (Optional)</label>
-                    <CustomSelect
+                    <Dropdown
                       variant="field"
                       value={uploadContentType}
                       onChange={setUploadContentType}
@@ -790,7 +789,7 @@ export default function KnowledgeView({
                   {/* Source Type */}
                   <div>
                     <label className="block text-sm text-cultivate-text-secondary mb-1.5">Source Type</label>
-                    <CustomSelect
+                    <Dropdown
                       variant="field"
                       value={uploadSourceType}
                       onChange={setUploadSourceType}

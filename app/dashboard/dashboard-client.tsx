@@ -16,7 +16,7 @@ import AgentEditView from "./views/agent-edit-view";
 import KnowledgeView from "./views/knowledge-view";
 import FlaggedView from "./views/flagged-view";
 import ChatsView from "./views/chats-view";
-import GlassCircleButton from "@/components/glass-circle-button";
+import { GlassCircleButton } from "@/components/cultivate-ui";
 import { useDashboardStats } from "@/lib/hooks/use-dashboard-stats";
 import { useActivity, relativeTime, type ActivityItem } from "@/lib/hooks/use-activity";
 import { useAgents } from "@/lib/hooks/use-agents";

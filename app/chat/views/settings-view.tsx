@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Settings, MapPin, ChevronLeft, Loader2, Check, AlertCircle } from "lucide-react";
-import GlassCircleButton from "@/components/glass-circle-button";
+import { GlassCircleButton } from "@/components/cultivate-ui";
 import { notify } from "@/lib/toast";
 
 interface SettingsViewProps {
