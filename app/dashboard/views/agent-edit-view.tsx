@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Bot, Loader2, Save } from "lucide-react";
+import { ArrowLeft, Bot, Loader2, Save, Pencil, X } from "lucide-react";
 import { useAgent, updateAgent } from "@/lib/hooks/use-agents";
 import { DEMO_AGENTS } from "@/lib/demo-data";
 import { notify } from "@/lib/toast";
@@ -9,10 +9,11 @@ import { notify } from "@/lib/toast";
 interface AgentEditViewProps {
   agentId: string | null;
   onBack: () => void;
+  onManageKnowledgeBases?: (agentId: string) => void;
   demoMode?: boolean;
 }
 
-export default function AgentEditView({ agentId, onBack, demoMode = false }: AgentEditViewProps) {
+export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases, demoMode = false }: AgentEditViewProps) {
   // Real mode: fetch via SWR. Demo mode: find in DEMO_AGENTS.
   const { agent: apiAgent, isLoading } = useAgent(demoMode ? null : agentId);
   const agent = demoMode ? DEMO_AGENTS.find(a => a.id === agentId) ?? null : apiAgent ?? null;
@@ -22,6 +23,7 @@ export default function AgentEditView({ agentId, onBack, demoMode = false }: Age
   const [style, setStyle] = useState("");
   const [threshold, setThreshold] = useState(0.7);
   const [submitting, setSubmitting] = useState(false);
+  const [showPromptModal, setShowPromptModal] = useState(false);
 
   // Populate form when agent loads
   useEffect(() => {
@@ -64,20 +66,22 @@ export default function AgentEditView({ agentId, onBack, demoMode = false }: Age
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="flex-shrink-0 px-4 lg:px-8 pt-8 lg:pt-6 pb-4 border-b border-cultivate-border-element flex items-center gap-3">
-        <button
-          onClick={onBack}
-          className="p-1.5 hover:bg-cultivate-bg-elevated rounded-lg transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 text-cultivate-text-primary" />
-        </button>
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-7 h-7 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Bot className="w-4 h-4 text-cultivate-green-light" />
+      <div className="flex-shrink-0 px-4 lg:px-8 pt-8 lg:pt-6 pb-4">
+        <div className="max-w-2xl mx-auto flex items-center gap-3 border-b border-cultivate-border-element pb-4">
+          <button
+            onClick={onBack}
+            className="p-1.5 hover:bg-cultivate-bg-elevated rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 text-cultivate-text-primary" />
+          </button>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Bot className="w-4 h-4 text-cultivate-green-light" />
+            </div>
+            <h1 className="text-base font-medium text-white truncate">
+              {loading ? "Loading…" : (agent?.name ?? "Edit Agent")}
+            </h1>
           </div>
-          <h1 className="text-base font-medium text-white truncate">
-            {loading ? "Loading…" : (agent?.name ?? "Edit Agent")}
-          </h1>
         </div>
       </div>
 
@@ -112,7 +116,17 @@ export default function AgentEditView({ agentId, onBack, demoMode = false }: Age
 
             {/* System Prompt */}
             <div>
-              <label className="block text-sm text-cultivate-text-secondary mb-1.5">System Prompt</label>
+              <div className="flex items-center justify-between gap-3 mb-1.5">
+                <label className="block text-sm text-cultivate-text-secondary">System Prompt</label>
+                <button
+                  type="button"
+                  onClick={() => setShowPromptModal(true)}
+                  className="inline-flex items-center gap-1.5 text-xs text-cultivate-text-secondary hover:text-white transition-colors"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Edit full prompt
+                </button>
+              </div>
               <textarea
                 rows={6}
                 value={prompt}
@@ -159,7 +173,13 @@ export default function AgentEditView({ agentId, onBack, demoMode = false }: Age
               <label className="block text-sm text-cultivate-text-secondary mb-1.5">Knowledge Bases</label>
               <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg p-3">
                 <p className="text-xs text-cultivate-text-tertiary mb-2">{agent.knowledgeBases || 0} knowledge bases assigned</p>
-                <button className="text-xs text-cultivate-green-light hover:text-[#9dcf84] transition-colors">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (agentId) onManageKnowledgeBases?.(agentId);
+                  }}
+                  className="text-xs text-cultivate-green-light hover:text-[#9dcf84] transition-colors"
+                >
                   Manage knowledge bases →
                 </button>
               </div>
@@ -200,6 +220,50 @@ export default function AgentEditView({ agentId, onBack, demoMode = false }: Age
           </div>
         )}
       </div>
+
+      {showPromptModal && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/50"
+            onClick={() => setShowPromptModal(false)}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+            <div className="w-full max-w-3xl bg-[#1C1C1C] border border-cultivate-border-element rounded-2xl shadow-2xl max-h-[85vh] flex flex-col">
+              <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-cultivate-border-element">
+                <div>
+                  <h2 className="text-base font-medium text-white">System Prompt</h2>
+                  <p className="text-xs text-cultivate-text-secondary mt-1">Use the larger editor for long prompts.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPromptModal(false)}
+                  className="p-1.5 hover:bg-cultivate-bg-elevated rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4 text-cultivate-text-secondary" />
+                </button>
+              </div>
+              <div className="flex-1 min-h-0 overflow-y-auto p-5">
+                <textarea
+                  value={prompt}
+                  onChange={e => setPrompt(e.target.value)}
+                  placeholder="Describe the agent's role, expertise, and how it should respond…"
+                  disabled={submitting}
+                  className="w-full min-h-[420px] max-h-[calc(85vh-10rem)] px-4 py-3 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl text-sm leading-6 text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none disabled:opacity-40"
+                />
+              </div>
+              <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-cultivate-border-element">
+                <button
+                  type="button"
+                  onClick={() => setShowPromptModal(false)}
+                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Downl
 import GlassCircleButton from "@/components/glass-circle-button";
 import { useKnowledgeBases, uploadDocument, deleteDocument, renameDocument, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
 import { useAgents } from "@/lib/hooks/use-agents";
-import { DEMO_KNOWLEDGE } from "@/lib/demo-data";
+import { DEMO_AGENTS, DEMO_KNOWLEDGE } from "@/lib/demo-data";
 import CustomSelect from "@/components/custom-select";
 import { notify } from "@/lib/toast";
 
@@ -18,10 +18,12 @@ const demoAgentNames = ["All Agents", "General Farm Advisor", "Pest Management",
 export default function KnowledgeView({
   sidebarOpen,
   setSidebarOpen,
+  initialAgentFilter,
   demoMode = false,
 }: {
   sidebarOpen: boolean;
   setSidebarOpen: (v: boolean) => void;
+  initialAgentFilter?: string | null;
   // demoMode: uses local mockDocuments, makes zero API requests. See BACKEND-PROGRESS.md § Phase 5.
   demoMode?: boolean;
 }) {
@@ -124,6 +126,17 @@ export default function KnowledgeView({
     mediaQuery.addEventListener("change", checkStandalone);
     return () => mediaQuery.removeEventListener("change", checkStandalone);
   }, []);
+
+  useEffect(() => {
+    if (!initialAgentFilter) return;
+    if (demoMode) {
+      const demoAgent = DEMO_AGENTS.find((agent) => agent.id === initialAgentFilter);
+      setAgentFilter(demoAgent?.name || "");
+    } else {
+      setAgentFilter(initialAgentFilter);
+    }
+    setCurrentPage(1);
+  }, [initialAgentFilter, demoMode]);
 
   const getPublicDocumentUrl = (doc: KnowledgeDoc) => doc.fileUrl;
 

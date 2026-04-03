@@ -62,17 +62,14 @@ function ActivityRow({ item, isStandalone }: { item: ActivityItem; isStandalone:
 
 export default function DashboardClient({ user, demoMode = false, initialView = "overview", initialAgentId = null }: DashboardProps) {
   const recentChatsLimit = 15;
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 1024 : false
+  );
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-
-  // Open sidebar by default on desktop, keep closed on mobile
-  useEffect(() => {
-    setSidebarOpen(window.innerWidth >= 1024);
-  }, []);
 
   // Capture the browser's PWA install prompt for the Install button
   useEffect(() => {
@@ -117,6 +114,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
   };
   const [activeNav, setActiveNav] = useState(initialView);
   const [activeAgentId, setActiveAgentId] = useState<string | null>(initialAgentId);
+  const [activeKnowledgeAgentId, setActiveKnowledgeAgentId] = useState<string | null>(null);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [chatListResetKey, setChatListResetKey] = useState(0);
   const [activityPanelOpen, setActivityPanelOpen] = useState(false);
@@ -278,9 +276,17 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                   <div
                     key={agent.id}
                     onClick={() => { setActiveAgentId(agent.id); setActiveNav("agent-edit"); if (window.innerWidth < 1024) setSidebarOpen(false); }}
-                    className="group flex items-stretch rounded-lg hover:bg-cultivate-bg-hover transition-colors cursor-pointer overflow-hidden"
+                    className={`group flex items-stretch rounded-lg transition-colors cursor-pointer overflow-hidden ${
+                      activeNav === "agent-edit" && activeAgentId === agent.id
+                        ? "bg-cultivate-bg-hover"
+                        : "hover:bg-cultivate-bg-hover"
+                    }`}
                   >
-                    <span className={`block flex-1 min-w-0 truncate ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm text-cultivate-text-primary group-hover:text-white pl-2 py-2`}>
+                    <span className={`block flex-1 min-w-0 truncate ${isStandalone ? "text-lg" : "text-sm"} lg:text-sm pl-2 py-2 ${
+                      activeNav === "agent-edit" && activeAgentId === agent.id
+                        ? "text-white"
+                        : "text-cultivate-text-primary group-hover:text-white"
+                    }`}>
                       {agent.name}
                     </span>
                   </div>
@@ -704,10 +710,21 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
             <AgentEditView
               agentId={activeAgentId}
               demoMode={demoMode}
+              onManageKnowledgeBases={(agentId) => {
+                setActiveKnowledgeAgentId(agentId);
+                setActiveNav("knowledge");
+              }}
               onBack={() => { setActiveAgentId(null); setActiveNav("agents"); }}
             />
           )}
-          {activeNav === "knowledge" && <KnowledgeView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} demoMode={demoMode} />}
+          {activeNav === "knowledge" && (
+            <KnowledgeView
+              sidebarOpen={sidebarOpen}
+              setSidebarOpen={setSidebarOpen}
+              initialAgentFilter={activeKnowledgeAgentId}
+              demoMode={demoMode}
+            />
+          )}
           {/* demoMode disables SWR fetch — view uses initialFlagged local state */}
           {activeNav === "flagged" && <FlaggedView sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} demoMode={demoMode} />}
 
