@@ -15,6 +15,7 @@ export interface FlaggedQueryItem {
   farmerMessage: string;  // most recent USER message in the conversation
   agentResponse: string;  // the ASSISTANT message that was flagged
   agentName: string;
+  conversationTitle?: string;
   confidenceScore: number;
   status: "PENDING" | "VERIFIED" | "CORRECTED";
   createdAt: string;      // formatted display string
@@ -75,6 +76,7 @@ function normalize(fq: RawFlaggedQuery): FlaggedQueryItem {
     farmerMessage: fq.message.conversation.messages[0]?.content || "Message not available",
     agentResponse: fq.message.content,
     agentName: fq.agent.name,
+    conversationTitle: fq.message.conversation.title || "Conversation",
     confidenceScore: fq.message.confidenceScore ?? 0,
     status: fq.status,
     createdAt: formatDate(fq.createdAt),

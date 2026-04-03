@@ -27,7 +27,10 @@ interface ChatMessage {
 const sampleConversations = DEMO_FLAGGED_CONVOS;
 
 // Mock flagged queries for demo mode — sourced from lib/demo-data.ts
-const initialFlagged: FlaggedQuery[] = DEMO_FLAGGED as FlaggedQuery[];
+const initialFlagged: FlaggedQuery[] = (DEMO_FLAGGED as FlaggedQuery[]).map((query) => ({
+  ...query,
+  conversationTitle: query.conversationTitle || sampleConversations[query.conversationId]?.title || "Conversation",
+}));
 
 const DEFAULT_PANEL_WIDTH = 576; // max-w-xl equivalent
 const MIN_PANEL_WIDTH = 400;
@@ -435,10 +438,26 @@ export default function FlaggedView({
                   </span>
                 </div>
                 <p className="text-sm text-cultivate-text-primary line-clamp-1">{query.farmerMessage}</p>
-                <div className="flex items-center gap-3 mt-1.5">
-                  <span className="text-xs text-cultivate-text-tertiary">{query.agentName}</span>
-                  <span className="text-xs text-cultivate-text-tertiary">{query.createdAt}</span>
-                </div>
+                {isDesktop ? (
+                  <div className="flex items-center gap-2 mt-1.5 min-w-0 text-xs text-cultivate-text-tertiary">
+                    <span className="shrink-0">{query.agentName}</span>
+                    <span className="shrink-0 text-cultivate-text-tertiary/60">·</span>
+                    <span className="min-w-0 truncate">{query.conversationTitle || "Conversation"}</span>
+                    <span className="shrink-0 text-cultivate-text-tertiary/60">·</span>
+                    <span className="shrink-0">{query.createdAt}</span>
+                  </div>
+                ) : (
+                  <div className="mt-1.5 min-w-0 space-y-1">
+                    <p className="text-xs text-cultivate-text-secondary truncate">
+                      {query.conversationTitle || "Conversation"}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-cultivate-text-tertiary min-w-0">
+                      <span className="truncate">{query.agentName}</span>
+                      <span className="shrink-0 text-cultivate-text-tertiary/60">·</span>
+                      <span className="shrink-0">{query.createdAt}</span>
+                    </div>
+                  </div>
+                )}
               </div>
               <ChevronDown className={`w-4 h-4 text-cultivate-text-tertiary flex-shrink-0 mt-1 transition-transform ${expandedId === query.id ? 'rotate-180' : ''}`} />
             </button>
