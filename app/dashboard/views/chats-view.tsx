@@ -32,12 +32,14 @@ export default function ChatsView({
   demoMode,
   initialChatId = null,
   onChatSelect,
+  listResetKey = 0,
 }: {
   sidebarOpen: boolean;
   setSidebarOpen: (v: boolean) => void;
   demoMode?: boolean;
   initialChatId?: string | null;
   onChatSelect?: (chatId: string | null) => void;
+  listResetKey?: number;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -134,6 +136,13 @@ export default function ChatsView({
 
     void handleOpenChat(targetChat);
   }, [initialChatId, filteredChats, openedChat]);
+
+  useEffect(() => {
+    setOpenedChat(null);
+    setConversationMessages([]);
+    setMessagesLoading(false);
+    setHeaderMenuOpen(false);
+  }, [listResetKey]);
 
   if (openedChat) {
     return (

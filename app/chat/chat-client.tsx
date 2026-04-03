@@ -680,7 +680,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                         {chat.title}
                       </span>
                       {/* Three-dot menu — absolute positioned so it doesn't take layout space when hidden */}
-                      <div className="relative flex-shrink-0 w-8 flex items-center">
+                      <div className="relative flex-shrink-0 w-6 flex items-center">
                         <button
                           onClick={(e) => { e.stopPropagation(); setChatMenuId(isMenuOpen ? null : chat.id); }}
                           className={`absolute right-0 ${isActive || isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} ${isMenuOpen ? 'bg-cultivate-bg-hover-dark' : 'hover:bg-cultivate-bg-hover'} transition-all w-8 h-full rounded-lg flex items-center justify-center`}

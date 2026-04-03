@@ -118,6 +118,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
   const [activeNav, setActiveNav] = useState(initialView);
   const [activeAgentId, setActiveAgentId] = useState<string | null>(initialAgentId);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [chatListResetKey, setChatListResetKey] = useState(0);
   const [activityPanelOpen, setActivityPanelOpen] = useState(false);
   // Ref to measure the 8th item's bottom — makes the list snap to exactly 8 visible items
   const activityListRef = useRef<HTMLDivElement>(null);
@@ -189,6 +190,8 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
   const hasMoreRecentChats = recentChats.length > recentChatsLimit;
 
   const handleAllChatsClick = () => {
+    setActiveChatId(null);
+    setChatListResetKey((value) => value + 1);
     setActiveNav("chats");
     if (window.innerWidth < 1024) setSidebarOpen(false);
   };
@@ -224,13 +227,27 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
         <div className="flex-1 min-h-0 px-2 pt-3 overflow-hidden flex flex-col">
           <div className="space-y-0.5">
             {navItems.map((item) => (
+              (() => {
+                const isNavActive =
+                  item.id === "chats"
+                    ? activeNav === "chats" && !activeChatId
+                    : activeNav === item.id;
+
+                return (
               <button
                 key={item.id}
-                onClick={() => { setActiveNav(item.id); if (window.innerWidth < 1024) setSidebarOpen(false); }}
+                onClick={() => {
+                  if (item.id === "chats") {
+                    setActiveChatId(null);
+                    setChatListResetKey((value) => value + 1);
+                  }
+                  setActiveNav(item.id);
+                  if (window.innerWidth < 1024) setSidebarOpen(false);
+                }}
                 className={`group relative w-full flex items-center gap-3 pl-3 pr-2 py-2 rounded-lg transition-colors ${
                   !sidebarOpen ? 'justify-center' : ''
                 } ${
-                  activeNav === item.id
+                  isNavActive
                     ? 'bg-cultivate-bg-hover text-white'
                     : 'text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white'
                 }`}
@@ -243,6 +260,8 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                   </div>
                 )}
               </button>
+                );
+              })()
             ))}
           </div>
 
@@ -669,6 +688,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
               demoMode={demoMode}
               initialChatId={activeChatId}
               onChatSelect={setActiveChatId}
+              listResetKey={chatListResetKey}
             />
           )}
           {/* demoMode disables SWR fetch — view uses local mockAgents instead */}
