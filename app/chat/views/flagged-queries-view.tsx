@@ -77,14 +77,14 @@ export default function FlaggedQueriesView({
           )}
           <div className="text-center">
             <h1 className="text-2xl font-serif text-cultivate-text-primary">Flagged Queries</h1>
-            <p className="text-sm text-cultivate-text-secondary mt-1">{apiData.total} items needing review history</p>
+            <p className="text-sm text-cultivate-text-secondary mt-1">{apiData.total} questions you flagged</p>
           </div>
         </div>
 
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-serif text-cultivate-text-primary">Flagged Queries</h1>
-            <p className="text-sm text-cultivate-text-secondary mt-1">{apiData.total} items needing review history</p>
+            <p className="text-sm text-cultivate-text-secondary mt-1">{apiData.total} questions you flagged</p>
           </div>
         </div>
 
@@ -107,10 +107,10 @@ export default function FlaggedQueriesView({
         {reviewUpdates.length > 0 && (
           <div className="mt-4 rounded-xl border border-cultivate-border-element bg-cultivate-bg-elevated px-4 py-3">
             <p className="text-sm text-white">
-              {reviewUpdates.length === 1 ? "1 reviewed flag has an expert update." : `${reviewUpdates.length} reviewed flags have expert updates.`}
+              {reviewUpdates.length === 1 ? "1 flagged query has a new expert response." : `${reviewUpdates.length} flagged queries have new expert responses.`}
             </p>
             <p className="text-xs text-cultivate-text-secondary mt-1">
-              Open any item below to jump back into the related conversation.
+              Open any item below to jump back into the related chat.
             </p>
           </div>
         )}
@@ -152,7 +152,7 @@ export default function FlaggedQueriesView({
                     <p className="text-sm text-cultivate-text-primary line-clamp-2">{query.farmerMessage}</p>
                   </div>
                   <div>
-                    <p className="text-[11px] uppercase tracking-wide text-cultivate-text-tertiary mb-1">Agent response</p>
+                    <p className="text-[11px] uppercase tracking-wide text-cultivate-text-tertiary mb-1">Response you flagged</p>
                     <p className="text-sm text-cultivate-text-secondary line-clamp-3">{query.agentResponse}</p>
                   </div>
                 </div>
