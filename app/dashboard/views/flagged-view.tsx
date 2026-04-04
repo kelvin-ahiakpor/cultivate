@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Flag, Search, CheckCircle, ChevronDown, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft, Loader2, Copy } from "lucide-react";
+import { Flag, Search, CheckCircle, ChevronDown, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft, Loader2, Copy, WifiOff } from "lucide-react";
 import { GlassCircleButton, SproutIcon } from "@/components/cultivate-ui";
 import { useFlaggedQueries, reviewFlaggedQuery, type FlaggedQueryItem as FlaggedQuery } from "@/lib/hooks/use-flagged-queries";
+import { useOnlineStatus } from "@/lib/hooks/use-online-status";
+import { saveAgroCache, getAgroCache } from "@/lib/offline-storage";
 import { DEMO_FLAGGED_CONVOS, DEMO_FLAGGED } from "@/lib/demo-data";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -58,6 +60,9 @@ export default function FlaggedView({
   // Demo mode: local mutable state. Real mode: driven by SWR + API calls.
   const [demoQueries, setDemoQueries] = useState<FlaggedQuery[]>(initialFlagged);
 
+  const isOnline = useOnlineStatus();
+  const [offlineQueries, setOfflineQueries] = useState<FlaggedQuery[]>([]);
+
   // SWR — disabled in demo mode (null key → zero requests)
   const apiData = useFlaggedQueries(
     searchQuery,
@@ -66,6 +71,18 @@ export default function FlaggedView({
     itemsPerPage,
     demoMode
   );
+
+  // Write-through: cache when online data arrives
+  useEffect(() => {
+    if (demoMode || !isOnline || apiData.queries.length === 0) return;
+    saveAgroCache("flagged_queries", apiData.queries).catch(() => {});
+  }, [apiData.queries, isOnline, demoMode]);
+
+  // Read from IndexedDB when offline
+  useEffect(() => {
+    if (demoMode || isOnline) return;
+    getAgroCache<FlaggedQuery[]>("flagged_queries").then(r => { if (r) setOfflineQueries(r.data); }).catch(() => {});
+  }, [isOnline, demoMode]);
 
   // Verification modal state
   const [showVerifyModal, setShowVerifyModal] = useState(false);
@@ -152,6 +169,8 @@ export default function FlaggedView({
   }, [sidebarWidth, panelWidth]);
 
   // Demo: filter + paginate locally. Real: API already filtered + paginated.
+  const sourceQueries: FlaggedQuery[] = demoMode ? demoQueries : isOnline ? apiData.queries : offlineQueries;
+
   const filteredQueries: FlaggedQuery[] = demoMode
     ? demoQueries.filter(q => {
         const matchesSearch =
@@ -161,17 +180,28 @@ export default function FlaggedView({
         const matchesStatus = statusFilter === "all" || q.status === statusFilter;
         return matchesSearch && matchesStatus;
       })
-    : apiData.queries;
+    : isOnline
+      ? apiData.queries
+      : offlineQueries.filter(q => {
+          const matchesSearch =
+            !searchQuery ||
+            q.farmerMessage.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            q.farmerName.toLowerCase().includes(searchQuery.toLowerCase());
+          const matchesStatus = statusFilter === "all" || q.status === statusFilter;
+          return matchesSearch && matchesStatus;
+        });
 
-  const totalPages = demoMode ? Math.ceil(filteredQueries.length / itemsPerPage) : apiData.totalPages;
+  const totalPages = demoMode
+    ? Math.ceil(filteredQueries.length / itemsPerPage)
+    : isOnline ? apiData.totalPages : Math.ceil(filteredQueries.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedQueries = demoMode ? filteredQueries.slice(startIndex, endIndex) : filteredQueries;
+  const paginatedQueries = (demoMode || !isOnline) ? filteredQueries.slice(startIndex, endIndex) : filteredQueries;
 
   // Pending count — demo counts from local state, real counts from total (status=PENDING)
   const pendingCount = demoMode
     ? demoQueries.filter(q => q.status === "PENDING").length
-    : apiData.total;
+    : isOnline ? apiData.total : offlineQueries.filter(q => q.status === "PENDING").length;
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -222,7 +252,7 @@ export default function FlaggedView({
   };
 
   const handleEditVerification = (queryId: string) => {
-    const query = (demoMode ? demoQueries : apiData.queries).find(q => q.id === queryId);
+    const query = sourceQueries.find(q => q.id === queryId);
     if (!query) return;
     setVerifyingQueryId(queryId);
     setVerifyNotes(query.verificationNotes || "");
@@ -259,7 +289,7 @@ export default function FlaggedView({
   };
 
   const handleEditCorrection = (queryId: string) => {
-    const query = (demoMode ? demoQueries : apiData.queries).find(q => q.id === queryId);
+    const query = sourceQueries.find(q => q.id === queryId);
     if (!query) return;
     setEditingCorrectionId(queryId);
     setEditCorrectionText(query.agronomistResponse || "");
@@ -374,13 +404,19 @@ export default function FlaggedView({
           </div>
         )}
         <div className="text-center">
-          <h1 className="text-2xl font-serif text-cultivate-text-primary">Flagged Queries</h1>
+          <div className="flex items-center justify-center gap-2">
+            <h1 className="text-2xl font-serif text-cultivate-text-primary">Flagged Queries</h1>
+            {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+          </div>
           <p className="text-sm text-cultivate-text-secondary mt-1">{pendingCount} pending review</p>
         </div>
       </div>
       {/* Desktop header */}
       <div className="hidden lg:block mb-6">
-        <h1 className="text-2xl font-serif text-cultivate-text-primary">Flagged Queries</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-serif text-cultivate-text-primary">Flagged Queries</h1>
+          {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+        </div>
         <p className="text-sm text-cultivate-text-secondary mt-1">{pendingCount} pending review</p>
       </div>
 
@@ -670,14 +706,15 @@ export default function FlaggedView({
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleOpenVerifyModal(query.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#85b878] transition-colors"
+                          disabled={!isOnline}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#85b878] transition-colors disabled:opacity-30"
                         >
                           <CheckCircle className="w-3 h-3" />
                           Verify
                         </button>
                         <button
                           onClick={() => handleSendCorrection(query.id)}
-                          disabled={submitting}
+                          disabled={submitting || !isOnline}
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-cultivate-green-light text-white rounded-lg hover:bg-[#536d3d] transition-colors text-xs disabled:opacity-50"
                         >
                           {submitting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}

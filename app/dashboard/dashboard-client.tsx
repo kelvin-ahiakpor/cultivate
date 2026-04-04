@@ -17,10 +17,12 @@ import KnowledgeView from "./views/knowledge-view";
 import FlaggedView from "./views/flagged-view";
 import ChatsView from "./views/chats-view";
 import { GlassCircleButton } from "@/components/cultivate-ui";
-import { useDashboardStats } from "@/lib/hooks/use-dashboard-stats";
+import { useDashboardStats, type DashboardStats } from "@/lib/hooks/use-dashboard-stats";
 import { useActivity, relativeTime, type ActivityItem } from "@/lib/hooks/use-activity";
 import { useAgents } from "@/lib/hooks/use-agents";
 import { useConversations } from "@/lib/hooks/use-conversations";
+import { useOnlineStatus } from "@/lib/hooks/use-online-status";
+import { saveAgroCache, getAgroCache, formatCacheAge } from "@/lib/offline-storage";
 import { DEMO_AGENTS, DEMO_DASHBOARD_CHATS } from "@/lib/demo-data";
 
 interface DashboardProps {
@@ -170,8 +172,29 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
     window.history.replaceState(null, "", "/dashboard" + (query ? "?" + query : ""));
   }, [activeNav, activeAgentId, activeChatId, demoMode]);
 
+  const isOnline = useOnlineStatus();
+  const [offlineStats, setOfflineStats] = useState<DashboardStats | null>(null);
+  const [offlineStatsCachedAt, setOfflineStatsCachedAt] = useState<number | null>(null);
+
   // Overview stats — disabled in demo mode (zero API requests)
   const { stats, isLoading: statsLoading } = useDashboardStats(demoMode);
+
+  // Write-through: cache stats when online data arrives
+  useEffect(() => {
+    if (demoMode || !isOnline || !stats) return;
+    saveAgroCache("dashboard_stats", stats).catch(() => {});
+  }, [stats, isOnline, demoMode]);
+
+  // Read cached stats when offline
+  useEffect(() => {
+    if (demoMode || isOnline) return;
+    getAgroCache<DashboardStats>("dashboard_stats").then(r => {
+      if (r) { setOfflineStats(r.data); setOfflineStatsCachedAt(r.cachedAt); }
+    }).catch(() => {});
+  }, [isOnline, demoMode]);
+
+  const displayStats = isOnline ? stats : offlineStats;
+
   // Activity feed — disabled in demo mode (zero API requests)
   const { activities, isLoading: activityLoading } = useActivity(7, 20, demoMode);
 
@@ -482,6 +505,12 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
               {/* Stats + Quick Actions + Activity Header — flex-shrink-0 on desktop, scrolls on mobile */}
               <div className="lg:flex-shrink-0">
               {/* Stat Cards */}
+              {!isOnline && offlineStatsCachedAt && (
+                <p className="text-xs text-cultivate-text-tertiary mb-3 flex items-center gap-1.5">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-cultivate-text-tertiary" />
+                  Last updated {formatCacheAge(offlineStatsCachedAt)}
+                </p>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 <button onClick={() => setActiveNav("agents")} className="bg-cultivate-bg-elevated rounded-xl p-5 text-left hover:border-[#85b878] border border-transparent transition-colors">
                   <div className="flex items-center justify-between mb-3">
@@ -491,7 +520,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                     </div>
                   </div>
                   <p className="text-3xl font-semibold text-white">
-                    {demoMode ? 5 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-cultivate-text-tertiary" /> : (stats?.activeAgents ?? "—")}
+                    {demoMode ? 5 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-cultivate-text-tertiary" /> : (displayStats?.activeAgents ?? "—")}
                   </p>
                 </button>
 
@@ -503,7 +532,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                     </div>
                   </div>
                   <p className="text-3xl font-semibold text-white">
-                    {demoMode ? 18 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-cultivate-text-tertiary" /> : (stats?.knowledgeDocs ?? "—")}
+                    {demoMode ? 18 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-cultivate-text-tertiary" /> : (displayStats?.knowledgeDocs ?? "—")}
                   </p>
                 </button>
 
@@ -515,7 +544,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                     </div>
                   </div>
                   <p className="text-3xl font-semibold text-white">
-                    {demoMode ? 4 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-cultivate-text-tertiary" /> : (stats?.pendingFlags ?? "—")}
+                    {demoMode ? 4 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-cultivate-text-tertiary" /> : (displayStats?.pendingFlags ?? "—")}
                   </p>
                 </button>
               </div>

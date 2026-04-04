@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, ChevronDown, PanelLeft, Loader2, Pencil } from "lucide-react";
+import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, ChevronDown, PanelLeft, Loader2, Pencil, WifiOff } from "lucide-react";
 import { GlassCircleButton, Dropdown } from "@/components/cultivate-ui";
 import { useKnowledgeBases, uploadDocument, deleteDocument, renameDocument, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
 import { useAgents } from "@/lib/hooks/use-agents";
+import { useOnlineStatus } from "@/lib/hooks/use-online-status";
+import { saveAgroCache, getAgroCache } from "@/lib/offline-storage";
 import { DEMO_AGENTS, DEMO_KNOWLEDGE } from "@/lib/demo-data";
 import { notify } from "@/lib/toast";
 
@@ -68,6 +70,9 @@ export default function KnowledgeView({
   const [showDocSelectorModal, setShowDocSelectorModal] = useState(false);
   const [docSearchQuery, setDocSearchQuery] = useState('');
 
+  const isOnline = useOnlineStatus();
+  const [offlineDocs, setOfflineDocs] = useState<KnowledgeDoc[]>([]);
+
   // Fetch documents — disabled in demo mode (null SWR key → zero requests)
   const apiData = useKnowledgeBases(
     searchQuery,
@@ -80,9 +85,25 @@ export default function KnowledgeView({
   // Fetch real agents for filter dropdown and upload form — also disabled in demo
   const { agents: realAgents } = useAgents("", 1, 100, demoMode);
 
-  // Demo: filter mockDocuments client-side. Real: API already filtered + paginated.
+  // Write-through: cache documents when online data arrives
+  useEffect(() => {
+    if (demoMode || !isOnline || apiData.documents.length === 0) return;
+    saveAgroCache("knowledge_bases", apiData.documents).catch(() => {});
+  }, [apiData.documents, isOnline, demoMode]);
+
+  // Read from IndexedDB when offline
+  useEffect(() => {
+    if (demoMode || isOnline) return;
+    getAgroCache<KnowledgeDoc[]>("knowledge_bases").then(r => { if (r) setOfflineDocs(r.data); }).catch(() => {});
+  }, [isOnline, demoMode]);
+
+  // Demo: filter mockDocuments client-side. Real online: API filtered. Real offline: IndexedDB filtered.
+  const sourceData: KnowledgeDoc[] = demoMode
+    ? (mockDocuments as KnowledgeDoc[])
+    : isOnline ? apiData.documents : offlineDocs;
+
   const filteredDocs: KnowledgeDoc[] = demoMode
-    ? (mockDocuments as KnowledgeDoc[]).filter((doc) => {
+    ? sourceData.filter((doc) => {
         const matchesAgent = !agentFilter || doc.agentName === agentFilter;
         const matchesSearch =
           !searchQuery ||
@@ -90,18 +111,27 @@ export default function KnowledgeView({
           doc.agentName.toLowerCase().includes(searchQuery.toLowerCase());
         return matchesAgent && matchesSearch;
       })
-    : apiData.documents;
+    : isOnline
+      ? apiData.documents
+      : offlineDocs.filter((doc) => {
+          const matchesAgent = !agentFilter || doc.agentName === agentFilter;
+          const matchesSearch =
+            !searchQuery ||
+            doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            doc.agentName.toLowerCase().includes(searchQuery.toLowerCase());
+          return matchesAgent && matchesSearch;
+        });
 
-  const totalCount = demoMode ? mockDocuments.length : apiData.total;
-  const filteredCount = demoMode ? filteredDocs.length : apiData.total;
+  const totalCount = demoMode ? mockDocuments.length : isOnline ? apiData.total : offlineDocs.length;
+  const filteredCount = demoMode ? filteredDocs.length : isOnline ? apiData.total : filteredDocs.length;
   const totalPages = demoMode
     ? Math.ceil(filteredDocs.length / itemsPerPage)
-    : apiData.totalPages;
+    : isOnline ? apiData.totalPages : Math.ceil(filteredDocs.length / itemsPerPage);
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  // Demo: slice client-side. Real: already paginated from server.
-  const paginatedDocs = demoMode ? filteredDocs.slice(startIndex, endIndex) : filteredDocs;
+  // Demo/offline: slice client-side. Online: already paginated from server.
+  const paginatedDocs = (demoMode || !isOnline) ? filteredDocs.slice(startIndex, endIndex) : filteredDocs;
 
   const handleViewDocument = (doc: KnowledgeDoc) => {
     setViewPanelDoc(doc);
@@ -427,32 +457,42 @@ export default function KnowledgeView({
             </div>
           )}
           <div className="text-center">
-            <h1 className="text-2xl font-serif text-cultivate-text-primary">Knowledge Base</h1>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-2xl font-serif text-cultivate-text-primary">Knowledge Base</h1>
+              {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+            </div>
             <p className="text-sm text-cultivate-text-secondary mt-1">{totalCount} documents uploaded</p>
           </div>
           <div className="absolute right-0">
-            <button
-              onClick={handleOpenUploadModal}
-              className="w-11 h-11 bg-[#5a7048] hover:bg-[#4a5d38] rounded-full flex items-center justify-center transition-colors"
-              aria-label="Upload Document"
-            >
-              <Upload className="w-5 h-5 text-white" />
-            </button>
+            {isOnline && (
+              <button
+                onClick={handleOpenUploadModal}
+                className="w-11 h-11 bg-[#5a7048] hover:bg-[#4a5d38] rounded-full flex items-center justify-center transition-colors"
+                aria-label="Upload Document"
+              >
+                <Upload className="w-5 h-5 text-white" />
+              </button>
+            )}
           </div>
         </div>
         {/* Desktop header */}
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-serif text-cultivate-text-primary">Knowledge Base</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-serif text-cultivate-text-primary">Knowledge Base</h1>
+              {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+            </div>
             <p className="text-sm text-cultivate-text-secondary mt-1">{totalCount} documents uploaded</p>
           </div>
-          <button
-            onClick={handleOpenUploadModal}
-            className="flex items-center gap-2 px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm"
-          >
-            <Upload className="w-4 h-4" />
-            Upload Document
-          </button>
+          {isOnline && (
+            <button
+              onClick={handleOpenUploadModal}
+              className="flex items-center gap-2 px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm"
+            >
+              <Upload className="w-4 h-4" />
+              Upload Document
+            </button>
+          )}
         </div>
 
         {/* Filter and Search */}
@@ -564,9 +604,10 @@ export default function KnowledgeView({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setOpenMenuId(openMenuId === doc.id ? null : doc.id);
+                  if (isOnline) setOpenMenuId(openMenuId === doc.id ? null : doc.id);
                 }}
-                className="p-1 hover:bg-[#3B3B3B] rounded transition-colors"
+                disabled={!isOnline}
+                className="p-1 hover:bg-[#3B3B3B] rounded transition-colors disabled:opacity-30"
               >
                 <MoreHorizontal className="w-4 h-4 text-cultivate-text-primary" />
               </button>

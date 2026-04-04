@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown, AlertTriangle, PanelLeft, Eye, Loader2, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown, AlertTriangle, PanelLeft, Eye, Loader2, X, WifiOff } from "lucide-react";
 import { GlassCircleButton } from "@/components/cultivate-ui";
 import { useAgents, createAgent, toggleAgentStatus, deleteAgent, type Agent } from "@/lib/hooks/use-agents";
+import { useOnlineStatus } from "@/lib/hooks/use-online-status";
+import { saveAgroCache, getAgroCache } from "@/lib/offline-storage";
 import { DEMO_AGENTS } from "@/lib/demo-data";
 
 // Helper to format relative time
@@ -39,16 +41,31 @@ export default function AgentsView({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
 
-  // Fetch agents with SWR — disabled in demo mode (passes null key to SWR, no request made)
+  const isOnline = useOnlineStatus();
+  const [offlineAgents, setOfflineAgents] = useState<Agent[]>([]);
+
+  // Fetch agents with SWR — disabled in demo mode
   const apiData = useAgents(searchQuery, currentPage, itemsPerPage, demoMode);
 
-  // Use mock data in demo mode, real data otherwise
+  // Write-through: cache when online data arrives
+  useEffect(() => {
+    if (demoMode || !isOnline || apiData.agents.length === 0) return;
+    saveAgroCache("agents", apiData.agents).catch(() => {});
+  }, [apiData.agents, isOnline, demoMode]);
+
+  // Read from IndexedDB when offline
+  useEffect(() => {
+    if (demoMode || isOnline) return;
+    getAgroCache<Agent[]>("agents").then(r => { if (r) setOfflineAgents(r.data); }).catch(() => {});
+  }, [isOnline, demoMode]);
+
+  // Use mock data in demo mode, offline cache when offline, real data otherwise
   const agents = demoMode
     ? mockAgents.filter(a => a.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : apiData.agents;
-  const total = demoMode ? mockAgents.length : apiData.total;
-  const isLoading = demoMode ? false : apiData.isLoading;
-  const isError = demoMode ? false : apiData.isError;
+    : isOnline ? apiData.agents : offlineAgents.filter(a => a.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const total = demoMode ? mockAgents.length : isOnline ? apiData.total : offlineAgents.length;
+  const isLoading = demoMode ? false : isOnline ? apiData.isLoading : false;
+  const isError = demoMode ? false : isOnline ? apiData.isError : false;
   const mutate = demoMode ? (() => {}) : apiData.mutate;
 
   // UI state
@@ -186,32 +203,42 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
             </div>
           )}
           <div className="text-center">
-            <h1 className="text-2xl font-serif text-cultivate-text-primary">Agents</h1>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-2xl font-serif text-cultivate-text-primary">Agents</h1>
+              {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+            </div>
             <p className="text-sm text-cultivate-text-secondary mt-1">{total} agents configured</p>
           </div>
           <div className="absolute right-0">
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="w-11 h-11 bg-[#5a7048] hover:bg-[#4a5d38] rounded-full flex items-center justify-center transition-colors"
-              aria-label="Create Agent"
-            >
-              <Plus className="w-5 h-5 text-white" />
-            </button>
+            {isOnline && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="w-11 h-11 bg-[#5a7048] hover:bg-[#4a5d38] rounded-full flex items-center justify-center transition-colors"
+                aria-label="Create Agent"
+              >
+                <Plus className="w-5 h-5 text-white" />
+              </button>
+            )}
           </div>
         </div>
         {/* Desktop header */}
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-serif text-cultivate-text-primary">Agents</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-serif text-cultivate-text-primary">Agents</h1>
+              {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+            </div>
             <p className="text-sm text-cultivate-text-secondary mt-1">{total} agents configured</p>
           </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Create Agent
-          </button>
+          {isOnline && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Create Agent
+            </button>
+          )}
         </div>
 
         {/* Search */}
@@ -311,8 +338,9 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
 
                 <div className="relative">
                   <button
-                    onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === agent.id ? null : agent.id); }}
-                    className="p-1.5 hover:bg-[#3B3B3B] rounded-lg transition-colors"
+                    onClick={(e) => { e.stopPropagation(); if (isOnline) setOpenMenuId(openMenuId === agent.id ? null : agent.id); }}
+                    disabled={!isOnline}
+                    className="p-1.5 hover:bg-[#3B3B3B] rounded-lg transition-colors disabled:opacity-30"
                   >
                     <MoreHorizontal className="w-4 h-4 text-cultivate-text-primary" />
                   </button>
