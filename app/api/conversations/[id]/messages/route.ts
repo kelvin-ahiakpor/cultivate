@@ -25,6 +25,9 @@
  *   { type: "error" }         — something went wrong mid-stream
  */
 import { NextRequest } from "next/server";
+
+// Raise Vercel's function timeout for this route — Claude SSE streams can exceed the 10s default
+export const maxDuration = 60;
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
 import { mastraStream, generateTitle } from "@/lib/claude"; // Phase 6: Using Mastra agent with weather tool

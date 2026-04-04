@@ -7,7 +7,6 @@ const nextConfig: NextConfig = {
   // Serwist's webpack plugin only runs at build time (and is disabled in dev anyway).
   turbopack: {},
   images: {
-    unoptimized: true,
     remotePatterns: [],
   },
 };

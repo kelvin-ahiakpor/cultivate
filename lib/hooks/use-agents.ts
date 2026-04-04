@@ -25,13 +25,30 @@ export interface Agent {
   conversations?: number;
   knowledgeBases?: number;
   flaggedQueries?: number;
+  _count?: {
+    conversations?: number;
+    knowledgeBases?: number;
+    flaggedQueries?: number;
+  };
 }
 
 interface AgentsResponse {
   agents: Agent[];
-  total: number;
-  page: number;
-  limit: number;
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+function normalizeAgent(agent: Agent): Agent {
+  return {
+    ...agent,
+    conversations: agent.conversations ?? agent._count?.conversations ?? 0,
+    knowledgeBases: agent.knowledgeBases ?? agent._count?.knowledgeBases ?? 0,
+    flaggedQueries: agent.flaggedQueries ?? agent._count?.flaggedQueries ?? 0,
+  };
 }
 
 /**
@@ -58,10 +75,10 @@ export function useAgents(search?: string, page: number = 1, limit: number = 10,
   );
 
   return {
-    agents: data?.agents || [],
-    total: data?.total || 0,
-    page: data?.page || 1,
-    limit: data?.limit || limit,
+    agents: (data?.agents || []).map(normalizeAgent),
+    total: data?.pagination?.total || 0,
+    page: data?.pagination?.page || 1,
+    limit: data?.pagination?.limit || limit,
     isLoading,
     isError: error,
     mutate, // Expose mutate for manual cache updates

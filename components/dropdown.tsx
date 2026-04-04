@@ -24,6 +24,8 @@ export interface DropdownProps {
   className?: string;
 }
 
+const EMPTY_OPTION_VALUE = "__cultivate_empty__";
+
 /**
  * Reusable dark-themed dropdown backed by Radix UI Select.
  * Gains: keyboard navigation (arrows, type-ahead), aria roles, focus management.
@@ -41,9 +43,17 @@ export default function Dropdown({
   className = "",
 }: DropdownProps) {
   const isPill = variant === "pill";
+  const normalizedOptions = options.map((opt) => ({
+    ...opt,
+    value: opt.value === "" ? EMPTY_OPTION_VALUE : opt.value,
+  }));
+  const normalizedValue = value === "" ? EMPTY_OPTION_VALUE : value;
 
   return (
-    <Select value={value} onValueChange={onChange}>
+    <Select
+      value={normalizedValue}
+      onValueChange={(nextValue) => onChange(nextValue === EMPTY_OPTION_VALUE ? "" : nextValue)}
+    >
       <SelectTrigger
         className={cn(
           "gap-2 text-sm text-cultivate-text-primary border border-cultivate-border-element bg-transparent transition-colors",
@@ -67,7 +77,7 @@ export default function Dropdown({
           isPill ? "min-w-[160px]" : ""
         )}
       >
-        {options.map((opt) => (
+        {normalizedOptions.map((opt) => (
           <SelectItem
             key={opt.value}
             value={opt.value}

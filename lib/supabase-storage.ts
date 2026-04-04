@@ -13,6 +13,24 @@ import { createClient } from "@supabase/supabase-js";
 
 const BUCKET = "knowledge-documents";
 
+function getFileExtension(fileName: string): string {
+  const lastDot = fileName.lastIndexOf(".");
+  if (lastDot === -1 || lastDot === fileName.length - 1) {
+    return "bin";
+  }
+
+  return fileName.slice(lastDot + 1).toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
+}
+
+function getStoragePath(
+  organizationId: string,
+  knowledgeBaseId: string,
+  fileName: string
+): string {
+  const extension = getFileExtension(fileName);
+  return `${organizationId}/${knowledgeBaseId}/source.${extension}`;
+}
+
 function getClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -56,7 +74,7 @@ export async function uploadFile(
 ): Promise<string> {
   const supabase = getClient();
   await ensureBucket(supabase); // create bucket if it doesn't exist yet
-  const path = `${organizationId}/${knowledgeBaseId}/${fileName}`;
+  const path = getStoragePath(organizationId, knowledgeBaseId, fileName);
 
   const { error } = await supabase.storage
     .from(BUCKET)
@@ -83,7 +101,7 @@ export async function deleteFile(
   fileName: string
 ): Promise<void> {
   const supabase = getClient();
-  const path = `${organizationId}/${knowledgeBaseId}/${fileName}`;
+  const path = getStoragePath(organizationId, knowledgeBaseId, fileName);
 
   const { error } = await supabase.storage.from(BUCKET).remove([path]);
 
@@ -102,7 +120,7 @@ export async function downloadFile(
   fileName: string
 ): Promise<Buffer> {
   const supabase = getClient();
-  const path = `${organizationId}/${knowledgeBaseId}/${fileName}`;
+  const path = getStoragePath(organizationId, knowledgeBaseId, fileName);
 
   const { data, error } = await supabase.storage.from(BUCKET).download(path);
 

@@ -20,8 +20,10 @@ export interface KnowledgeDoc {
   agentName: string;     // Primary agent name
   agents: Array<{ id: string; name: string; isPrimary: boolean }>; // All agents
   uploadedAt: string;    // formatted display string e.g. "Jan 28, 2026"
+  uploadedAtIso: string;
   status: string;
   referencedInChats: number; // 0 for real data — API doesn't return this yet
+  processingState: "READY" | "PROCESSING" | "FAILED";
 }
 
 interface RawDoc {
@@ -35,6 +37,12 @@ interface RawDoc {
   status: string;
   referencedInChats?: number;
   agents: Array<{ isPrimary: boolean; agent: { id: string; name: string } }>;
+}
+
+function getProcessingState(chunkCount: number): KnowledgeDoc["processingState"] {
+  if (chunkCount < 0) return "FAILED";
+  if (chunkCount === 0) return "PROCESSING";
+  return "READY";
 }
 
 interface KnowledgeBasesResponse {
@@ -69,8 +77,10 @@ function normalize(doc: RawDoc): KnowledgeDoc {
     agentName: primaryAgent?.agent.name || "Unassigned",
     agents: agentsList,
     uploadedAt: formatDate(doc.uploadedAt),
+    uploadedAtIso: doc.uploadedAt,
     status: doc.status,
     referencedInChats: doc.referencedInChats ?? 0,
+    processingState: getProcessingState(doc.chunkCount),
   };
 }
 
@@ -98,7 +108,11 @@ export function useKnowledgeBases(
   const { data, error, isLoading, mutate } = useSWR<KnowledgeBasesResponse>(
     disabled ? null : `/api/knowledge-bases?${params.toString()}`,
     fetcher,
-    { revalidateOnFocus: false }
+    {
+      revalidateOnFocus: false,
+      refreshInterval: (response?: KnowledgeBasesResponse) =>
+        response?.documents?.some((doc) => doc.chunkCount === 0) ? 5000 : 0,
+    }
   );
 
   return {

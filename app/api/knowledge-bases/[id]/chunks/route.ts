@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { PgVector } from "@mastra/pg";
+import { prisma } from "@/lib/prisma";
 
 const EMBEDDING_DIMENSION = 1024;
 
@@ -30,6 +31,37 @@ export async function GET(
     const { id } = await params;
     const organizationId = session.user.organizationId;
     const indexName = `org_${organizationId}`;
+
+    const knowledgeBase = await prisma.knowledgeBase.findFirst({
+      where: {
+        id,
+        organizationId,
+      },
+      select: {
+        id: true,
+        chunkCount: true,
+      },
+    });
+
+    if (!knowledgeBase) {
+      return NextResponse.json({ error: "Knowledge base not found" }, { status: 404 });
+    }
+
+    if (knowledgeBase.chunkCount === -1) {
+      return NextResponse.json(
+        { error: "Document processing failed" },
+        { status: 409 }
+      );
+    }
+
+    if (knowledgeBase.chunkCount === 0) {
+      return NextResponse.json({
+        knowledgeBaseId: id,
+        chunks: [],
+        total: 0,
+        processing: true,
+      });
+    }
 
     // Query vector store for chunks belonging to this knowledge base
     // Use a dummy query vector (all zeros) to get all chunks, then filter by KB ID
@@ -56,10 +88,10 @@ export async function GET(
       chunks,
       total: chunks.length,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching chunks:", error);
     return NextResponse.json(
-      { error: "Failed to retrieve chunks", details: error.message },
+      { error: "Failed to retrieve chunks", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     );
   }

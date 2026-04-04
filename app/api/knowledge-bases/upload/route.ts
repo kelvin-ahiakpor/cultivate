@@ -21,7 +21,7 @@
  * Steps 4-8 run after the initial response so the agronomist
  * doesn't wait for the full pipeline to complete.
  */
-import { NextRequest } from "next/server";
+import { after, NextRequest } from "next/server";
 import { spawn } from "child_process";
 import { writeFile, unlink } from "fs/promises";
 import { join } from "path";
@@ -29,6 +29,8 @@ import { tmpdir } from "os";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
 import { uploadFile } from "@/lib/supabase-storage";
+import { ContentType, KnowledgeBaseType, SourceType } from "@prisma/client";
+import { processKnowledgeBaseDocument } from "@/lib/knowledge-base-processing";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 const ALLOWED_TYPES: Record<string, string> = {
@@ -36,6 +38,8 @@ const ALLOWED_TYPES: Record<string, string> = {
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
   "text/plain": "txt",
 };
+
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   const { session, error } = await requireAuth();
@@ -76,6 +80,9 @@ export async function POST(request: NextRequest) {
     }
 
     const orgId = session!.user.organizationId;
+    const normalizedKbType = kbType as KnowledgeBaseType;
+    const normalizedContentType = contentType ? (contentType as ContentType) : null;
+    const normalizedSourceType = sourceType as SourceType;
 
     // 1. Create KB record first (so we have an ID for the storage path)
     const knowledgeBase = await prisma.knowledgeBase.create({
@@ -84,9 +91,9 @@ export async function POST(request: NextRequest) {
         fileName: file.name,
         fileUrl: "", // Will update after upload
         fileType,
-        kbType: kbType as any,
-        contentType: contentType as any,
-        sourceType: sourceType as any,
+        kbType: normalizedKbType,
+        contentType: normalizedContentType,
+        sourceType: normalizedSourceType,
         description,
         organizationId: orgId,
         agronomistId: session!.user.id,
@@ -104,43 +111,73 @@ export async function POST(request: NextRequest) {
 
     // 3. Upload file to Supabase Storage
     const buffer = Buffer.from(await file.arrayBuffer());
-    const fileUrl = await uploadFile(buffer, file.name, file.type, orgId, knowledgeBase.id);
+    let fileUrl: string;
+
+    try {
+      fileUrl = await uploadFile(buffer, file.name, file.type, orgId, knowledgeBase.id);
+    } catch (uploadError) {
+      await prisma.knowledgeBase.delete({
+        where: { id: knowledgeBase.id },
+      }).catch((cleanupError) => {
+        console.error("Failed to clean up knowledge base after upload error:", cleanupError);
+      });
+
+      throw uploadError;
+    }
 
     await prisma.knowledgeBase.update({
       where: { id: knowledgeBase.id },
       data: { fileUrl },
     });
 
-    // 4. Process the document in a separate Node process (extract → chunk → embed → store)
-    // This runs completely isolated from Turbopack's memory usage
-    const tmpPath = join(tmpdir(), `cultivate-upload-${knowledgeBase.id}.${fileType}`);
-    await writeFile(tmpPath, buffer);
+    const isProductionLike = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
 
-    const scriptPath = join(process.cwd(), "lib", "workers", "process-document-script.ts");
-    const childProcess = spawn("npx", ["tsx", scriptPath, knowledgeBase.id, tmpPath, fileType], {
-      stdio: "pipe",
-      detached: false,
-    });
+    if (isProductionLike) {
+      after(async () => {
+        try {
+          const chunkCount = await processKnowledgeBaseDocument({
+            knowledgeBaseId: knowledgeBase.id,
+            buffer,
+            fileType: fileType as "pdf" | "docx" | "txt",
+            organizationId: orgId,
+            fileName: file.name,
+          });
+          console.log(`✅ Document ${knowledgeBase.id} processed successfully after response (${chunkCount} chunks)`);
+        } catch (processingError) {
+          console.error(`❌ Document ${knowledgeBase.id} failed in post-response processing:`, processingError);
+        }
+      });
+    } else {
+      // Local dev keeps the worker process to isolate memory from Turbopack.
+      const tmpPath = join(tmpdir(), `cultivate-upload-${knowledgeBase.id}.${fileType}`);
+      await writeFile(tmpPath, buffer);
 
-    // Capture output for debugging
-    childProcess.stdout.on("data", (data) => {
-      console.log(`[Document ${knowledgeBase.id}]:`, data.toString().trim());
-    });
+      const scriptPath = join(process.cwd(), "lib", "workers", "process-document-script.ts");
+      const childProcess = spawn("npx", ["tsx", scriptPath, knowledgeBase.id, tmpPath, fileType], {
+        stdio: "pipe",
+        detached: false,
+      });
 
-    childProcess.stderr.on("data", (data) => {
-      console.error(`[Document ${knowledgeBase.id} ERROR]:`, data.toString().trim());
-    });
+      childProcess.stdout.on("data", (data) => {
+        console.log(`[Document ${knowledgeBase.id}]:`, data.toString().trim());
+      });
 
-    childProcess.on("exit", async (code) => {
-      // Clean up temp file
-      await unlink(tmpPath).catch(() => {});
+      childProcess.stderr.on("data", (data) => {
+        const msg = data.toString().trim();
+        if (msg.includes("DeprecationWarning") || msg.includes("--trace-deprecation")) return;
+        console.error(`[Document ${knowledgeBase.id} ERROR]:`, msg);
+      });
 
-      if (code === 0) {
-        console.log(`✅ Document ${knowledgeBase.id} processed successfully`);
-      } else {
-        console.error(`❌ Document processing failed with exit code ${code}`);
-      }
-    });
+      childProcess.on("exit", async (code) => {
+        await unlink(tmpPath).catch(() => {});
+
+        if (code === 0) {
+          console.log(`✅ Document ${knowledgeBase.id} processed successfully`);
+        } else {
+          console.error(`❌ Document processing failed with exit code ${code}`);
+        }
+      });
+    }
 
     return apiSuccess(
       {
@@ -155,4 +192,3 @@ export async function POST(request: NextRequest) {
     return apiError("Failed to upload document", 500);
   }
 }
-

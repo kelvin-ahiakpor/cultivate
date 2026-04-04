@@ -133,6 +133,24 @@ export default function KnowledgeView({
   // Demo/offline: slice client-side. Online: already paginated from server.
   const paginatedDocs = (demoMode || !isOnline) ? filteredDocs.slice(startIndex, endIndex) : filteredDocs;
 
+  const getChunkCountLabel = (doc: KnowledgeDoc) => {
+    if (doc.processingState === "FAILED") return "Failed";
+    if (doc.processingState === "PROCESSING") return "Processing";
+    return String(doc.chunkCount);
+  };
+
+  const getChunkCountTone = (doc: KnowledgeDoc) => {
+    if (doc.processingState === "FAILED") return "text-red-400";
+    if (doc.processingState === "PROCESSING") return "text-[#e8c8ab]";
+    return "text-cultivate-text-secondary";
+  };
+
+  const getSegmentSummary = (doc: KnowledgeDoc) => {
+    if (doc.processingState === "FAILED") return "Processing failed";
+    if (doc.processingState === "PROCESSING") return "Processing document";
+    return `${doc.chunkCount} ${doc.chunkCount === 1 ? "segment" : "segments"}`;
+  };
+
   const handleViewDocument = (doc: KnowledgeDoc) => {
     setViewPanelDoc(doc);
     setOpenMenuId(null);
@@ -166,6 +184,14 @@ export default function KnowledgeView({
     }
     setCurrentPage(1);
   }, [initialAgentFilter, demoMode]);
+
+  useEffect(() => {
+    if (!viewPanelDoc || demoMode) return;
+    const latestDoc = apiData.documents.find((doc) => doc.id === viewPanelDoc.id);
+    if (latestDoc) {
+      setViewPanelDoc(latestDoc);
+    }
+  }, [apiData.documents, viewPanelDoc, demoMode]);
 
   const getPublicDocumentUrl = (doc: KnowledgeDoc) => doc.fileUrl;
 
@@ -310,15 +336,21 @@ export default function KnowledgeView({
 
     fetch(`/api/knowledge-bases/${viewPanelDoc.id}/chunks`)
       .then(async (res) => {
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || "Failed to load chunks");
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 409) {
+          throw new Error("Document processing failed");
         }
-        return res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to load chunks");
+        }
+        return data;
       })
       .then((data) => {
         if (cancelled) return;
         setChunks(data.chunks || []);
+        if (data.processing) {
+          setChunksError("Document is still processing. Chunks will appear automatically when ready.");
+        }
       })
       .catch((err) => {
         if (cancelled) return;
@@ -407,7 +439,8 @@ export default function KnowledgeView({
       if (uploadDescription.trim()) fd.append("description", uploadDescription.trim());
       fd.append("file", uploadFile);
       await uploadDocument(fd);
-      apiData.mutate();
+      void apiData.mutate();
+      notify.success("Document uploaded. Processing has started in the background.");
       handleCloseUploadModal();
     } catch (e) {
       setUploadError(e instanceof Error ? e.message : "Upload failed");
@@ -595,7 +628,7 @@ export default function KnowledgeView({
                 <span className="text-xs text-cultivate-text-secondary truncate">{doc.agentName}</span>
               </div>
               <div onClick={() => handleViewDocument(doc)} className="flex items-center">
-                <span className="text-xs text-cultivate-text-secondary">{doc.chunkCount}</span>
+                <span className={`text-xs ${getChunkCountTone(doc)}`}>{getChunkCountLabel(doc)}</span>
               </div>
               <div onClick={() => handleViewDocument(doc)} className="flex items-center">
                 <span className="text-xs text-cultivate-text-tertiary">{doc.uploadedAt}</span>
@@ -1021,7 +1054,9 @@ export default function KnowledgeView({
                 <div className="bg-cultivate-bg-elevated rounded-lg p-3 space-y-2.5">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-cultivate-text-secondary">Chunks</span>
-                    <span className="text-white">{viewPanelDoc.chunkCount} segments</span>
+                    <span className={viewPanelDoc.processingState === "FAILED" ? "text-red-400" : "text-white"}>
+                      {getSegmentSummary(viewPanelDoc)}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-cultivate-text-secondary">Uploaded</span>
@@ -1058,7 +1093,7 @@ export default function KnowledgeView({
                     </div>
                   ) : chunksError ? (
                     <div className="p-3 bg-cultivate-bg-hover border border-cultivate-border-subtle rounded-lg">
-                      <p className="text-sm text-red-400">{chunksError}</p>
+                      <p className={`text-sm ${chunksError.includes("still processing") ? "text-[#e8c8ab]" : "text-red-400"}`}>{chunksError}</p>
                     </div>
                   ) : chunks.length === 0 ? (
                     <div className="p-3 bg-cultivate-bg-hover border border-cultivate-border-subtle rounded-lg">
@@ -1183,7 +1218,9 @@ export default function KnowledgeView({
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-cultivate-text-secondary">Chunks</span>
-                <span className="text-white">{viewPanelDoc.chunkCount} segments</span>
+                <span className={viewPanelDoc.processingState === "FAILED" ? "text-red-400" : "text-white"}>
+                  {getSegmentSummary(viewPanelDoc)}
+                </span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-cultivate-text-secondary">Uploaded</span>
@@ -1213,7 +1250,13 @@ export default function KnowledgeView({
                 <div>
                   <h3 className="text-xs font-medium text-cultivate-text-secondary uppercase tracking-wide mb-2">Document Preview</h3>
                   <div className="text-sm text-cultivate-text-primary leading-relaxed space-y-3">
-                    <p>This knowledge base document contains comprehensive information about {viewPanelDoc.title.toLowerCase()}. The content has been processed and chunked into {viewPanelDoc.chunkCount} segments for optimal retrieval by the AI agent.</p>
+                    <p>
+                      {viewPanelDoc.processingState === "FAILED"
+                        ? `This knowledge base document could not be processed into searchable chunks. Re-upload it or inspect the source file format.`
+                        : viewPanelDoc.processingState === "PROCESSING"
+                          ? `This knowledge base document is still being processed into searchable chunks for AI retrieval.`
+                          : `This knowledge base document contains comprehensive information about ${viewPanelDoc.title.toLowerCase()}. The content has been processed and chunked into ${viewPanelDoc.chunkCount} segments for optimal retrieval by the AI agent.`}
+                    </p>
                     <p className="text-cultivate-text-tertiary italic">Full document preview will be available when backend integration is complete. The RAG system will use vector embeddings to retrieve relevant chunks based on farmer queries.</p>
                   </div>
                 </div>
@@ -1228,7 +1271,7 @@ export default function KnowledgeView({
                     </div>
                   ) : chunksError ? (
                     <div className="p-3 bg-cultivate-bg-hover border border-cultivate-border-subtle rounded-lg">
-                      <p className="text-sm text-red-400">{chunksError}</p>
+                      <p className={`text-sm ${chunksError.includes("still processing") ? "text-[#e8c8ab]" : "text-red-400"}`}>{chunksError}</p>
                     </div>
                   ) : chunks.length === 0 ? (
                     <div className="p-3 bg-cultivate-bg-hover border border-cultivate-border-subtle rounded-lg">

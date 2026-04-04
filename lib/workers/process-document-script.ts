@@ -14,7 +14,7 @@
  */
 import { readFile } from "fs/promises";
 import { prisma } from "@/lib/prisma";
-import { processAndStoreDocument } from "@/lib/mastra-rag";
+import { processKnowledgeBaseDocument } from "@/lib/knowledge-base-processing";
 
 async function main() {
   const [knowledgeBaseId, filePath, fileTypeRaw] = process.argv.slice(2);
@@ -48,20 +48,14 @@ async function main() {
     console.log(`Step 2 done. Buffer size: ${buffer.length} bytes. Mem: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
 
     console.log(`Step 3: Processing document (parse → chunk → embed → store)...`);
-    const chunkCount = await processAndStoreDocument(
+    const chunkCount = await processKnowledgeBaseDocument({
+      knowledgeBaseId: kb.id,
       buffer,
-      fileType,
-      kb.id,
-      kb.organizationId,
-      kb.fileName
-    );
-    console.log(`Step 3 done. Created ${chunkCount} chunks. Mem: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
-
-    console.log(`Step 4: Updating knowledge base with chunk count...`);
-    await prisma.knowledgeBase.update({
-      where: { id: knowledgeBaseId },
-      data: { chunkCount },
+      fileType: fileType as "pdf" | "docx" | "txt",
+      organizationId: kb.organizationId,
+      fileName: kb.fileName,
     });
+    console.log(`Step 3 done. Created ${chunkCount} chunks. Mem: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
 
     console.log(`✅ Processed document ${knowledgeBaseId}: ${chunkCount} chunks embedded in Mastra PgVector`);
     process.exit(0);

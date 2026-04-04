@@ -74,9 +74,16 @@ export default function SettingsView({
           notify.error("Location permission denied");
         } else if (error.code === error.POSITION_UNAVAILABLE) {
           notify.error("Location unavailable");
+        } else if (error.code === error.TIMEOUT) {
+          notify.error("Location request timed out");
         } else {
           notify.error("Failed to detect location");
         }
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 12000,
+        maximumAge: 300000,
       }
     );
   };
