@@ -11,7 +11,7 @@
 
 ## 🌱 Project Overview
 
-Cultivate addresses the **1:10,000 agronomist-to-farmer ratio** problem in Ghana by enabling agronomists to create AI agents that provide on-demand agricultural advice to farmers via chat. Think of it as "ChatGPT for farming" where agronomists control the knowledge base and quality.
+Cultivate addresses the **1:1,500 agronomist-to-farmer ratio** problem in Ghana by enabling agronomists to create AI agents that provide on-demand agricultural advice to farmers via chat. Think of it as "ChatGPT for farming" where agronomists control the knowledge base and quality.
 
 ### Two User Types
 
@@ -393,7 +393,7 @@ This is a **Capstone project** for Computer Science at Ashesi University (Spring
 - Final presentation and defense
 
 **Problem Statement:**  
-Ghana has a 1:10,000 agronomist-to-farmer ratio. Cultivate uses AI to scale personalized agricultural extension services without compromising quality.
+Ghana has a 1:1,500 agronomist-to-farmer ratio. Cultivate uses AI to scale personalized agricultural extension services without compromising quality.
 
 ---
 

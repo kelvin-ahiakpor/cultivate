@@ -228,7 +228,7 @@ export default async function HomePage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <p className="text-lg text-[#4a3728] leading-relaxed">
-                Ghana has one of the most severe agricultural extension gaps in West Africa — with a ratio of <strong>1 agronomist for every 10,000 farmers</strong>, most smallholders go weeks or months without expert guidance during critical growing seasons.
+                Ghana has one of the most severe agricultural extension gaps in West Africa — with a ratio of <strong>1 agronomist for every 1,500 farmers</strong>, most smallholders go weeks or months without expert guidance during critical growing seasons.
               </p>
               <p className="text-lg text-[#4a3728] leading-relaxed">
                 Cultivate was built to change that. Developed as a capstone project at <strong>Ashesi University</strong> in partnership with <strong>Farmitecture</strong> — an Accra-based urban farming startup — the platform lets agronomists train AI agents with their own knowledge, so farmers can get expert advice 24/7.
@@ -242,7 +242,7 @@ export default async function HomePage() {
               {[
                 { label: "Ashesi University", desc: "Built as a Computer Science capstone project, Spring 2026" },
                 { label: "Farmitecture", desc: "Accra-based urban farming startup, pilot partner" },
-                { label: "1 : 10,000", desc: "Agronomist-to-farmer ratio in Ghana — the problem we're solving" },
+                { label: "1 : 1,500", desc: "Agronomist-to-farmer ratio in Ghana — the problem we're solving" },
                 { label: "Ghana-first", desc: "Designed for Ghanaian crops, climate, and farming seasons" },
               ].map(({ label, desc }) => (
                 <div key={label} className="bg-white rounded-2xl p-5 shadow-sm border border-[#e8c8ab]/40">
