@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, ChevronDown, PanelLeft, Loader2, Pencil, WifiOff } from "lucide-react";
 import { GlassCircleButton, Dropdown } from "@/components/cultivate-ui";
-import { useKnowledgeBases, uploadDocument, deleteDocument, renameDocument, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
+import { useKnowledgeBases, uploadDocument, deleteDocument, renameDocument, assignDocumentToAgent, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
 import { useAgents } from "@/lib/hooks/use-agents";
 import { useOnlineStatus } from "@/lib/hooks/use-online-status";
 import { saveAgroCache, getAgroCache } from "@/lib/offline-storage";
@@ -69,6 +69,8 @@ export default function KnowledgeView({
   const [updateDocId, setUpdateDocId] = useState<string>('');
   const [showDocSelectorModal, setShowDocSelectorModal] = useState(false);
   const [docSearchQuery, setDocSearchQuery] = useState('');
+  const [duplicateDoc, setDuplicateDoc] = useState<KnowledgeDoc | null>(null);
+  const [assigningDuplicate, setAssigningDuplicate] = useState(false);
 
   const isOnline = useOnlineStatus();
   const [offlineDocs, setOfflineDocs] = useState<KnowledgeDoc[]>([]);
@@ -407,6 +409,31 @@ export default function KnowledgeView({
     setUploadSourceType("PDF_UPLOAD");
     setUploadDescription("");
     setShowUploadModal(false);
+    setDuplicateDoc(null);
+    setAssigningDuplicate(false);
+  };
+
+  const handleAssignDuplicateDocument = async () => {
+    if (!duplicateDoc || !uploadAgentId) {
+      notify.error("Select an agent before assigning this document.");
+      return;
+    }
+
+    setAssigningDuplicate(true);
+    try {
+      const result = await assignDocumentToAgent(duplicateDoc.id, uploadAgentId);
+      await apiData.mutate();
+      notify.success(
+        typeof result?.message === "string"
+          ? result.message
+          : `Assigned "${duplicateDoc.title}" to the selected agent.`
+      );
+      handleCloseUploadModal();
+    } catch (e) {
+      notify.error(e instanceof Error ? e.message : "Assignment failed");
+    } finally {
+      setAssigningDuplicate(false);
+    }
   };
 
   const handleUploadSubmit = async () => {
@@ -421,9 +448,7 @@ export default function KnowledgeView({
       (doc) => doc.fileName.toLowerCase() === uploadFile.name.toLowerCase()
     );
     if (duplicate) {
-      notify.error(
-        `A file named "${uploadFile.name}" already exists. Use "Update Existing" to replace it.`
-      );
+      setDuplicateDoc(duplicate);
       return;
     }
 
@@ -970,6 +995,63 @@ export default function KnowledgeView({
                 >
                   {uploading && <Loader2 className="w-4 h-4 animate-spin" />}
                   {uploading ? "Uploading..." : "Upload"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {showUploadModal && duplicateDoc && (
+        <>
+          <div className="fixed inset-0 bg-black/70 z-[60]" onClick={() => setDuplicateDoc(null)} />
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-10 h-10 bg-[#e8c8ab]/15 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-5 h-5 text-[#e8c8ab]" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-medium text-white">Document Already Exists</h2>
+                  <p className="text-sm text-cultivate-text-secondary mt-1">
+                    <span className="text-white font-medium">{duplicateDoc.fileName}</span> is already in this knowledge base.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg p-3 space-y-2 mb-5">
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-cultivate-text-secondary">Existing document</span>
+                  <span className="text-white text-right">{duplicateDoc.title}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-cultivate-text-secondary">Current primary agent</span>
+                  <span className="text-white text-right">{duplicateDoc.agentName}</span>
+                </div>
+                <p className="text-xs text-cultivate-text-tertiary pt-1">
+                  You can assign this existing knowledge base to another agent, or switch to “Updating an existing document” if you meant to replace the file.
+                </p>
+              </div>
+
+              {!uploadAgentId && (
+                <p className="text-sm text-[#e8c8ab] mb-4">Pick an agent in the upload form first if you want to assign this existing document.</p>
+              )}
+
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setDuplicateDoc(null)}
+                  disabled={assigningDuplicate}
+                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors disabled:opacity-50"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handleAssignDuplicateDocument}
+                  disabled={assigningDuplicate || !uploadAgentId}
+                  className="px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
+                >
+                  {assigningDuplicate && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {assigningDuplicate ? "Assigning..." : "Assign to Agent"}
                 </button>
               </div>
             </div>

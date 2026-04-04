@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
 import { Prisma } from "@prisma/client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 async function getReferencedInChatsCounts(
   knowledgeBaseIds: string[],
   organizationId: string

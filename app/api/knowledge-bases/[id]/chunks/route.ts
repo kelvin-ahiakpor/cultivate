@@ -10,6 +10,9 @@ import { auth } from "@/auth";
 import { PgVector } from "@mastra/pg";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const EMBEDDING_DIMENSION = 1024;
 
 // Initialize Mastra PgVector

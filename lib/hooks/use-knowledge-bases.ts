@@ -3,7 +3,7 @@
 import useSWR from "swr";
 
 const fetcher = (url: string) =>
-  fetch(url).then((res) => {
+  fetch(url, { cache: "no-store" }).then((res) => {
     if (!res.ok) throw new Error("Failed to fetch");
     return res.json();
   });
@@ -168,6 +168,21 @@ export async function renameDocument(id: string, title: string) {
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.error || "Rename failed");
+  }
+
+  return res.json();
+}
+
+export async function assignDocumentToAgent(id: string, agentId: string) {
+  const res = await fetch(`/api/knowledge-bases/${id}/assign`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ agentId }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Assignment failed");
   }
 
   return res.json();
