@@ -1,12 +1,14 @@
 /**
  * offline-storage.ts
  * IndexedDB helpers for PWA offline support.
- * Stores the 20 most recent conversations + their messages so farmers can
- * read past advice without a connection.
  *
  * Access layer:
  *   - Cache API  (via serwist/sw)  →  static assets + app shell
- *   - IndexedDB  (this file)       →  structured conversation data
+ *   - IndexedDB  (this file)       →  structured data for both farmer + agronomist
+ *
+ * Stores:
+ *   v1 - "conversations"  — farmer: 20 most recent convos + messages
+ *   v2 - "agro_cache"     — agronomist: agents, KBs, flagged queries, dashboard stats
  *
  * Uses `idb` — a tiny promise-based wrapper around the raw IndexedDB API.
  */
@@ -14,8 +16,9 @@
 import { openDB, type IDBPDatabase } from "idb";
 
 const DB_NAME = "cultivate-offline";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const CONV_STORE = "conversations";
+const AGRO_STORE = "agro_cache";
 export const MAX_CACHED_CONVERSATIONS = 20;
 
 export interface CachedConversation {
@@ -50,13 +53,49 @@ interface StoredConversation extends CachedConversation {
 
 function openCultivateDB(): Promise<IDBPDatabase> {
   return openDB(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains(CONV_STORE)) {
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
         const store = db.createObjectStore(CONV_STORE, { keyPath: "id" });
         store.createIndex("cachedAt", "cachedAt");
       }
+      if (oldVersion < 2) {
+        // Agronomist cache: generic key-value store
+        // Records: { key: string, data: unknown, cachedAt: number }
+        db.createObjectStore(AGRO_STORE, { keyPath: "key" });
+      }
     },
   });
+}
+
+// ─── Agronomist cache helpers ────────────────────────────────────────────────
+
+/** Save any agronomist data blob under a named key */
+export async function saveAgroCache<T>(key: string, data: T): Promise<void> {
+  const db = await openCultivateDB();
+  await db.put(AGRO_STORE, { key, data, cachedAt: Date.now() });
+}
+
+/** Read a cached agronomist data blob. Returns null if not cached. */
+export async function getAgroCache<T>(
+  key: string
+): Promise<{ data: T; cachedAt: number } | null> {
+  const db = await openCultivateDB();
+  const record = await db.get(AGRO_STORE, key) as { key: string; data: T; cachedAt: number } | undefined;
+  if (!record) return null;
+  return { data: record.data, cachedAt: record.cachedAt };
+}
+
+/**
+ * Format a cachedAt timestamp as a human-readable age string.
+ * e.g. "just now", "5m ago", "2h ago", "3d ago"
+ */
+export function formatCacheAge(cachedAt: number): string {
+  const mins = Math.floor((Date.now() - cachedAt) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }
 
 /**
