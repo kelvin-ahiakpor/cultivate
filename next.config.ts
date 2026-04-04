@@ -18,5 +18,6 @@ export default withSerwist({
   // IMPORTANT: disable in dev to prevent stale SW caching dev build hashes
   disable: process.env.NODE_ENV !== "production",
   cacheOnNavigation: true,
-  reloadOnOnline: true,
+  // Disabled — useOnlineStatus hook handles reconnect via SWR revalidation (no hard reload)
+  reloadOnOnline: false,
 })(nextConfig);

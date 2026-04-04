@@ -19,6 +19,14 @@ import { translateToEnglish, translateFromEnglish, LANGUAGES, type SupportedLang
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
 import { AnimatedDots } from "@/components/cultivate-ui";
 import { notify } from "@/lib/toast";
+import { useOnlineStatus } from "@/lib/hooks/use-online-status";
+import {
+  saveConversationList,
+  saveConversationMessages,
+  getConversationList,
+  getConversationMessages,
+  type CachedConversation,
+} from "@/lib/offline-storage";
 
 interface ChatPageProps {
   user: {
@@ -117,13 +125,33 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   const messagesEndRef = useRef<HTMLDivElement>(null); // kept for welcome-screen scroll if needed
   const chatDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Online/offline status — drives IndexedDB fallback + disables input when offline
+  const isOnline = useOnlineStatus();
+  const [offlineChats, setOfflineChats] = useState<CachedConversation[]>([]);
+
   // Sidebar conversation list — disabled in demo mode (zero API requests)
   const apiConversations = useConversations("", 1, 30, demoMode);
   const farmerFlags = useFarmerFlaggedQueries("", 1, 50, demoMode);
-  // Unified list: demo uses mockChats shape, real uses API data normalized to same shape
+  // Unified list: demo → mockChats, online → API data, offline → IndexedDB cache
   const sidebarChats = demoMode
     ? mockChats
-    : apiConversations.conversations.map(c => ({ id: c.id, title: c.title, agentName: c.agentName, lastMessage: c.lastMessage, messageCount: c.messageCount, systemName: undefined as string | undefined }));
+    : isOnline
+      ? apiConversations.conversations.map(c => ({ id: c.id, title: c.title, agentName: c.agentName, lastMessage: c.lastMessage, messageCount: c.messageCount, systemName: undefined as string | undefined }))
+      : offlineChats.map(c => ({ id: c.id, title: c.title, agentName: c.agentName, lastMessage: c.lastMessage, messageCount: c.messageCount, systemName: undefined as string | undefined }));
+
+  // IndexedDB write-through: persist conversations when online data loads
+  useEffect(() => {
+    if (demoMode || !isOnline) return;
+    const convs = apiConversations.conversations;
+    if (convs.length === 0) return;
+    saveConversationList(convs).catch(() => {/* non-critical */});
+  }, [apiConversations.conversations, isOnline, demoMode]);
+
+  // IndexedDB read: populate offlineChats when connection drops
+  useEffect(() => {
+    if (demoMode || isOnline) return;
+    getConversationList().then(setOfflineChats).catch(() => {/* non-critical */});
+  }, [isOnline, demoMode]);
 
   // Load language preference from localStorage
   useEffect(() => {
@@ -172,6 +200,27 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   useEffect(() => {
     if (!initialConversationId || demoMode) return;
     let cancelled = false;
+
+    // Offline: serve what's in IndexedDB
+    if (!navigator.onLine) {
+      Promise.all([
+        getConversationList(),
+        getConversationMessages(initialConversationId),
+      ]).then(([list, msgs]) => {
+        if (cancelled) return;
+        const cached = list.find(c => c.id === initialConversationId);
+        if (cached) {
+          setConversationTitle(cached.title);
+          setConversationSystem(cached.agentName);
+          setSelectedChatId(initialConversationId);
+        }
+        if (msgs) setMessages(msgs);
+      }).finally(() => {
+        if (!cancelled) setMessagesLoading(false);
+      });
+      return () => { cancelled = true; };
+    }
+
     Promise.all([
       fetch(`/api/conversations/${initialConversationId}`).then(r => r.json()),
       fetch(`/api/conversations/${initialConversationId}/messages`).then(r => r.json()),
@@ -181,14 +230,19 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       setConversationSystem(convData?.agent?.name || null);
       setSelectedChatId(initialConversationId);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (msgData?.messages) setMessages(msgData.messages.map((m: any) => ({
+      const mapped = msgData?.messages ? msgData.messages.map((m: any) => ({
         id: m.id,
         role: m.role as "USER" | "ASSISTANT",
         content: m.content,
         confidenceScore: m.confidenceScore,
         isFlagged: m.isFlagged,
         flaggedQuery: m.flaggedQuery,
-      })));
+      })) : [];
+      if (mapped.length > 0) {
+        setMessages(mapped);
+        // Cache for next offline visit
+        saveConversationMessages(initialConversationId, mapped).catch(() => {/* non-critical */});
+      }
     }).catch(() => {
       if (cancelled) return;
       // Conversation gone — reset to clean state
@@ -440,20 +494,30 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
         flaggedQuery: m.flaggedQuery,
       })));
       setMessagesLoading(false);
+    } else if (!isOnline) {
+      // Offline: serve from IndexedDB cache
+      const cached = await getConversationMessages(chatId).catch(() => null);
+      if (cached) {
+        setMessages(cached);
+      }
+      setMessagesLoading(false);
     } else {
       try {
         const res = await fetch(`/api/conversations/${chatId}/messages`);
         const data = await res.json();
         if (data.messages) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setMessages(data.messages.map((m: any) => ({
+          const mapped = data.messages.map((m: any) => ({
             id: m.id,
             role: m.role,
             content: m.content,
             confidenceScore: m.confidenceScore,
             isFlagged: m.isFlagged,
             flaggedQuery: m.flaggedQuery
-          })));
+          }));
+          setMessages(mapped);
+          // Write-through: cache for offline access
+          saveConversationMessages(chatId, mapped).catch(() => {/* non-critical */});
         }
       } catch (e) {
         console.error("Failed to load conversation messages:", e);
@@ -1138,6 +1202,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                   isStreaming={isStreaming}
                   streamingContent={streamingContent}
                   isStandalone={isStandalone}
+                  isOnline={isOnline}
                   inputProps={{
                     value: inputValue,
                     onChange: setInputValue,

@@ -43,7 +43,7 @@
  */
 
 import { useRef, useEffect, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle, Mic, MicOff, AlertTriangle, AudioLines, Globe, Image, FileText, FolderPlus, PanelLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle, Mic, MicOff, AlertTriangle, AudioLines, Globe, Image, FileText, FolderPlus, PanelLeft, WifiOff } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { notify } from "@/lib/toast";
@@ -116,6 +116,8 @@ interface ConversationViewProps {
   showNewChatButton?: boolean;
   showMessageActions?: boolean;
   highlightFlaggedMessages?: boolean;
+  /** Passed from useOnlineStatus(). Disables input + shows offline indicator when false. */
+  isOnline?: boolean;
 }
 
 export default function ConversationView({
@@ -139,6 +141,7 @@ export default function ConversationView({
   showNewChatButton = true,
   showMessageActions = true,
   highlightFlaggedMessages = false,
+  isOnline = true,
 }: ConversationViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [flaggedMessages, setFlaggedMessages] = useState<Set<string>>(new Set());
@@ -565,12 +568,12 @@ export default function ConversationView({
             <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-3.5 mb-1 lg:max-w-3xl lg:mx-auto"}`}>
               <div className="bg-cultivate-bg-elevated rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
                 <textarea
-                  placeholder="How can I help you today?"
+                  placeholder={!isOnline ? "No connection · read only" : "How can I help you today?"}
                   rows={1}
                   value={inputProps?.value ?? ""}
-                  onChange={inputProps ? (e) => inputProps.onChange(e.target.value) : undefined}
-                  onKeyDown={inputProps ? (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); inputProps.onSend(); } } : undefined}
-                  readOnly={!inputProps || voiceState !== "idle"}
+                  onChange={inputProps && isOnline ? (e) => inputProps.onChange(e.target.value) : undefined}
+                  onKeyDown={inputProps && isOnline ? (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); inputProps.onSend(); } } : undefined}
+                  readOnly={!inputProps || voiceState !== "idle" || !isOnline}
                   className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-[#6B6B6B] bg-transparent text-sm standalone:text-base lg:text-sm"
                 />
                 <div className="flex items-center justify-between mt-2">
@@ -747,8 +750,13 @@ export default function ConversationView({
                       </div>
                     )}
 
-                    {/* Send button */}
-                    {inputProps ? (
+                    {/* Offline indicator — replaces send button when disconnected */}
+                    {!isOnline && inputProps ? (
+                      <div className="flex items-center gap-1.5 text-cultivate-text-tertiary px-1">
+                        <WifiOff className="w-4 h-4" />
+                        <span className="text-xs">Offline</span>
+                      </div>
+                    ) : inputProps ? (
                       inputProps.isStreaming ? (
                         <div className="p-2">
                           <Loader2 className="w-5 h-5 text-cultivate-green-light animate-spin" />
