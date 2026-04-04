@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageCircle, Search, ChevronLeft, ChevronRight, Plus, PanelLeft, Loader2 } from "lucide-react";
+import { MessageCircle, Search, ChevronLeft, ChevronRight, Plus, PanelLeft, Loader2, WifiOff } from "lucide-react";
 import { GlassCircleButton } from "@/components/cultivate-ui";
 import ConversationView from "@/components/conversation-view";
 import { useConversations } from "@/lib/hooks/use-conversations";
+import { useOnlineStatus } from "@/lib/hooks/use-online-status";
+import { getConversationList, getConversationMessages, type CachedConversation } from "@/lib/offline-storage";
 import { DEMO_FARMER_CHATS, DEMO_FARMER_CONVO_MESSAGES } from "@/lib/demo-data";
 
 interface ChatMessage {
@@ -53,19 +55,37 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
   const [messagesLoading, setMessagesLoading] = useState(false);
   const itemsPerPage = 30;
 
+  // Online/offline — drives IndexedDB fallback
+  const isOnline = useOnlineStatus();
+  const [offlineChats, setOfflineChats] = useState<CachedConversation[]>([]);
+
   // SWR — disabled in demo mode
   const apiConversations = useConversations(searchQuery, currentPage, itemsPerPage, demoMode);
 
-  // Unified chat list — strip markdown heading prefix from titles
+  // Load from IndexedDB when offline
+  useEffect(() => {
+    if (demoMode || isOnline) return;
+    getConversationList().then(setOfflineChats).catch(() => {/* non-critical */});
+  }, [isOnline, demoMode]);
+
+  // Unified chat list — demo → mock, online → API, offline → IndexedDB
   const allChats: Chat[] = demoMode
     ? mockChats
-    : apiConversations.conversations.map(c => ({
-        id: c.id,
-        title: c.title.replace(/^#+\s*/, ""),
-        agentName: c.agentName,
-        lastMessage: c.lastMessage,
-        messageCount: c.messageCount,
-      }));
+    : isOnline
+      ? apiConversations.conversations.map(c => ({
+          id: c.id,
+          title: c.title.replace(/^#+\s*/, ""),
+          agentName: c.agentName,
+          lastMessage: c.lastMessage,
+          messageCount: c.messageCount,
+        }))
+      : offlineChats.map(c => ({
+          id: c.id,
+          title: c.title,
+          agentName: c.agentName,
+          lastMessage: c.lastMessage,
+          messageCount: c.messageCount,
+        }));
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(display-mode: standalone)");
@@ -95,19 +115,27 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
         if (!demoMode) {
           setMessagesLoading(true);
           setRealMessages([]);
-          fetch(`/api/conversations/${initialChatId}/messages`)
-            .then(r => r.json())
-            .then(data => {
-              const msgs = (data?.messages ?? []).map((m: { id: string; role: string; content: string; createdAt: string }) => ({
-                id: m.id,
-                role: m.role as "USER" | "ASSISTANT",
-                content: m.content,
-                timestamp: new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-              }));
-              setRealMessages(msgs);
-            })
-            .catch(() => setRealMessages([]))
-            .finally(() => setMessagesLoading(false));
+          if (!navigator.onLine) {
+            // Offline: serve from IndexedDB
+            getConversationMessages(initialChatId)
+              .then(msgs => { if (msgs) setRealMessages(msgs); })
+              .catch(() => {/* non-critical */})
+              .finally(() => setMessagesLoading(false));
+          } else {
+            fetch(`/api/conversations/${initialChatId}/messages`)
+              .then(r => r.json())
+              .then(data => {
+                const msgs = (data?.messages ?? []).map((m: { id: string; role: string; content: string; createdAt: string }) => ({
+                  id: m.id,
+                  role: m.role as "USER" | "ASSISTANT",
+                  content: m.content,
+                  timestamp: new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                }));
+                setRealMessages(msgs);
+              })
+              .catch(() => setRealMessages([]))
+              .finally(() => setMessagesLoading(false));
+          }
         }
       }
     } else {
@@ -151,6 +179,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
         messages={demoMode ? getMockConversationMessages(openedChat.id) : realMessages}
         messagesLoading={messagesLoading}
         isStandalone={isStandalone}
+        isOnline={isOnline}
         demoAgentLabel={openedChat.agentName}
       />
     );
@@ -171,16 +200,22 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
             </div>
           )}
           <div className="text-center">
-            <h1 className="text-2xl font-serif text-cultivate-text-primary">Chats</h1>
-            <p className="text-sm text-cultivate-text-secondary mt-1">{mockChats.length} conversations with Cultivate</p>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-2xl font-serif text-cultivate-text-primary">Chats</h1>
+              {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+            </div>
+            <p className="text-sm text-cultivate-text-secondary mt-1">{allChats.length} conversations with Cultivate</p>
           </div>
         </div>
 
         {/* Desktop header */}
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-serif text-cultivate-text-primary">Chats</h1>
-            <p className="text-sm text-cultivate-text-secondary mt-1">{mockChats.length} conversations with Cultivate</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-serif text-cultivate-text-primary">Chats</h1>
+              {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+            </div>
+            <p className="text-sm text-cultivate-text-secondary mt-1">{allChats.length} conversations with Cultivate</p>
           </div>
         </div>
 
