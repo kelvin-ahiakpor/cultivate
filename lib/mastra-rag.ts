@@ -12,7 +12,7 @@
  *
  * Pipeline Flow:
  * 1. Upload PDF → Supabase Storage
- * 2. Extract text → pdftotext (system binary)
+ * 2. Extract text → unpdf (serverless-safe PDF.js build)
  * 3. Chunk → MDocument.chunk() recursive strategy
  * 4. Embed → Voyage AI (1024-dim vectors)
  * 5. Store → Mastra PgVector (creates tables automatically)
@@ -25,6 +25,7 @@ import { PgVector } from "@mastra/pg";
 import { embedMany, embed } from "ai";
 import { voyage } from "voyage-ai-provider";
 import { prisma } from "@/lib/prisma";
+import type { KnowledgeBaseType } from "@prisma/client";
 
 // ============================================================================
 // CONFIGURATION
@@ -48,30 +49,17 @@ const vectorStore = new PgVector({
 // ============================================================================
 
 /**
- * Extract text from PDF buffer using pdftotext (system binary)
+ * Extract text from PDF buffer using unpdf.
  *
- * Why pdftotext instead of JS libraries?
- * - pdf-parse, pdfjs-dist, unpdf all cause Turbopack OOM (4-8GB heap) in dev
- * - pdftotext runs in separate OS process → zero Node.js heap cost
- * - Requires: `brew install poppler` (Mac) or `poppler-utils` (Linux/Vercel)
+ * Why unpdf?
+ * - Pure JS / PDF.js-based extraction
+ * - Works in local Node and Vercel/serverless
+ * - Avoids external system binary dependencies like pdftotext
  */
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
-  const { execFile } = await import("child_process");
-  const { promisify } = await import("util");
-  const { writeFile, unlink } = await import("fs/promises");
-  const { tmpdir } = await import("os");
-  const { join } = await import("path");
-
-  const execFileAsync = promisify(execFile);
-  const tmpPath = join(tmpdir(), `cultivate-pdf-${Date.now()}.pdf`);
-
-  try {
-    await writeFile(tmpPath, buffer);
-    const { stdout } = await execFileAsync("pdftotext", ["-layout", tmpPath, "-"]);
-    return stdout;
-  } finally {
-    await unlink(tmpPath).catch(() => {});
-  }
+  const { extractText } = await import("unpdf");
+  const { text } = await extractText(new Uint8Array(buffer), { mergePages: true });
+  return text;
 }
 
 /**
@@ -103,6 +91,20 @@ export interface Chunk {
   content: string;
   chunkIndex: number;
   tokenCount: number;
+}
+
+interface VectorChunkMetadata {
+  knowledgeBaseId?: string;
+  fileName?: string;
+  content?: string;
+  chunkIndex?: number;
+  tokenCount?: number;
+}
+
+interface KnowledgeBaseRef {
+  id: string;
+  fileName: string;
+  kbType: KnowledgeBaseType;
 }
 
 /**
@@ -179,9 +181,9 @@ export async function storeChunks(
   // Ensure index exists before upserting
   try {
     await vectorStore.getIndexInfo({ indexName });
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Index doesn't exist - create it
-    if (error.message?.includes("does not exist")) {
+    if (error instanceof Error && error.message.includes("does not exist")) {
       await vectorStore.createIndex({
         indexName,
         dimension: EMBEDDING_DIMENSION,
@@ -277,8 +279,8 @@ export async function retrieveContext(
     return { context: "", chunks: [], hasContext: false };
   }
 
-  const knowledgeBases = agentKbs.map((akb: any) => akb.knowledgeBase);
-  const kbIds = knowledgeBases.map((kb: any) => kb.id);
+  const knowledgeBases: KnowledgeBaseRef[] = agentKbs.map((akb) => akb.knowledgeBase);
+  const kbIds = knowledgeBases.map((kb) => kb.id);
 
   // 2. Embed the query
   const queryEmbedding = await embedQuery(query);
@@ -304,8 +306,9 @@ export async function retrieveContext(
   console.log(`Query embedding search returned ${results.length} results (topK × 2 = ${topK * 2})`);
 
   const weighted = results.map((r, i) => {
-    const kbId = r.metadata?.knowledgeBaseId as string;
-    const kb = knowledgeBases.find((k: any) => k.id === kbId);
+    const metadata = (r.metadata ?? {}) as VectorChunkMetadata;
+    const kbId = metadata.knowledgeBaseId;
+    const kb = knowledgeBases.find((k) => k.id === kbId);
     const weight =
       kb?.kbType === "CORE" ? 1.5 : kb?.kbType === "RELATED" ? 1.0 : 0.7;
     const originalScore = r.score;
@@ -325,7 +328,7 @@ export async function retrieveContext(
 
   console.log(`\n✅ Top ${topK} after weighted re-ranking:`);
   topResults.forEach((r, i) => {
-    console.log(`  [${i + 1}] ${(r as any).fileName?.slice(0, 40) || "Unknown"} (${(r as any).kbType || "?"}) - Score: ${r.score.toFixed(4)}`);
+    console.log(`  [${i + 1}] ${r.fileName?.slice(0, 40) || "Unknown"} (${r.kbType || "?"}) - Score: ${r.score.toFixed(4)}`);
   });
   console.log("");
 
@@ -333,8 +336,8 @@ export async function retrieveContext(
   const chunks = topResults
     .filter((r) => r.metadata?.knowledgeBaseId && r.metadata?.content)
     .map((r) => {
-      const metadata = r.metadata!;
-      const kb = knowledgeBases.find((kb: any) => kb.id === metadata.knowledgeBaseId);
+      const metadata = r.metadata as VectorChunkMetadata;
+      const kb = knowledgeBases.find((kb) => kb.id === metadata.knowledgeBaseId);
       return {
         content: metadata.content as string,
         knowledgeBaseId: metadata.knowledgeBaseId as string,
