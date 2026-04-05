@@ -578,20 +578,18 @@ export default function KnowledgeView({
         {/* Filter and Search */}
         <div className="flex items-center gap-3 mb-6">
           {/* Agent Filter — demo: hardcoded names, real: from API */}
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary pointer-events-none" />
-            <select
-              value={agentFilter || "All Agents"}
-              onChange={(e) => handleAgentChange(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-cultivate-text-primary focus:outline-none focus:border-[#85b878] cursor-pointer appearance-none min-w-[200px]"
-            >
-              <option value="All Agents">All Agents</option>
-              {demoMode
-                ? demoAgentNames.slice(1).map(name => <option key={name} value={name}>{name}</option>)
-                : realAgents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)
-              }
-            </select>
-          </div>
+          <Dropdown
+            variant="pill"
+            value={agentFilter || ""}
+            onChange={(val) => handleAgentChange(val === "" ? "All Agents" : val)}
+            options={[
+              { value: "", label: "All Agents" },
+              ...(demoMode
+                ? demoAgentNames.slice(1).map(name => ({ value: name, label: name }))
+                : realAgents.map(a => ({ value: a.id, label: a.name }))
+              ),
+            ]}
+          />
 
           {/* Search */}
           <div className="relative flex-1 max-w-[78.5%]">
@@ -830,20 +828,16 @@ export default function KnowledgeView({
 
                   <div>
                     <label className="block text-sm text-cultivate-text-secondary mb-1.5">Assign to Agent</label>
-                    <div className="relative">
-                      <select
-                        value={uploadAgentId}
-                        onChange={(e) => setUploadAgentId(e.target.value)}
-                        className="w-full px-3 py-2 pr-10 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white focus:outline-none focus:border-[#5a7048] appearance-none"
-                      >
-                        <option value="">Select an agent...</option>
-                        {demoMode
-                          ? demoAgentNames.slice(1).map(name => <option key={name} value={name}>{name}</option>)
-                          : realAgents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)
-                        }
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary pointer-events-none" />
-                    </div>
+                    <Dropdown
+                      variant="field"
+                      value={uploadAgentId}
+                      onChange={setUploadAgentId}
+                      placeholder="Select an agent..."
+                      options={demoMode
+                        ? demoAgentNames.slice(1).map(name => ({ value: name, label: name }))
+                        : realAgents.map(a => ({ value: a.id, label: a.name }))
+                      }
+                    />
                   </div>
 
                   {/* KB Type */}
@@ -1383,7 +1377,6 @@ export default function KnowledgeView({
                           ? `This knowledge base document is still being processed into searchable chunks for AI retrieval.`
                           : `This knowledge base document contains comprehensive information about ${viewPanelDoc.title.toLowerCase()}. The content has been processed and chunked into ${viewPanelDoc.chunkCount} segments for optimal retrieval by the AI agent.`}
                     </p>
-                    <p className="text-cultivate-text-tertiary italic">Full document preview will be available when backend integration is complete. The RAG system will use vector embeddings to retrieve relevant chunks based on farmer queries.</p>
                   </div>
                 </div>
 
