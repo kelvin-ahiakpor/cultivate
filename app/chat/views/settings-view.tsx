@@ -32,10 +32,18 @@ export default function SettingsView({
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
+  const [name, setName] = useState(user.name || "");
+  const [isSavingName, setIsSavingName] = useState(false);
+  const [hasNameChanges, setHasNameChanges] = useState(false);
+
   useEffect(() => {
     const changed = location !== (user.location || "") || gpsCoordinates !== (user.gpsCoordinates || "");
     setHasChanges(changed);
   }, [location, gpsCoordinates, user.location, user.gpsCoordinates]);
+
+  useEffect(() => {
+    setHasNameChanges(name !== (user.name || ""));
+  }, [name, user.name]);
 
   const handleDetectLocation = () => {
     if (!navigator.geolocation) {
@@ -86,6 +94,34 @@ export default function SettingsView({
         maximumAge: 300000,
       }
     );
+  };
+
+  const handleSaveName = async () => {
+    if (!name.trim()) {
+      notify.error("Name cannot be empty");
+      return;
+    }
+
+    setIsSavingName(true);
+    try {
+      const response = await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim() }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save name");
+      }
+
+      notify.success("Name updated");
+      setHasNameChanges(false);
+    } catch (error) {
+      console.error("Save name error:", error);
+      notify.error("Failed to save name");
+    } finally {
+      setIsSavingName(false);
+    }
   };
 
   const handleSave = async () => {
@@ -251,7 +287,7 @@ export default function SettingsView({
               </div>
             </div>
 
-            {/* Account Info Section (read-only) */}
+            {/* Account Info Section */}
             <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-6">
               <div className="flex items-start gap-3 mb-4">
                 <div className="p-2 bg-cultivate-bg-hover rounded-lg">
@@ -263,15 +299,40 @@ export default function SettingsView({
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-xs text-cultivate-text-tertiary mb-1">Name</label>
-                  <p className="text-sm text-cultivate-text-primary">{user.name}</p>
+                  <label className="block text-sm text-cultivate-text-secondary mb-2">Name</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    className="w-full px-3 py-2.5 bg-cultivate-bg-main border border-cultivate-border-element rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-button-primary"
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs text-cultivate-text-tertiary mb-1">Email</label>
-                  <p className="text-sm text-cultivate-text-primary">{user.email}</p>
+                  <label className="block text-sm text-cultivate-text-secondary mb-2">Email</label>
+                  <p className="px-3 py-2.5 text-sm text-cultivate-text-secondary">{user.email}</p>
                 </div>
+                {hasNameChanges && (
+                  <button
+                    onClick={handleSaveName}
+                    disabled={isSavingName}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-cultivate-button-primary text-white text-sm rounded-lg hover:bg-cultivate-button-primary-hover transition-colors disabled:opacity-40"
+                  >
+                    {isSavingName ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>Save name</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>
