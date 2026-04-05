@@ -193,6 +193,7 @@ export default function ConversationView({
 
   // Attachment menu state
   const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const shouldShowComposer = showComposer && (!messagesLoading || messages.length > 0);
 
   const triggerImagePicker = () => {
     imageInputRef.current?.click();
@@ -923,7 +924,7 @@ export default function ConversationView({
             <div className="max-w-3xl standalone:max-w-4xl mx-auto flex flex-col min-h-full">
               {/* space-y-4: gap between messages.
                   pb-12 standalone: breathing room after "AI can make mistakes" before input */}
-              <div className={`flex-1 px-8 standalone:px-2 lg:px-8 pt-6 ${showComposer ? (isStandalone ? "pb-12" : "pb-6") : "pb-8"} space-y-4`}>
+              <div className={`flex-1 px-8 standalone:px-2 lg:px-8 pt-6 ${shouldShowComposer ? (isStandalone ? "pb-12" : "pb-6") : "pb-8"} space-y-4`}>
               {messagesLoading ? (
                 <div className="flex flex-1 items-center justify-center min-h-[60vh]">
                   <Loader2 className="w-5 h-5 text-cultivate-text-secondary animate-spin" />
@@ -1189,7 +1190,7 @@ export default function ConversationView({
             {/* ── Sticky Input ────────────────────────────────────────────
                 Standalone: glass gradient overlay, transparent bg, -mt-10 to overlap messages
                 Desktop/web: solid bg, centered max width */}
-            <div className={`${showComposer ? `sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-cultivate-bg-main pb-2"}` : "hidden"}`}>
+            <div className={`${shouldShowComposer ? `sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-cultivate-bg-main pb-2"}` : "hidden"}`}>
               {isStandalone && (
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
               )}
@@ -1459,7 +1460,7 @@ export default function ConversationView({
                     </div>
                   </div>
                 </div>
-                {showComposer && !isStandalone && (messages.length > 0 || messagesLoading) && (
+                {shouldShowComposer && !isStandalone && (messages.length > 0 || messagesLoading) && (
                   <p className="mt-2 text-xs text-cultivate-text-secondary text-center leading-snug">
                     AI can make mistakes. Please verify important information.
                   </p>
@@ -1468,7 +1469,7 @@ export default function ConversationView({
               </div>
           </div>
         </div>
-        {!showComposer && footerMeta && (
+        {!shouldShowComposer && footerMeta && (
           <div className="flex-shrink-0 px-3 lg:px-4 py-3 border-t border-cultivate-border-element">
             <p className="text-xs text-cultivate-text-secondary text-center">
               {footerMeta}

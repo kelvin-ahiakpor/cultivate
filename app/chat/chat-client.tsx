@@ -206,78 +206,96 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   useEffect(() => {
     if (!initialConversationId || demoMode) return;
     let cancelled = false;
+    let hasVisibleMessages = false;
+
+    const applyCachedConversationMeta = (list: CachedConversation[]) => {
+      const cached = list.find(c => c.id === initialConversationId);
+      if (!cached || cancelled) return;
+      setConversationTitle(cached.title);
+      setConversationSystem(cached.systemName || cached.agentName);
+      setSelectedChatId(initialConversationId);
+    };
+
+    const applyApiConversationMeta = (convData: {
+      title?: string | null;
+      agent?: { name?: string | null } | null;
+      farmerSystem?: { id?: string | null; name?: string | null } | null;
+    }) => {
+      if (cancelled) return;
+      setConversationTitle(convData?.title || null);
+      setConversationSystem(convData?.farmerSystem?.name ?? convData?.agent?.name ?? null);
+      setConversationSystemId(convData?.farmerSystem?.id || null);
+      setSelectedChatId(initialConversationId);
+    };
+
+    const applyMessages = (msgs: ChatMessage[] | null, { clearLoading }: { clearLoading: boolean }) => {
+      if (cancelled || !msgs || msgs.length === 0) return false;
+      hasVisibleMessages = true;
+      setMessages(msgs);
+      setSelectedChatId(initialConversationId);
+      if (clearLoading) {
+        setMessagesLoading(false);
+      }
+      return true;
+    };
 
     if (!navigator.onLine) {
-      Promise.all([
-        getConversationList(),
-        getConversationMessages(initialConversationId),
-      ]).then(([list, msgs]) => {
-        if (cancelled) return;
-        const cached = list.find(c => c.id === initialConversationId);
-        if (cached) {
-          setConversationTitle(cached.title);
-          setConversationSystem(cached.agentName);
-          setSelectedChatId(initialConversationId);
-        }
-        if (msgs) setMessages(msgs);
-      }).finally(() => {
+      const offlineMetaPromise = getConversationList()
+        .then(applyCachedConversationMeta)
+        .catch(() => {/* cache miss */});
+      const offlineMessagesPromise = getConversationMessages(initialConversationId)
+        .then((msgs) => { applyMessages(msgs, { clearLoading: true }); })
+        .catch(() => {/* cache miss */});
+
+      Promise.allSettled([offlineMetaPromise, offlineMessagesPromise]).finally(() => {
         if (!cancelled) setMessagesLoading(false);
       });
       return () => { cancelled = true; };
     }
 
-    // Step 1: paint from cache immediately — clears spinner before network responds
-    let hasCache = false;
-    Promise.all([
-      getConversationList(),
-      getConversationMessages(initialConversationId),
-    ]).then(([list, msgs]) => {
-      if (cancelled) return;
-      const cached = list.find(c => c.id === initialConversationId);
-      if (cached) {
-        setConversationTitle(cached.title);
-        setConversationSystem(cached.agentName);
-        setSelectedChatId(initialConversationId);
-      }
-      if (msgs && msgs.length > 0) {
-        hasCache = true;
-        setMessages(msgs);
-        setMessagesLoading(false); // instant — no spinner
-      }
-    }).catch(() => {/* cache miss, keep spinner until API responds */});
+    // Step 1: paint from cache immediately — messages should not wait on list metadata.
+    getConversationMessages(initialConversationId)
+      .then((msgs) => { applyMessages(msgs, { clearLoading: true }); })
+      .catch(() => {/* cache miss, keep spinner until API responds */});
 
-    // Step 2: revalidate from API silently in background
-    Promise.all([
-      fetch(`/api/conversations/${initialConversationId}`).then(r => r.json()),
-      fetch(`/api/conversations/${initialConversationId}/messages`).then(r => r.json()),
-    ]).then(([convData, msgData]) => {
-      if (cancelled) return;
-      setConversationTitle(convData?.title || null);
-      setConversationSystem(convData?.agent?.name || null);
-      setConversationSystem(convData?.farmerSystem?.name || null);
-      setConversationSystemId(convData?.farmerSystem?.id || null);
-      setSelectedChatId(initialConversationId);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mapped = msgData?.messages ? msgData.messages.map((m: any) => ({
-        id: m.id,
-        role: m.role as "USER" | "ASSISTANT",
-        content: m.content,
-        attachments: m.attachments,
-        confidenceScore: m.confidenceScore,
-        isFlagged: m.isFlagged,
-        flaggedQuery: m.flaggedQuery,
-      })) : [];
-      if (mapped.length > 0) {
-        setMessages(mapped);
-        saveConversationMessages(initialConversationId, mapped).catch(() => {});
-      }
-    }).catch(() => {
-      if (cancelled || hasCache) return; // cached data still visible — don't reset
+    getConversationList()
+      .then(applyCachedConversationMeta)
+      .catch(() => {/* cache miss */});
+
+    // Step 2: revalidate from API in background. Messages and metadata resolve independently.
+    fetch(`/api/conversations/${initialConversationId}`)
+      .then(r => r.json())
+      .then(applyApiConversationMeta)
+      .catch(() => {/* metadata can fail without losing the visible conversation */});
+
+    fetch(`/api/conversations/${initialConversationId}/messages`)
+      .then(r => r.json())
+      .then((msgData) => {
+        if (cancelled) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mapped = msgData?.messages ? msgData.messages.map((m: any) => ({
+          id: m.id,
+          role: m.role as "USER" | "ASSISTANT",
+          content: m.content,
+          attachments: m.attachments,
+          confidenceScore: m.confidenceScore,
+          isFlagged: m.isFlagged,
+          flaggedQuery: m.flaggedQuery,
+        })) : [];
+        if (applyMessages(mapped, { clearLoading: true })) {
+          saveConversationMessages(initialConversationId, mapped).catch(() => {});
+          return;
+        }
+        setMessagesLoading(false);
+      })
+      .catch(() => {
+        if (cancelled || hasVisibleMessages) return; // cached data still visible — don't reset
       setCurrentConversationId(null);
       window.history.replaceState(null, "", "/chat");
-    }).finally(() => {
-      if (!cancelled) setMessagesLoading(false);
-    });
+      })
+      .finally(() => {
+        if (!cancelled && !hasVisibleMessages) setMessagesLoading(false);
+      });
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
