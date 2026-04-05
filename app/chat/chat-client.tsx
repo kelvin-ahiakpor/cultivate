@@ -317,9 +317,14 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
 
   useEffect(() => {
     if (!openMenuId) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setOpenMenuId(null); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpenMenuId(null); };
+    const handleMouseDown = () => setOpenMenuId(null);
+    window.addEventListener("keydown", handleKey);
+    window.addEventListener("mousedown", handleMouseDown);
+    return () => {
+      window.removeEventListener("keydown", handleKey);
+      window.removeEventListener("mousedown", handleMouseDown);
+    };
   }, [openMenuId]);
 
   const handleInstall = async () => {
@@ -410,7 +415,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
     return () => {
       pendingImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
     };
-  }, [pendingImages]);
+  }, []);
 
   useEffect(() => {
     const hasFilePayload = (event: DragEvent) =>
@@ -647,7 +652,18 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
         for (const line of lines) {
           try {
             const event = JSON.parse(line.slice(6));
-            if (event.type === "text") {
+            if (event.type === "user_message") {
+              setMessages((prev) => prev.map((msg) => (
+                msg.id === userMsg.id
+                  ? {
+                      ...msg,
+                      id: event.message?.id || msg.id,
+                      attachments: event.message?.attachments || msg.attachments,
+                    }
+                  : msg
+              )));
+              imagesToSend.forEach((image) => URL.revokeObjectURL(image.previewUrl));
+            } else if (event.type === "text") {
               assistantText += event.content;
               setStreamingContent(assistantText);
             } else if (event.type === "done") {
@@ -1038,6 +1054,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                       {/* Three-dot menu */}
                       <div className="relative flex-shrink-0 w-8 flex items-center">
                         <button
+                          onMouseDown={(e) => e.stopPropagation()}
                           onClick={(e) => {
                             e.stopPropagation();
                             setOpenMenuId(isMenuOpen ? null : chat.id);
@@ -1048,8 +1065,10 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                         </button>
 
                         {isMenuOpen && (
-                          <>
-                            <div className="absolute right-0 top-full mt-1.5 bg-cultivate-bg-elevated rounded-xl shadow-xl border border-cultivate-border-element py-1.5 z-[101] min-w-[180px] whitespace-nowrap">
+                          <div
+                            onMouseDown={(e) => e.stopPropagation()}
+                            className="absolute right-0 top-full mt-1.5 bg-cultivate-bg-elevated rounded-xl shadow-xl border border-cultivate-border-element py-1.5 z-[101] min-w-[180px] whitespace-nowrap"
+                          >
                               <div className="px-1.5">
                                 <button
                                   onClick={(e) => {
@@ -1111,8 +1130,6 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                                 </button>
                               </div>
                             </div>
-                            <div className="fixed inset-0 z-[100]" onClick={() => setOpenMenuId(null)} />
-                          </>
                         )}
                       </div>
                     </div>
