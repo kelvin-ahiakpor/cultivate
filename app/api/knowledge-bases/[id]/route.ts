@@ -5,6 +5,9 @@ import { deleteFile } from "@/lib/supabase-storage";
 import { deleteChunks } from "@/lib/mastra-rag"; // Mastra PgVector
 import { Prisma } from "@prisma/client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 async function getReferencedInChatsCount(knowledgeBaseId: string, organizationId: string) {
   const rows = await prisma.$queryRaw<Array<{ count: bigint | number }>>(
     Prisma.sql`
