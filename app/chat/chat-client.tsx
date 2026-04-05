@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Download, Share, Pencil, Unlink, Trash2, Globe, AudioLines, Mic, AlertTriangle, Flag } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { signOut } from "next-auth/react";
 import { mutate as globalMutate } from "swr";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon, GlassCircleButton, Tooltip } from "@/components/cultivate-ui";
@@ -81,7 +83,6 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
 
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [flaggedUpdatesSeenAt, setFlaggedUpdatesSeenAt] = useState<string | null>(null);
-  const [chatMenuId, setChatMenuId] = useState<string | null>(null);
   const [showInstallModal, setShowInstallModal] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -123,7 +124,6 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   const [chatsViewOpen, setChatsViewOpen] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null); // kept for welcome-screen scroll if needed
-  const chatDropdownRef = useRef<HTMLDivElement>(null);
 
   // Online/offline status — drives IndexedDB fallback + disables input when offline
   const isOnline = useOnlineStatus();
@@ -183,18 +183,6 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
     const query = params.toString();
     window.history.replaceState(null, "", "/chat" + (query ? "?" + query : ""));
   }, [activeView, currentConversationId, demoMode]);
-
-  // Close the chat item dropdown when clicking anywhere outside it
-  useEffect(() => {
-    if (!chatMenuId) return;
-    const handleMouseDown = (e: MouseEvent) => {
-      if (chatDropdownRef.current && !chatDropdownRef.current.contains(e.target as Node)) {
-        setChatMenuId(null);
-      }
-    };
-    document.addEventListener("mousedown", handleMouseDown);
-    return () => document.removeEventListener("mousedown", handleMouseDown);
-  }, [chatMenuId]);
 
   // On mount: if a conversation ID was in the URL, restore it (fetch title + messages in parallel)
   useEffect(() => {
@@ -569,7 +557,6 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
     setRenameTargetId(chatId);
     setRenameValue(chat?.title || "");
     setShowRenameModal(true);
-    setChatMenuId(null);
   };
 
   const handleRenameSubmit = async () => {
@@ -602,7 +589,6 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   const handleDeleteClick = (chatId: string) => {
     setDeleteTargetId(chatId);
     setShowDeleteModal(true);
-    setChatMenuId(null);
   };
 
   const handleDeleteConfirm = async () => {
@@ -763,7 +749,6 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
               <div className="space-y-0.5 standalone:space-y-2 lg:space-y-0.5">
                 {sidebarChats.slice(0, isDesktop ? 30 : 10).map((chat) => {
                   const isActive = selectedChatId === chat.id;
-                  const isMenuOpen = chatMenuId === chat.id;
                   return (
                     <div
                       key={chat.id}
@@ -771,9 +756,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                       className={`group flex items-stretch rounded-lg transition-colors cursor-pointer ${
                         isActive
                           ? 'bg-cultivate-bg-hover'
-                          : isMenuOpen
-                            ? '' /* menu open on non-active: no row bg, only button gets bg */
-                            : 'hover:bg-cultivate-bg-hover has-[button:hover]:bg-transparent'
+                          : 'hover:bg-cultivate-bg-hover has-[button:hover]:bg-transparent'
                       }`}
                     >
                       {/* Text label — min-w-0 is critical for flex child truncation */}
@@ -786,56 +769,48 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                       >
                         {chat.title}
                       </span>
-                      {/* Three-dot menu — absolute positioned so it doesn't take layout space when hidden */}
+                      {/* Three-dot menu — Radix DropdownMenu */}
                       <div className="relative flex-shrink-0 w-6 flex items-center">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setChatMenuId(isMenuOpen ? null : chat.id); }}
-                          className={`absolute right-0 ${isActive || isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} ${isMenuOpen ? 'bg-cultivate-bg-hover-dark' : 'hover:bg-cultivate-bg-hover'} transition-all w-8 h-full rounded-lg flex items-center justify-center`}
-                        >
-                          <MoreHorizontal className="w-4 h-4 text-cultivate-text-secondary hover:text-white transition-colors" strokeWidth={2.5} />
-                        </button>
-
-                        {/* Dropdown: Share, Rename, [Remove from system], Delete */}
-                        {isMenuOpen && (
-                          <div ref={chatDropdownRef} className="absolute right-0 top-full mt-1.5 bg-cultivate-bg-elevated rounded-xl shadow-xl border border-cultivate-border-element py-1.5 z-[101] min-w-[180px] whitespace-nowrap">
-                              <div className="px-1.5">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}
-                                  className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
-                                >
-                                  <Share className="w-3.5 h-3.5" />
-                                  Share
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleRenameClick(chat.id); }}
-                                  className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
-                                >
-                                  <Pencil className="w-3.5 h-3.5" />
-                                  Rename
-                                </button>
-                                {/* Conditional: only for chats linked to a Farmitecture system */}
-                                {chat.systemName && (
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); setChatMenuId(null); }}
-                                    className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
-                                  >
-                                    <Unlink className="w-3.5 h-3.5" />
-                                    Remove from system
-                                  </button>
-                                )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              onClick={(e) => e.stopPropagation()}
+                              className={`absolute right-0 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} hover:bg-cultivate-bg-hover transition-all w-8 h-full rounded-lg flex items-center justify-center`}
+                            >
+                              <MoreHorizontal className="w-4 h-4 text-cultivate-text-secondary hover:text-white transition-colors" strokeWidth={2.5} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl shadow-xl py-1.5 min-w-[160px]">
+                            <DropdownMenuItem className="px-1.5 py-0 focus:bg-transparent" onSelect={() => {}}>
+                              <div className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors">
+                                <Share className="w-3.5 h-3.5" />
+                                Share
                               </div>
-                              <div className="border-t border-cultivate-border-element my-1 mx-2" />
-                              <div className="px-1.5">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleDeleteClick(chat.id); }}
-                                  className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-cultivate-bg-hover hover:text-red-300 rounded-lg flex items-center gap-2.5 transition-colors"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                  Delete
-                                </button>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="px-1.5 py-0 focus:bg-transparent" onSelect={() => handleRenameClick(chat.id)}>
+                              <div className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors">
+                                <Pencil className="w-3.5 h-3.5" />
+                                Rename
                               </div>
-                            </div>
-                        )}
+                            </DropdownMenuItem>
+                            {/* Conditional: only for chats linked to a Farmitecture system */}
+                            {chat.systemName && (
+                              <DropdownMenuItem className="px-1.5 py-0 focus:bg-transparent" onSelect={() => {}}>
+                                <div className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors">
+                                  <Unlink className="w-3.5 h-3.5" />
+                                  Remove from system
+                                </div>
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator className="border-cultivate-border-element my-1 mx-2" />
+                            <DropdownMenuItem className="px-1.5 py-0 focus:bg-transparent" onSelect={() => handleDeleteClick(chat.id)}>
+                              <div className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-cultivate-bg-hover hover:text-red-300 rounded-lg flex items-center gap-2.5 transition-colors">
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Delete
+                              </div>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   );
@@ -1233,10 +1208,8 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       </div>
 
       {/* PWA Install Modal — outside sidebar to avoid transform containing block issues */}
-      {showInstallModal && (
-        <>
-          <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowInstallModal(false)} />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-80 shadow-xl">
+      <Dialog open={showInstallModal} onOpenChange={(open) => { if (!open) setShowInstallModal(false); }}>
+        <DialogContent showCloseButton={false} className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-80 shadow-xl">
             <div className="mb-4">
               <div className="w-10 h-10 bg-[#5a7048] rounded-full flex items-center justify-center mb-3">
                 <Download className="w-5 h-5 text-white" />
@@ -1263,15 +1236,12 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                 Install
               </button>
             </div>
-          </div>
-        </>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Rename Conversation Modal */}
-      {showRenameModal && (
-        <>
-          <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowRenameModal(false)} />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-80 shadow-xl">
+      <Dialog open={showRenameModal} onOpenChange={(open) => { if (!open) setShowRenameModal(false); }}>
+        <DialogContent showCloseButton={false} className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-80 shadow-xl">
             <div className="mb-4">
               <h2 className="text-white font-semibold text-base mb-3">Rename Conversation</h2>
               <input
@@ -1300,15 +1270,12 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                 {renameLoading ? "Renaming..." : "Rename"}
               </button>
             </div>
-          </div>
-        </>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Conversation Modal */}
-      {showDeleteModal && (
-        <>
-          <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowDeleteModal(false)} />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-96 shadow-xl">
+      <Dialog open={showDeleteModal} onOpenChange={(open) => { if (!open) setShowDeleteModal(false); }}>
+        <DialogContent showCloseButton={false} className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-96 shadow-xl">
             <div className="mb-4">
               <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center mb-3">
                 <Trash2 className="w-5 h-5 text-red-400" />
@@ -1334,9 +1301,8 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                 {deleteLoading ? "Deleting..." : "Delete"}
               </button>
             </div>
-          </div>
-        </>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
