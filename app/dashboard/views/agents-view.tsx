@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, ChevronDown, AlertTriangle, PanelLeft, Eye, Loader2, X, WifiOff } from "lucide-react";
+import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, AlertTriangle, PanelLeft, Eye, Loader2, X, WifiOff } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { GlassCircleButton } from "@/components/cultivate-ui";
 import { useAgents, createAgent, toggleAgentStatus, deleteAgent, type Agent } from "@/lib/hooks/use-agents";
 import { useOnlineStatus } from "@/lib/hooks/use-online-status";
@@ -70,7 +71,6 @@ export default function AgentsView({
 
   // UI state
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   // View, Edit, Deactivate, Delete modals
@@ -88,7 +88,6 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
 
 
   const handleEditAgent = (agent: Agent) => {
-    setOpenMenuId(null);
     onEditAgent?.(agent.id);
   };
 
@@ -106,7 +105,6 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
         alert("Failed to activate agent. Please try again.");
       }
     }
-    setOpenMenuId(null);
   };
 
   const handleDeactivateConfirm = async () => {
@@ -129,7 +127,6 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
     setDeleteModalAgent(agent);
     setDeleteNameConfirm("");
     setDeleteReason("");
-    setOpenMenuId(null);
   };
 
   const handleDeleteConfirm = async () => {
@@ -336,44 +333,49 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                   </div>
                 </div>
 
-                <div className="relative">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); if (isOnline) setOpenMenuId(openMenuId === agent.id ? null : agent.id); }}
-                    disabled={!isOnline}
-                    className="p-1.5 hover:bg-[#3B3B3B] rounded-lg transition-colors disabled:opacity-30"
-                  >
-                    <MoreHorizontal className="w-4 h-4 text-cultivate-text-primary" />
-                  </button>
-
-                  {openMenuId === agent.id && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                      <div onClick={(e) => e.stopPropagation()} className="absolute right-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-cultivate-border-subtle py-1 z-50 min-w-[160px]">
-                        <button
-                          onClick={() => handleEditAgent(agent)}
-                          className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors"
-                        >
+                <div className="relative" onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        disabled={!isOnline}
+                        className="p-1.5 hover:bg-[#3B3B3B] rounded-lg transition-colors disabled:opacity-30"
+                      >
+                        <MoreHorizontal className="w-4 h-4 text-cultivate-text-primary" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl shadow-xl py-1.5 min-w-[160px]"
+                    >
+                      <DropdownMenuItem
+                        className="px-1.5 py-0 focus:bg-transparent cursor-pointer"
+                        onSelect={() => handleEditAgent(agent)}
+                      >
+                        <div className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover transition-colors">
                           <Pencil className="w-3.5 h-3.5" />
                           Edit
-                        </button>
-                        <button
-                          onClick={() => handleToggleActivation(agent)}
-                          className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors"
-                        >
+                        </div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="px-1.5 py-0 focus:bg-transparent cursor-pointer"
+                        onSelect={() => handleToggleActivation(agent)}
+                      >
+                        <div className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover transition-colors">
                           <Power className="w-3.5 h-3.5" />
                           {agent.isActive ? "Deactivate" : "Activate"}
-                        </button>
-                        <div className="border-t border-cultivate-border-subtle my-1" />
-                        <button
-                          onClick={() => handleDeleteAgent(agent)}
-                          className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-cultivate-bg-hover hover:text-red-300 flex items-center gap-2 transition-colors"
-                        >
+                        </div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="px-1.5 py-0 focus:bg-transparent cursor-pointer"
+                        onSelect={() => handleDeleteAgent(agent)}
+                      >
+                        <div className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-cultivate-bg-hover hover:text-red-300 transition-colors">
                           <Trash2 className="w-3.5 h-3.5" />
                           Delete
-                        </button>
-                      </div>
-                    </>
-                  )}
+                        </div>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </div>
@@ -605,10 +607,11 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
       )}
 
       {/* Create Agent Modal */}
-      {showCreateModal && (
-        <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => !submitting && setShowCreateModal(false)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <Dialog open={showCreateModal} onOpenChange={(open) => { if (!open && !submitting) setShowCreateModal(false); }}>
+        <DialogContent
+          showCloseButton={false}
+          className="bg-[#1C1C1C] border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
+        >
             <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-lg p-6">
               <h2 className="text-lg font-medium text-white mb-4">Create New Agent</h2>
 
@@ -689,15 +692,16 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                 </button>
               </div>
             </div>
-          </div>
-        </>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Deactivate Agent Modal */}
-      {deactivateModalAgent && (
-        <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setDeactivateModalAgent(null)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <Dialog open={!!deactivateModalAgent} onOpenChange={(open) => { if (!open) setDeactivateModalAgent(null); }}>
+        <DialogContent
+          showCloseButton={false}
+          className="bg-[#1C1C1C] border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
+        >
+          {deactivateModalAgent && (
             <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -713,7 +717,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
 
               <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg p-3 mb-5">
                 <p className="text-xs text-cultivate-text-primary leading-relaxed">
-                  This agent will no longer respond to farmer queries. {deactivateModalAgent.conversations} conversation histories will be preserved, but farmers won't be able to select this agent for new chats.
+                  This agent will no longer respond to farmer queries. {deactivateModalAgent.conversations} conversation histories will be preserved, but farmers won&apos;t be able to select this agent for new chats.
                 </p>
               </div>
 
@@ -735,15 +739,17 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                 </button>
               </div>
             </div>
-          </div>
-        </>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Agent Modal - Strict Confirmation */}
-      {deleteModalAgent && (
-        <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setDeleteModalAgent(null)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <Dialog open={!!deleteModalAgent} onOpenChange={(open) => { if (!open) setDeleteModalAgent(null); }}>
+        <DialogContent
+          showCloseButton={false}
+          className="bg-[#1C1C1C] border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
+        >
+          {deleteModalAgent && (
             <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-lg p-6">
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -812,9 +818,9 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                 </button>
               </div>
             </div>
-          </div>
-        </>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

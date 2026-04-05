@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ArrowLeft, Bot, Loader2, Save, Pencil, X } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useAgent, updateAgent } from "@/lib/hooks/use-agents";
 import { DEMO_AGENTS } from "@/lib/demo-data";
 import { notify } from "@/lib/toast";
@@ -221,49 +222,46 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
         )}
       </div>
 
-      {showPromptModal && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/50"
-            onClick={() => setShowPromptModal(false)}
-          />
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-            <div className="w-full max-w-3xl bg-[#1C1C1C] border border-cultivate-border-element rounded-2xl shadow-2xl max-h-[85vh] flex flex-col">
-              <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-cultivate-border-element">
-                <div>
-                  <h2 className="text-base font-medium text-white">System Prompt</h2>
-                  <p className="text-xs text-cultivate-text-secondary mt-1">Use the larger editor for long prompts.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowPromptModal(false)}
-                  className="p-1.5 hover:bg-cultivate-bg-elevated rounded-lg transition-colors"
-                >
-                  <X className="w-4 h-4 text-cultivate-text-secondary" />
-                </button>
+      <Dialog open={showPromptModal} onOpenChange={setShowPromptModal}>
+        <DialogContent
+          showCloseButton={false}
+          className="bg-[#1C1C1C] border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
+        >
+          <div className="w-full max-w-3xl bg-[#1C1C1C] border border-cultivate-border-element rounded-2xl shadow-2xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-cultivate-border-element">
+              <div>
+                <h2 className="text-base font-medium text-white">System Prompt</h2>
+                <p className="text-xs text-cultivate-text-secondary mt-1">Use the larger editor for long prompts.</p>
               </div>
-              <div className="flex-1 min-h-0 overflow-y-auto p-5">
-                <textarea
-                  value={prompt}
-                  onChange={e => setPrompt(e.target.value)}
-                  placeholder="Describe the agent's role, expertise, and how it should respond…"
-                  disabled={submitting}
-                  className="w-full min-h-[420px] max-h-[calc(85vh-10rem)] px-4 py-3 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl text-sm leading-6 text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none disabled:opacity-40"
-                />
-              </div>
-              <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-cultivate-border-element">
-                <button
-                  type="button"
-                  onClick={() => setShowPromptModal(false)}
-                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors"
-                >
-                  Done
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowPromptModal(false)}
+                className="p-1.5 hover:bg-cultivate-bg-elevated rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4 text-cultivate-text-secondary" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto p-5">
+              <textarea
+                value={prompt}
+                onChange={e => setPrompt(e.target.value)}
+                placeholder="Describe the agent's role, expertise, and how it should respond…"
+                disabled={submitting}
+                className="w-full min-h-[420px] max-h-[calc(85vh-10rem)] px-4 py-3 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl text-sm leading-6 text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none disabled:opacity-40"
+              />
+            </div>
+            <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-cultivate-border-element">
+              <button
+                type="button"
+                onClick={() => setShowPromptModal(false)}
+                className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors"
+              >
+                Done
+              </button>
             </div>
           </div>
-        </>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
