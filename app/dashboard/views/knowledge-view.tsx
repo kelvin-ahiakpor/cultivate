@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, ChevronDown, PanelLeft, Loader2, Pencil } from "lucide-react";
 import { GlassCircleButton, Dropdown } from "@/components/cultivate-ui";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useKnowledgeBases, uploadDocument, deleteDocument, renameDocument, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
 import { useAgents } from "@/lib/hooks/use-agents";
 import { DEMO_AGENTS, DEMO_KNOWLEDGE } from "@/lib/demo-data";
@@ -28,7 +30,6 @@ export default function KnowledgeView({
 }) {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   // agentFilter: demo = agent name string, real = agent ID string (empty = all)
   const [agentFilter, setAgentFilter] = useState("");
@@ -105,7 +106,6 @@ export default function KnowledgeView({
 
   const handleViewDocument = (doc: KnowledgeDoc) => {
     setViewPanelDoc(doc);
-    setOpenMenuId(null);
   };
 
   const handleCloseViewPanel = () => {
@@ -170,7 +170,6 @@ export default function KnowledgeView({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setOpenMenuId(null);
   };
 
   const handleDeleteConfirm = async () => {
@@ -193,7 +192,6 @@ export default function KnowledgeView({
     setEditingTitleDocId(doc.id);
     setRenameTitle(doc.title);
     renameDraftRef.current = doc.title;
-    setOpenMenuId(null);
   };
 
   const handleRenameConfirm = async (doc: KnowledgeDoc) => {
@@ -305,7 +303,6 @@ export default function KnowledgeView({
   }, [viewPanelDoc, demoMode]);
 
   const handleStartUpdate = (doc: KnowledgeDoc) => {
-    setOpenMenuId(null);
     handleCloseViewPanel();
     setUploadType('update');
     setUpdateDocId(doc.id);
@@ -560,66 +557,44 @@ export default function KnowledgeView({
               <div onClick={() => handleViewDocument(doc)} className="flex items-center">
                 <span className="text-xs text-cultivate-text-tertiary">{doc.uploadedAt}</span>
               </div>
-              <div className="flex items-center relative">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpenMenuId(openMenuId === doc.id ? null : doc.id);
-                }}
-                className="p-1 hover:bg-[#3B3B3B] rounded transition-colors"
-              >
-                <MoreHorizontal className="w-4 h-4 text-cultivate-text-primary" />
-              </button>
-
-              {openMenuId === doc.id && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                  <div className="absolute right-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-cultivate-border-subtle py-1 z-50 min-w-[140px]">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleViewDocument(doc);
-                      }}
-                      className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors"
-                    >
+              <div className="flex items-center">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-1 hover:bg-[#3B3B3B] rounded transition-colors"
+                  >
+                    <MoreHorizontal className="w-4 h-4 text-cultivate-text-primary" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl shadow-xl py-1.5 min-w-[160px]">
+                  <DropdownMenuItem className="px-1.5 py-0 focus:bg-transparent" onSelect={() => handleViewDocument(doc)}>
+                    <div className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors rounded-lg">
                       <Eye className="w-3.5 h-3.5" />
                       View
-                    </button>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownloadDocument(doc);
-                      }}
-                      className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors"
-                    >
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="px-1.5 py-0 focus:bg-transparent" onSelect={() => handleDownloadDocument(doc)}>
+                    <div className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors rounded-lg">
                       <Download className="w-3.5 h-3.5" />
                       Download
-                    </button>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleStartUpdate(doc);
-                      }}
-                      className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors"
-                    >
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="px-1.5 py-0 focus:bg-transparent" onSelect={() => handleStartUpdate(doc)}>
+                    <div className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors rounded-lg">
                       <FileText className="w-3.5 h-3.5" />
                       Update
-                    </button>
-                    <div className="border-t border-cultivate-border-subtle my-1" />
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteModalDoc(doc);
-                        setOpenMenuId(null);
-                      }}
-                      className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-cultivate-bg-hover hover:text-red-300 flex items-center gap-2 transition-colors"
-                    >
+                    </div>
+                  </DropdownMenuItem>
+                  <div className="border-t border-cultivate-border-subtle my-1 mx-1.5" />
+                  <DropdownMenuItem className="px-1.5 py-0 focus:bg-transparent" onSelect={() => setDeleteModalDoc(doc)}>
+                    <div className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-cultivate-bg-hover hover:text-red-300 flex items-center gap-2 transition-colors rounded-lg">
                       <Trash2 className="w-3.5 h-3.5" />
                       Delete
-                    </button>
-                  </div>
-                </>
-              )}
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         ))}
@@ -661,11 +636,8 @@ export default function KnowledgeView({
       </div>
 
       {/* Upload Modal */}
-      {showUploadModal && (
-        <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={handleCloseUploadModal} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-lg max-h-[90vh] flex flex-col">
+      <Dialog open={showUploadModal} onOpenChange={(open) => { if (!open) handleCloseUploadModal(); }}>
+        <DialogContent showCloseButton={false} className="bg-[#1C1C1C] border border-cultivate-border-subtle rounded-xl p-0 w-full max-w-lg max-h-[90vh] flex flex-col gap-0">
               {/* Fixed header */}
               <div className="px-6 pt-5 pb-4 flex-shrink-0">
                 <h2 className="text-lg font-medium text-white">Upload Knowledge Base</h2>
@@ -898,10 +870,8 @@ export default function KnowledgeView({
                   {uploading ? "Uploading..." : "Upload"}
                 </button>
               </div>
-            </div>
-          </div>
-        </>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* View Document Panel - Mobile: Full screen modal, Desktop: Side panel */}
       {viewPanelDoc && (
@@ -1246,11 +1216,8 @@ export default function KnowledgeView({
       )}
 
       {/* Delete Confirmation Modal */}
-      {deleteModalDoc && (
-        <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setDeleteModalDoc(null)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
+      <Dialog open={!!deleteModalDoc} onOpenChange={(open) => { if (!open) setDeleteModalDoc(null); }}>
+        <DialogContent showCloseButton={false} className="bg-[#1C1C1C] border border-cultivate-border-subtle rounded-xl p-6 w-full max-w-md">
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Trash2 className="w-5 h-5 text-red-400" />
@@ -1258,20 +1225,20 @@ export default function KnowledgeView({
                 <div>
                   <h2 className="text-lg font-medium text-white">Delete Document</h2>
                   <p className="text-sm text-cultivate-text-secondary mt-1">
-                    Are you sure you want to delete <span className="text-white font-medium">{deleteModalDoc.title}</span>?
+                    Are you sure you want to delete <span className="text-white font-medium">{deleteModalDoc?.title}</span>?
                   </p>
                 </div>
               </div>
 
               <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg p-3 mb-5">
                 <p className="text-xs text-cultivate-text-primary leading-relaxed">
-                  This will remove the document and all {deleteModalDoc.chunkCount} associated chunks from the knowledge base. 
-                  The <span className="text-white">{deleteModalDoc.agentName}</span> agent will no longer be able to reference this information.
+                  This will remove the document and all {deleteModalDoc?.chunkCount} associated chunks from the knowledge base.
+                  The <span className="text-white">{deleteModalDoc?.agentName}</span> agent will no longer be able to reference this information.
                 </p>
                 <div className="mt-3 pt-3 border-t border-cultivate-border-element">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-cultivate-text-secondary">Referenced in conversations:</span>
-                    <span className="text-xs font-medium text-orange-400">{deleteModalDoc.referencedInChats} chats</span>
+                    <span className="text-xs font-medium text-orange-400">{deleteModalDoc?.referencedInChats} chats</span>
                   </div>
                   <p className="text-xs text-cultivate-text-tertiary mt-1.5">
                     Note: This document is actively used. Consider creating a new version instead of deleting.
@@ -1286,7 +1253,7 @@ export default function KnowledgeView({
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={handleDeleteConfirm}
                   disabled={deleting}
                   className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
@@ -1295,17 +1262,12 @@ export default function KnowledgeView({
                   {deleting ? "Deleting..." : "Delete Document"}
                 </button>
               </div>
-            </div>
-          </div>
-        </>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Document Selector Modal */}
-      {showDocSelectorModal && (
-        <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setShowDocSelectorModal(false)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-xl p-6">
+      <Dialog open={showDocSelectorModal} onOpenChange={(open) => { if (!open) setShowDocSelectorModal(false); }}>
+        <DialogContent showCloseButton={false} className="bg-[#1C1C1C] border border-cultivate-border-subtle rounded-xl p-6 w-full max-w-xl">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-medium text-white">Select Document to Update</h2>
                 <button
@@ -1364,10 +1326,8 @@ export default function KnowledgeView({
                   Cancel
                 </button>
               </div>
-            </div>
-          </div>
-        </>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
