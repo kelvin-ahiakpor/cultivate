@@ -49,6 +49,7 @@ import remarkGfm from "remark-gfm";
 import { notify } from "@/lib/toast";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon, Tooltip, AnimatedDots } from "@/components/cultivate-ui";
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export interface ConversationMessage {
   id: string;
@@ -1313,6 +1314,7 @@ export default function ConversationView({
       )}
 
       {/* Flag modal */}
+      <Dialog open={showFlagModal} onOpenChange={(open) => { if (!open) { setShowFlagModal(false); setFlagReason(""); setCopiedFlagMessages(new Set()); } }}>
       {showFlagModal && (() => {
         // Parse all flag messages (initial reason + updates) - both have timestamps now
         const allMessages: Array<{ text: string; date: string }> = [];
@@ -1358,9 +1360,11 @@ export default function ConversationView({
         const canAddMore = allMessages.length < 3;
 
         return (
-          <>
-            <div className="fixed inset-0 bg-black/50 z-50" onClick={() => { setShowFlagModal(false); setFlagReason(""); setCopiedFlagMessages(new Set()); }} />
-            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-cultivate-bg-elevated rounded-lg border border-cultivate-border-element p-5 z-50 w-[90%] max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogContent
+            showCloseButton={false}
+            className="bg-cultivate-bg-elevated border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
+          >
+            <div className="bg-cultivate-bg-elevated rounded-lg border border-cultivate-border-element p-5 w-[90vw] max-w-md max-h-[80vh] overflow-y-auto">
               <h3 className="text-base font-semibold text-cultivate-text-primary mb-2">
                 {isUpdatingFlag ? "Update flag" : "Flag for Review"}
               </h3>
@@ -1438,9 +1442,10 @@ export default function ConversationView({
                 </button>
               </div>
             </div>
-          </>
+          </DialogContent>
         );
       })()}
+      </Dialog>
     </div>
   );
 }

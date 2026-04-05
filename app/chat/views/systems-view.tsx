@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, ChevronLeft, Loader2, Plus, X } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { GlassCircleButton, Dropdown } from "@/components/cultivate-ui";
 import { useSystems, type FarmerSystemItem } from "@/lib/hooks/use-systems";
 import { DEMO_SYSTEMS } from "@/lib/demo-data";
@@ -357,10 +358,12 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
       </div>
 
       {/* Add System Modal */}
-      {showAddModal && (
-        <>
-          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => { setShowAddModal(false); resetForm(); }} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-cultivate-bg-elevated rounded-lg border border-cultivate-border-element p-5 z-50 w-[90%] max-w-md max-h-[80vh] overflow-y-auto thin-scrollbar">
+      <Dialog open={showAddModal} onOpenChange={(open) => { if (!open) { setShowAddModal(false); resetForm(); } }}>
+        <DialogContent
+          showCloseButton={false}
+          className="bg-cultivate-bg-elevated border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
+        >
+          <div className="bg-cultivate-bg-elevated rounded-lg border border-cultivate-border-element p-5 w-[90vw] max-w-md max-h-[80vh] overflow-y-auto thin-scrollbar">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-cultivate-text-primary">Add a System</h3>
               <button onClick={() => { setShowAddModal(false); resetForm(); }} className="text-cultivate-text-tertiary hover:text-cultivate-text-primary transition-colors">
@@ -469,8 +472,8 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
               </button>
             </div>
           </div>
-        </>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
