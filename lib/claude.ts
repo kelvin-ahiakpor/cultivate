@@ -283,10 +283,15 @@ export async function mastraStream(
     },
   });
 
+  const normalizeHistoryContent = (content: string) => {
+    const trimmed = content.trim();
+    return trimmed.length > 0 ? trimmed : "[Image attachment unavailable]";
+  };
+
   // Convert conversation history to Mastra ModelMessage format (lowercase roles, string content)
   const contextMessages = input.conversationHistory.map((msg) => ({
     role: msg.role as "user" | "assistant",
-    content: msg.content,
+    content: normalizeHistoryContent(msg.content),
   }));
 
   let inputTokens = 0;

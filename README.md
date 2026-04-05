@@ -150,6 +150,8 @@ For detailed setup instructions, see [SETUP.md](./SETUP.md).
 - [x] Translation and speech-input support
 - [x] Farmer systems and settings views
 - [x] Inline profile name editing in settings
+- [x] Private image attachments with authenticated image access
+- [x] Client-side WebP conversion for farmer chat uploads
 
 #### PWA & UX Refinements
 - [x] Role-aware PWA startup routing (`/` -> `/dashboard` or `/chat`)
