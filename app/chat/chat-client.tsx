@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type DragEvent as ReactDragEvent } from "react";
 import Link from "next/link";
-import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Download, Share, Pencil, Unlink, Trash2, Globe, AudioLines, Mic, AlertTriangle, Flag } from "lucide-react";
+import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Download, Share, Pencil, Unlink, Trash2, Globe, AudioLines, Mic, AlertTriangle, Flag, Image, FileText, X } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { signOut } from "next-auth/react";
 import { mutate as globalMutate } from "swr";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon, GlassCircleButton, Tooltip, Dropdown } from "@/components/cultivate-ui";
@@ -16,6 +15,7 @@ import SettingsView from "./views/settings-view";
 import { useConversations } from "@/lib/hooks/use-conversations";
 import { useAgents } from "@/lib/hooks/use-agents";
 import { useFarmerFlaggedQueries, type FarmerFlaggedQueryItem } from "@/lib/hooks/use-farmer-flagged-queries";
+import { useSystems } from "@/lib/hooks/use-systems";
 import { DEMO_FARMER_CONVO_MESSAGES } from "@/lib/demo-data";
 import { translateToEnglish, translateFromEnglish, LANGUAGES, type SupportedLanguage } from "@/lib/translation";
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
@@ -49,6 +49,10 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   const FLAGGED_LAST_SEEN_KEY = "cultivate-farmer-flagged-last-seen";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [showSystemPickerModal, setShowSystemPickerModal] = useState(false);
+  const [systemPickerConversationId, setSystemPickerConversationId] = useState<string | null>(null);
+  const [selectedSystemOptionId, setSelectedSystemOptionId] = useState<string>("");
   const [isStandalone, setIsStandalone] = useState(false);
 
   const [isDesktop, setIsDesktop] = useState(false);
@@ -117,17 +121,24 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   }
   const [inputValue, setInputValue] = useState("");
   const [pendingImages, setPendingImages] = useState<PendingImageAttachment[]>([]);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [isDraggingWelcomeImages, setIsDraggingWelcomeImages] = useState(false);
+  const [isGlobalImageDragActive, setIsGlobalImageDragActive] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(initialConversationId);
   const [conversationTitle, setConversationTitle] = useState<string | null>(null);
   const [conversationSystem, setConversationSystem] = useState<string | null>(null);
+  const [conversationSystemId, setConversationSystemId] = useState<string | null>(null);
+  const [pendingConversationSystemId, setPendingConversationSystemId] = useState<string | null>(null);
   const [messagesLoading, setMessagesLoading] = useState(!!initialConversationId);
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const [chatsViewOpen, setChatsViewOpen] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null); // kept for welcome-screen scroll if needed
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const globalDragCounterRef = useRef(0);
 
   // Online/offline status — drives IndexedDB fallback + disables input when offline
   const isOnline = useOnlineStatus();
@@ -136,12 +147,13 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   // Sidebar conversation list — disabled in demo mode (zero API requests)
   const apiConversations = useConversations("", 1, 30, demoMode);
   const farmerFlags = useFarmerFlaggedQueries("", 1, 50, demoMode);
+  const farmerSystems = useSystems(demoMode);
   // Unified list: demo → mockChats, online → API data, offline → IndexedDB cache
   const sidebarChats = demoMode
     ? demoChatList
     : isOnline
-      ? apiConversations.conversations.map(c => ({ id: c.id, title: c.title, agentName: c.agentName, lastMessage: c.lastMessage, messageCount: c.messageCount, systemName: undefined as string | undefined }))
-      : offlineChats.map(c => ({ id: c.id, title: c.title, agentName: c.agentName, lastMessage: c.lastMessage, messageCount: c.messageCount, systemName: undefined as string | undefined }));
+      ? apiConversations.conversations.map(c => ({ id: c.id, title: c.title, agentName: c.agentName, lastMessage: c.lastMessage, messageCount: c.messageCount, systemName: c.systemName }))
+      : offlineChats.map(c => ({ id: c.id, title: c.title, agentName: c.agentName, lastMessage: c.lastMessage, messageCount: c.messageCount, systemName: c.systemName }));
 
   // IndexedDB write-through: persist conversations when online data loads
   useEffect(() => {
@@ -220,6 +232,8 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       if (cancelled) return;
       setConversationTitle(convData?.title || null);
       setConversationSystem(convData?.agent?.name || null);
+      setConversationSystem(convData?.farmerSystem?.name || null);
+      setConversationSystemId(convData?.farmerSystem?.id || null);
       setSelectedChatId(initialConversationId);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mapped = msgData?.messages ? msgData.messages.map((m: any) => ({
@@ -301,6 +315,13 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
     return () => mediaQuery.removeEventListener("change", checkStandalone);
   }, []);
 
+  useEffect(() => {
+    if (!openMenuId) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setOpenMenuId(null); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [openMenuId]);
+
   const handleInstall = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
@@ -352,10 +373,15 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   };
 
   const handleSelectImages = (files: FileList | File[]) => {
-    const nextFiles = Array.from(files).filter((file) => ["image/jpeg", "image/png", "image/webp"].includes(file.type));
+    const requestedFiles = Array.from(files);
+    const nextFiles = requestedFiles.filter((file) => ["image/jpeg", "image/png", "image/webp"].includes(file.type));
     if (nextFiles.length === 0) {
       notify.error("Only JPG, PNG, and WebP images are supported.");
       return;
+    }
+
+    if (nextFiles.length < requestedFiles.length) {
+      notify.error("Some files were skipped. Only JPG, PNG, and WebP images are supported.");
     }
 
     if (pendingImages.length + nextFiles.length > 3) {
@@ -385,6 +411,155 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       pendingImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
     };
   }, [pendingImages]);
+
+  useEffect(() => {
+    const hasFilePayload = (event: DragEvent) =>
+      Array.from(event.dataTransfer?.items || []).some((item) => item.kind === "file");
+
+    const handleWindowDragEnter = (event: DragEvent) => {
+      if (activeView !== "chat" || !hasFilePayload(event)) return;
+      event.preventDefault();
+      globalDragCounterRef.current += 1;
+      setIsGlobalImageDragActive(true);
+    };
+
+    const handleWindowDragOver = (event: DragEvent) => {
+      if (activeView !== "chat" || !hasFilePayload(event)) return;
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+      setIsGlobalImageDragActive(true);
+    };
+
+    const handleWindowDragLeave = (event: DragEvent) => {
+      if (activeView !== "chat" || !hasFilePayload(event)) return;
+      event.preventDefault();
+      globalDragCounterRef.current = Math.max(0, globalDragCounterRef.current - 1);
+      if (globalDragCounterRef.current === 0) {
+        setIsGlobalImageDragActive(false);
+      }
+    };
+
+    const handleWindowDrop = (event: DragEvent) => {
+      if (activeView !== "chat") return;
+      if (!event.dataTransfer?.files || event.dataTransfer.files.length === 0) return;
+      event.preventDefault();
+      globalDragCounterRef.current = 0;
+      setIsGlobalImageDragActive(false);
+      handleSelectImages(event.dataTransfer.files);
+    };
+
+    window.addEventListener("dragenter", handleWindowDragEnter);
+    window.addEventListener("dragover", handleWindowDragOver);
+    window.addEventListener("dragleave", handleWindowDragLeave);
+    window.addEventListener("drop", handleWindowDrop);
+
+    return () => {
+      window.removeEventListener("dragenter", handleWindowDragEnter);
+      window.removeEventListener("dragover", handleWindowDragOver);
+      window.removeEventListener("dragleave", handleWindowDragLeave);
+      window.removeEventListener("drop", handleWindowDrop);
+    };
+  }, [activeView]);
+
+  const triggerImagePicker = () => {
+    imageInputRef.current?.click();
+  };
+
+  const openAddToSystemModal = (conversationId: string | null) => {
+    setSystemPickerConversationId(conversationId);
+    setSelectedSystemOptionId(conversationSystemId || pendingConversationSystemId || "");
+    setShowSystemPickerModal(true);
+    setOpenMenuId(null);
+    setShowAttachMenu(false);
+  };
+
+  const assignConversationToSystem = async (systemId: string) => {
+    const selectedSystem = farmerSystems.systems.find((system) => system.id === systemId);
+    if (!selectedSystem) {
+      notify.error("System not found");
+      return;
+    }
+
+    if (!systemPickerConversationId) {
+      setPendingConversationSystemId(systemId);
+      setConversationSystem(selectedSystem.name);
+      setConversationSystemId(systemId);
+      setSelectedSystemOptionId("");
+      setShowSystemPickerModal(false);
+      notify.success("System selected. Send your first message to link this chat.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/conversations/${systemPickerConversationId}/system`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ farmerSystemId: systemId }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to add chat to system");
+      }
+
+      setConversationSystem(data.farmerSystem?.name || selectedSystem.name);
+      setConversationSystemId(data.farmerSystem?.id || systemId);
+      setSelectedSystemOptionId("");
+      setShowSystemPickerModal(false);
+      await apiConversations.mutate();
+      notify.success("Chat added to system");
+    } catch (error) {
+      notify.error(error instanceof Error ? error.message : "Failed to add chat to system");
+    }
+  };
+
+  const removeConversationFromSystem = async (conversationId: string) => {
+    try {
+      const response = await fetch(`/api/conversations/${conversationId}/system`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to remove chat from system");
+      }
+      if (currentConversationId === conversationId) {
+        setConversationSystem(null);
+        setConversationSystemId(null);
+      }
+      setSelectedSystemOptionId("");
+      setShowSystemPickerModal(false);
+      await apiConversations.mutate();
+      notify.success("Chat removed from system");
+    } catch (error) {
+      notify.error(error instanceof Error ? error.message : "Failed to remove chat from system");
+    }
+  };
+
+  const handleWelcomeComposerDragEnter = (e: ReactDragEvent<HTMLDivElement>) => {
+    if (!Array.from(e.dataTransfer.items || []).some((item) => item.kind === "file")) return;
+    e.preventDefault();
+    setIsDraggingWelcomeImages(true);
+  };
+
+  const handleWelcomeComposerDragOver = (e: ReactDragEvent<HTMLDivElement>) => {
+    if (!Array.from(e.dataTransfer.items || []).some((item) => item.kind === "file")) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    if (!isDraggingWelcomeImages) setIsDraggingWelcomeImages(true);
+  };
+
+  const handleWelcomeComposerDragLeave = (e: ReactDragEvent<HTMLDivElement>) => {
+    const relatedTarget = e.relatedTarget;
+    if (relatedTarget instanceof Node && e.currentTarget.contains(relatedTarget)) return;
+    setIsDraggingWelcomeImages(false);
+  };
+
+  const handleWelcomeComposerDrop = (e: ReactDragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingWelcomeImages(false);
+    if (!e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
+    handleSelectImages(e.dataTransfer.files);
+  };
 
   const handleSend = async () => {
     const text = inputValue.trim();
@@ -426,7 +601,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
         const res = await fetch("/api/conversations", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ agentId }),
+          body: JSON.stringify({ agentId, farmerSystemId: pendingConversationSystemId || undefined }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
@@ -436,6 +611,9 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
         const data = await res.json();
         convId = data.id;
         setCurrentConversationId(convId);
+        setConversationSystem(data.farmerSystem?.name || conversationSystem);
+        setConversationSystemId(data.farmerSystem?.id || pendingConversationSystemId);
+        setPendingConversationSystemId(null);
       }
 
       // Send message — SSE stream (send English text to backend)
@@ -745,7 +923,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
           <div className="space-y-0.5">
             {/* New Chat */}
             <button
-              onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); setSelectedChatId(null); setMessagesLoading(false); setHeaderMenuOpen(false); setActiveView("chat"); if (window.innerWidth < 1024) setSidebarOpen(false); }}
+              onClick={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setConversationSystemId(null); setPendingConversationSystemId(null); setStreamingContent(""); setSelectedChatId(null); setMessagesLoading(false); setHeaderMenuOpen(false); setActiveView("chat"); if (window.innerWidth < 1024) setSidebarOpen(false); }}
               className={`group relative w-full flex items-center gap-3 pl-3 pr-2 py-1 rounded-lg transition-colors ${!sidebarOpen ? 'justify-center' : ''} ${
                 activeView === "chat" && !currentConversationId ? "bg-cultivate-bg-hover text-white" : "text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white"
               }`}
@@ -834,6 +1012,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
               <div className="space-y-0.5 standalone:space-y-2 lg:space-y-0.5">
                 {sidebarChats.slice(0, isDesktop ? 30 : 10).map((chat) => {
                   const isActive = selectedChatId === chat.id;
+                  const isMenuOpen = openMenuId === chat.id;
                   return (
                     <div
                       key={chat.id}
@@ -841,7 +1020,9 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                       className={`group flex items-stretch rounded-lg transition-colors cursor-pointer ${
                         isActive
                           ? 'bg-cultivate-bg-hover'
-                          : 'hover:bg-cultivate-bg-hover has-[button:hover]:bg-transparent'
+                          : isMenuOpen
+                            ? '' /* menu open: no row bg, only button gets bg */
+                            : 'hover:bg-cultivate-bg-hover has-[button:hover]:bg-transparent'
                       }`}
                     >
                       {/* Text label — min-w-0 is critical for flex child truncation */}
@@ -854,48 +1035,85 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                       >
                         {chat.title}
                       </span>
-                      {/* Three-dot menu — Radix DropdownMenu */}
-                      <div className="relative flex-shrink-0 w-6 flex items-center">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              onClick={(e) => e.stopPropagation()}
-                              className={`absolute right-0 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} hover:bg-cultivate-bg-hover transition-all w-8 h-full rounded-lg flex items-center justify-center`}
-                            >
-                              <MoreHorizontal className="w-4 h-4 text-cultivate-text-secondary hover:text-white transition-colors" strokeWidth={2.5} />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl shadow-xl py-1.5 min-w-[160px]">
-                            <DropdownMenuItem className="px-1.5 py-0 focus:bg-transparent" onSelect={() => {}}>
-                              <div className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors">
-                                <Share className="w-3.5 h-3.5" />
-                                Share
+                      {/* Three-dot menu */}
+                      <div className="relative flex-shrink-0 w-8 flex items-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(isMenuOpen ? null : chat.id);
+                          }}
+                          className={`absolute right-0 ${isActive || isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} ${isMenuOpen ? 'bg-cultivate-bg-hover-dark' : 'hover:bg-cultivate-bg-hover'} transition-all w-8 h-full rounded-lg flex items-center justify-center`}
+                        >
+                          <MoreHorizontal className="w-4 h-4 text-cultivate-text-secondary hover:text-white transition-colors" strokeWidth={2.5} />
+                        </button>
+
+                        {isMenuOpen && (
+                          <>
+                            <div className="absolute right-0 top-full mt-1.5 bg-cultivate-bg-elevated rounded-xl shadow-xl border border-cultivate-border-element py-1.5 z-[101] min-w-[180px] whitespace-nowrap">
+                              <div className="px-1.5">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                                >
+                                  <Share className="w-4 h-4" />
+                                  Share
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenMenuId(null);
+                                    handleRenameClick(chat.id);
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                  Rename
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openAddToSystemModal(chat.id);
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                                >
+                                  <Layers className="w-4 h-4" />
+                                  Add to system
+                                </button>
+                                {chat.systemName && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenMenuId(null);
+                                      void removeConversationFromSystem(chat.id);
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                                  >
+                                    <Unlink className="w-4 h-4" />
+                                    Remove from system
+                                  </button>
+                                )}
                               </div>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="px-1.5 py-0 focus:bg-transparent" onSelect={() => handleRenameClick(chat.id)}>
-                              <div className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors">
-                                <Pencil className="w-3.5 h-3.5" />
-                                Rename
+                              <div className="border-t border-cultivate-border-element/70 my-1 mx-1.5" />
+                              <div className="px-1.5">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenMenuId(null);
+                                    handleDeleteClick(chat.id);
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-sm text-cultivate-error hover:bg-cultivate-bg-hover hover:text-cultivate-error rounded-lg flex items-center gap-2.5 transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Delete
+                                </button>
                               </div>
-                            </DropdownMenuItem>
-                            {/* Conditional: only for chats linked to a Farmitecture system */}
-                            {chat.systemName && (
-                              <DropdownMenuItem className="px-1.5 py-0 focus:bg-transparent" onSelect={() => {}}>
-                                <div className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors">
-                                  <Unlink className="w-3.5 h-3.5" />
-                                  Remove from system
-                                </div>
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator className="border-cultivate-border-element my-1 mx-2" />
-                            <DropdownMenuItem className="px-1.5 py-0 focus:bg-transparent" onSelect={() => handleDeleteClick(chat.id)}>
-                              <div className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-cultivate-bg-hover hover:text-red-300 rounded-lg flex items-center gap-2.5 transition-colors">
-                                <Trash2 className="w-3.5 h-3.5" />
-                                Delete
-                              </div>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                            </div>
+                            <div className="fixed inset-0 z-[100]" onClick={() => setOpenMenuId(null)} />
+                          </>
+                        )}
                       </div>
                     </div>
                   );
@@ -999,7 +1217,15 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden relative">
+        {activeView === "chat" && isGlobalImageDragActive && (
+          <div className="absolute inset-0 z-[120] bg-cultivate-bg-main/75 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+            <div className="rounded-3xl border border-dashed border-cultivate-green-light/60 bg-cultivate-bg-elevated/95 px-8 py-6 text-center shadow-xl">
+              <p className="text-lg font-medium text-cultivate-green-light">Drop up to 3 images here</p>
+              <p className="mt-2 text-sm text-cultivate-text-secondary">JPG, PNG, and WebP only</p>
+            </div>
+          </div>
+        )}
         {/* Conditional rendering based on active view */}
         {/* Conversation view: full-width (header spans edge-to-edge like Claude)
             Chat list view: padded with max-w-5xl container */}
@@ -1115,7 +1341,51 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                       <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
                     )}
                     <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-auto w-full max-w-3xl px-6 mb-2"}`}>
-                      <div className="relative bg-cultivate-bg-elevated rounded-2xl shadow-sm p-4">
+                      <div
+                        onDragEnter={handleWelcomeComposerDragEnter}
+                        onDragOver={handleWelcomeComposerDragOver}
+                        onDragLeave={handleWelcomeComposerDragLeave}
+                        onDrop={handleWelcomeComposerDrop}
+                        className={`relative rounded-2xl p-4 shadow-sm transition-colors ${
+                          isDraggingWelcomeImages
+                            ? "bg-cultivate-bg-hover ring-1 ring-cultivate-green-light/60"
+                            : "bg-cultivate-bg-elevated"
+                        }`}
+                      >
+                        {pendingImages.length > 0 && (
+                          <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+                            {pendingImages.map((image) => (
+                              <div key={image.id} className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border border-cultivate-border-element bg-cultivate-bg-main">
+                                <img src={image.previewUrl} alt="" className="h-full w-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemovePendingImage(image.id)}
+                                  className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white transition-colors hover:bg-black/85"
+                                  title="Remove image"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {isDraggingWelcomeImages && (
+                          <div className="mb-3 rounded-2xl border border-dashed border-cultivate-green-light/60 bg-cultivate-green-light/8 px-3 py-2 text-sm text-cultivate-green-light">
+                            Drop up to 3 images here
+                          </div>
+                        )}
+                        <input
+                          ref={imageInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => {
+                            if (!e.target.files || e.target.files.length === 0) return;
+                            handleSelectImages(e.target.files);
+                            e.target.value = "";
+                          }}
+                        />
                         <textarea
                           placeholder="How can I help you today?"
                           rows={1}
@@ -1126,22 +1396,82 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                         />
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center gap-2">
-                            <button className="p-1.5 hover:bg-cultivate-border-element rounded transition-colors">
+                            <div className="relative">
+                              <button
+                                onClick={() => setShowAttachMenu(!showAttachMenu)}
+                                className="p-1.5 hover:bg-cultivate-bg-hover rounded transition-colors"
+                                title="Attach"
+                              >
                               <Plus className="w-5 h-5 text-cultivate-text-primary" />
-                            </button>
+                              </button>
 
-                            {/* Voice input button */}
-                            <div className="relative flex items-center">
-                              {/* Mic icon (shows when connecting/listening/error) */}
+                              {showAttachMenu && (
+                                <>
+                                  <div className="absolute left-0 bottom-full mb-1 bg-cultivate-bg-elevated rounded-xl shadow-xl border border-cultivate-border-element py-1.5 z-[101] min-w-[220px] whitespace-nowrap">
+                                    <div className="px-1.5">
+                                      <button
+                                        onClick={() => {
+                                          setShowAttachMenu(false);
+                                          triggerImagePicker();
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                                      >
+                                        <Image className="w-4 h-4" />
+                                        Upload image
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setShowAttachMenu(false);
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                                      >
+                                        <FileText className="w-4 h-4" />
+                                        Upload document
+                                      </button>
+                                    </div>
+                                    <div className="border-t border-cultivate-border-element my-1 mx-2" />
+                                    <div className="px-1.5">
+                                      {pendingConversationSystemId || conversationSystemId ? (
+                                        <button
+                                          onClick={() => {
+                                            setShowAttachMenu(false);
+                                            setPendingConversationSystemId(null);
+                                            setConversationSystem(null);
+                                            setConversationSystemId(null);
+                                            notify.success("System removed from pending chat");
+                                          }}
+                                          className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                                        >
+                                          <Unlink className="w-4 h-4" />
+                                          Remove from system
+                                        </button>
+                                      ) : (
+                                        <button
+                                          onClick={() => {
+                                            openAddToSystemModal(null);
+                                          }}
+                                          className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                                        >
+                                          <Layers className="w-4 h-4" />
+                                          Add to system
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="fixed inset-0 z-[100]" onClick={() => setShowAttachMenu(false)} />
+                                </>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2">
                               {voiceState !== "idle" && (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <Mic className="w-5 h-5 text-cultivate-text-secondary" />
-                                </div>
+                                <Mic className="w-5 h-5 text-cultivate-text-secondary" />
                               )}
                               {voiceState === "idle" && (
                                 <button
                                   onClick={handleVoiceClick}
-                                  className="p-1.5 hover:bg-cultivate-border-element rounded transition-colors"
+                                  disabled={isStreaming}
+                                  className="p-2 hover:bg-cultivate-bg-hover rounded-lg transition-colors disabled:opacity-40"
                                   title="Voice input"
                                 >
                                   <AudioLines className="w-5 h-5 text-cultivate-text-primary" />
@@ -1150,27 +1480,27 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                               {voiceState === "connecting" && (
                                 <button
                                   onClick={handleVoiceClick}
-                                  className="px-2.5 py-1.5 bg-cultivate-bg-elevated hover:bg-cultivate-border-element rounded transition-colors flex items-center gap-1.5 text-xs text-white"
+                                  className="px-3 py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
                                 >
-                                  <span>Cancel</span>
                                   <AnimatedDots type="pulse" />
+                                  <span>Cancel</span>
                                 </button>
                               )}
                               {voiceState === "listening" && (
                                 <button
                                   onClick={handleVoiceClick}
-                                  className="px-2.5 py-1.5 bg-cultivate-bg-elevated hover:bg-cultivate-border-element rounded transition-colors flex items-center gap-1.5 text-xs text-white"
+                                  className="px-3 py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
                                 >
-                                  <span>Stop</span>
                                   <AnimatedDots type="wave" />
+                                  <span>Stop</span>
                                 </button>
                               )}
                               {voiceState === "error" && (
                                 <button
                                   onClick={handleVoiceClick}
-                                  className="px-2.5 py-1.5 bg-cultivate-error hover:bg-cultivate-error-dark rounded transition-colors flex items-center gap-1.5 text-xs text-white"
+                                  className="px-3 py-1.5 bg-cultivate-error rounded-lg flex items-center gap-2 text-white text-sm"
                                 >
-                                  <AlertTriangle className="w-3.5 h-3.5" />
+                                  <AlertTriangle className="w-4 h-4" />
                                   <span>Error</span>
                                 </button>
                               )}
@@ -1247,19 +1577,21 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                   headerMenuOpen={headerMenuOpen}
                   setHeaderMenuOpen={setHeaderMenuOpen}
                   onBack={() => setSidebarOpen(true)}
-                  onNewChat={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); }}
+                  onNewChat={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setConversationSystemId(null); setPendingConversationSystemId(null); setStreamingContent(""); }}
                   messages={messages}
                   messagesLoading={messagesLoading}
                   isStreaming={isStreaming}
                   streamingContent={streamingContent}
                   isStandalone={isStandalone}
                   isOnline={isOnline}
+                  onAddToSystem={() => openAddToSystemModal(currentConversationId)}
+                  onRemoveFromSystem={conversationSystemId ? () => { void removeConversationFromSystem(currentConversationId!); } : undefined}
                   inputProps={{
                     value: inputValue,
                     onChange: setInputValue,
                     onSend: handleSend,
                     canSend: inputValue.trim().length > 0 || pendingImages.length > 0,
-                    onNewChat: () => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); },
+                    onNewChat: () => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setConversationSystemId(null); setPendingConversationSystemId(null); setStreamingContent(""); },
                     agents,
                     selectedAgent,
                     onAgentSelect: (id, name) => { setSelectedAgentId(id); setSelectedAgent(name); },
@@ -1286,6 +1618,57 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                       </>
         )}
       </div>
+
+      {/* PWA Install Modal — outside sidebar to avoid transform containing block issues */}
+      <Dialog open={showSystemPickerModal} onOpenChange={(open) => { if (!open) { setShowSystemPickerModal(false); setSelectedSystemOptionId(""); } }}>
+        <DialogContent showCloseButton={false} className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-80 shadow-xl">
+            <div className="mb-4">
+              <div className="w-10 h-10 bg-cultivate-button-primary rounded-full flex items-center justify-center mb-3">
+                <Layers className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="text-white font-semibold text-base mb-1.5">Add Chat to System</h2>
+              <p className="text-cultivate-text-secondary text-sm leading-relaxed">
+                Choose which Farmitecture system this conversation should be linked to.
+              </p>
+            </div>
+
+            {farmerSystems.systems.length === 0 ? (
+              <div className="rounded-lg border border-cultivate-border-element bg-cultivate-bg-elevated px-4 py-3 text-sm text-cultivate-text-secondary">
+                No systems available yet. Add a system first from the Systems page.
+              </div>
+            ) : (
+              <Dropdown
+                value={selectedSystemOptionId}
+                onChange={setSelectedSystemOptionId}
+                options={farmerSystems.systems.map((system) => ({ value: system.id, label: system.name }))}
+                placeholder="Select a system..."
+                className="w-full"
+              />
+            )}
+
+            <div className="mt-5 flex gap-2 justify-end">
+              <button
+                onClick={() => { setShowSystemPickerModal(false); setSelectedSystemOptionId(""); }}
+                className="px-4 py-2 text-sm text-cultivate-text-secondary hover:text-white transition-colors rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (!selectedSystemOptionId) {
+                    notify.error("Select a system first");
+                    return;
+                  }
+                  void assignConversationToSystem(selectedSystemOptionId);
+                }}
+                disabled={farmerSystems.systems.length === 0}
+                className="px-4 py-2 bg-cultivate-button-primary hover:bg-cultivate-button-primary-hover text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+              >
+                Add to System
+              </button>
+            </div>
+        </DialogContent>
+      </Dialog>
 
       {/* PWA Install Modal — outside sidebar to avoid transform containing block issues */}
       <Dialog open={showInstallModal} onOpenChange={(open) => { if (!open) setShowInstallModal(false); }}>
