@@ -918,17 +918,16 @@ export default function ConversationView({
         </>
       ) : (
         // Normal conversation view with scroll container
-        <div className="flex-1 min-h-0 relative">
-          <div className="h-full overflow-y-auto thin-scrollbar">
-            <div className="max-w-3xl standalone:max-w-4xl mx-auto flex flex-col min-h-full">
-              {/* space-y-4: gap between messages.
-                  pb-12 standalone: breathing room after "AI can make mistakes" before input */}
-              <div className={`flex-1 px-8 standalone:px-2 lg:px-8 pt-6 ${showComposer ? (isStandalone ? "pb-12" : "pb-6") : "pb-8"} space-y-4`}>
-              {messagesLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-5 h-5 text-cultivate-text-secondary animate-spin" />
-                </div>
-              ) : (
+        <div className="flex-1 min-h-0 flex flex-col">
+          {messagesLoading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <Loader2 className="w-5 h-5 text-cultivate-text-secondary animate-spin" />
+            </div>
+          ) : (
+          <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar">
+            <div className="max-w-3xl standalone:max-w-4xl mx-auto">
+              <div className={`px-8 standalone:px-2 lg:px-8 pt-6 ${showComposer ? "pb-6" : "pb-8"} space-y-4`}>
+              {(
                 <>
                   {messages.map(msg => (
                     <div key={msg.id}>
@@ -1185,11 +1184,11 @@ export default function ConversationView({
                 </>
               )}
             </div>
-
-            {/* ── Sticky Input ────────────────────────────────────────────
-                Standalone: glass gradient overlay, transparent bg, -mt-10 to overlap messages
-                Desktop/web: solid bg, centered max width */}
-            <div className={`${showComposer ? `sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-cultivate-bg-main pb-2"}` : "hidden"}`}>
+            </div>
+          </div>
+          )}
+          {/* ── Composer — flex-shrink-0 so it always anchors to the bottom ── */}
+          <div className={`flex-shrink-0 ${showComposer ? (isStandalone ? "bg-transparent pb-4 pt-0" : "bg-cultivate-bg-main pb-2") : "hidden"}`}>
               {isStandalone && (
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
               )}
@@ -1465,9 +1464,7 @@ export default function ConversationView({
                   </p>
                 )}
                 </div>
-              </div>
-          </div>
-        </div>
+            </div>
         {!showComposer && footerMeta && (
           <div className="flex-shrink-0 px-3 lg:px-4 py-3 border-t border-cultivate-border-element">
             <p className="text-xs text-cultivate-text-secondary text-center">
