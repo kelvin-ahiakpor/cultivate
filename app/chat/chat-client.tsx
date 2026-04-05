@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, type DragEvent as ReactDragEvent } from "react";
 import Link from "next/link";
 import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Download, Share, Pencil, Unlink, Trash2, Globe, AudioLines, Mic, AlertTriangle, Flag, Image, FileText, X } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { signOut } from "next-auth/react";
 import { mutate as globalMutate } from "swr";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon, GlassCircleButton, Tooltip, Dropdown } from "@/components/cultivate-ui";
@@ -1622,6 +1622,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       {/* PWA Install Modal — outside sidebar to avoid transform containing block issues */}
       <Dialog open={showSystemPickerModal} onOpenChange={(open) => { if (!open) { setShowSystemPickerModal(false); setSelectedSystemOptionId(""); } }}>
         <DialogContent showCloseButton={false} className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-80 shadow-xl">
+            <DialogTitle className="sr-only">Add Chat to System</DialogTitle>
             <div className="mb-4">
               <div className="w-10 h-10 bg-cultivate-button-primary rounded-full flex items-center justify-center mb-3">
                 <Layers className="w-5 h-5 text-white" />
@@ -1673,6 +1674,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       {/* PWA Install Modal — outside sidebar to avoid transform containing block issues */}
       <Dialog open={showInstallModal} onOpenChange={(open) => { if (!open) setShowInstallModal(false); }}>
         <DialogContent showCloseButton={false} className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-80 shadow-xl">
+            <DialogTitle className="sr-only">Install Cultivate</DialogTitle>
             <div className="mb-4">
               <div className="w-10 h-10 bg-cultivate-button-primary rounded-full flex items-center justify-center mb-3">
                 <Download className="w-5 h-5 text-white" />
@@ -1705,6 +1707,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       {/* Rename Conversation Modal */}
       <Dialog open={showRenameModal} onOpenChange={(open) => { if (!open) setShowRenameModal(false); }}>
         <DialogContent showCloseButton={false} className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-80 shadow-xl">
+            <DialogTitle className="sr-only">Rename Conversation</DialogTitle>
             <div className="mb-4">
               <h2 className="text-white font-semibold text-base mb-3">Rename Conversation</h2>
               <input
@@ -1739,6 +1742,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       {/* Delete Conversation Modal */}
       <Dialog open={showDeleteModal} onOpenChange={(open) => { if (!open) setShowDeleteModal(false); }}>
         <DialogContent showCloseButton={false} className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-96 shadow-xl">
+            <DialogTitle className="sr-only">Delete Conversation</DialogTitle>
             <div className="mb-4">
               <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center mb-3">
                 <Trash2 className="w-5 h-5 text-red-400" />
