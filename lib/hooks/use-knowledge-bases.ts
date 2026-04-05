@@ -30,6 +30,7 @@ export interface KnowledgeDoc {
   agentId: string;       // Primary agent ID
   agentName: string;     // Primary agent name
   agents: Array<{ id: string; name: string; isPrimary: boolean }>; // All agents
+  agronomistName: string;
   uploadedAt: string;    // formatted display string e.g. "Jan 28, 2026"
   uploadedAtIso: string;
   status: string;
@@ -47,6 +48,7 @@ interface RawDoc {
   uploadedAt: string; // ISO
   status: string;
   referencedInChats?: number;
+  agronomist?: { id: string; name: string } | null;
   agents: Array<{ isPrimary: boolean; agent: { id: string; name: string } }>;
 }
 
@@ -87,6 +89,7 @@ function normalize(doc: RawDoc): KnowledgeDoc {
     agentId: primaryAgent?.agent.id || "",
     agentName: primaryAgent?.agent.name || "Unassigned",
     agents: agentsList,
+    agronomistName: doc.agronomist?.name || "Unknown",
     uploadedAt: formatDate(doc.uploadedAt),
     uploadedAtIso: doc.uploadedAt,
     status: doc.status,

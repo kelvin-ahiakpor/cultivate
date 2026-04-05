@@ -16,6 +16,7 @@ import AgentEditView from "./views/agent-edit-view";
 import KnowledgeView from "./views/knowledge-view";
 import FlaggedView from "./views/flagged-view";
 import ChatsView from "./views/chats-view";
+import SettingsView from "./views/settings-view";
 import { GlassCircleButton } from "@/components/cultivate-ui";
 import { useDashboardStats, type DashboardStats } from "@/lib/hooks/use-dashboard-stats";
 import { useActivity, relativeTime, type ActivityItem } from "@/lib/hooks/use-activity";
@@ -27,9 +28,12 @@ import { DEMO_AGENTS, DEMO_DASHBOARD_CHATS } from "@/lib/demo-data";
 
 interface DashboardProps {
   user: {
+    id: string;
     name: string;
     email: string;
     role: string;
+    location?: string | null;
+    gpsCoordinates?: string | null;
   };
   // demoMode: when true, all child views use local mock data and make zero API requests.
   // Passed down from /demo/dashboard/page.tsx. See BACKEND-PROGRESS.md § Phase 5 for the pattern.
@@ -168,6 +172,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
     if (activeNav !== "overview") params.set("view", activeNav);
     if (activeNav === "agent-edit" && activeAgentId) params.set("agent", activeAgentId);
     if (activeNav === "chats" && activeChatId) params.set("c", activeChatId);
+    if (activeNav === "settings") params.delete("agent");
     const query = params.toString();
     window.history.replaceState(null, "", "/dashboard" + (query ? "?" + query : ""));
   }, [activeNav, activeAgentId, activeChatId, demoMode]);
@@ -427,7 +432,10 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                 <div className="px-3 py-2 mb-1">
                   <p className="text-xs text-cultivate-text-secondary truncate">{user.email}</p>
                 </div>
-                <button className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors rounded">
+                <button
+                  onClick={() => { setActiveNav("settings"); setShowUserMenu(false); }}
+                  className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2 transition-colors rounded"
+                >
                   <Settings className="w-4 h-4" />
                   Settings
                 </button>
@@ -810,6 +818,15 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                 <p className="text-sm text-cultivate-text-tertiary">Analytics coming soon.</p>
               </div>
             </div>
+          )}
+
+          {activeNav === "settings" && (
+            <SettingsView
+              user={user}
+              sidebarOpen={sidebarOpen}
+              setSidebarOpen={setSidebarOpen}
+              onBack={() => setActiveNav("overview")}
+            />
           )}
         </div>
       </div>

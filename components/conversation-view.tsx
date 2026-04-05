@@ -47,7 +47,7 @@ import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Un
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { notify } from "@/lib/toast";
-import { CabbageIcon, PaperPlaneIcon, SproutIcon, Tooltip, AnimatedDots } from "@/components/cultivate-ui";
+import { CabbageIcon, PaperPlaneIcon, SproutIcon, Tooltip, AnimatedDots, Dropdown } from "@/components/cultivate-ui";
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
@@ -687,31 +687,19 @@ export default function ConversationView({
                   <div className="flex items-center gap-2">
                     {inputProps ? (
                       /* Real mode: agent dropdown */
-                      <div className="relative">
-                        <button
-                          onClick={() => inputProps.setShowAgentMenu(!inputProps.showAgentMenu)}
-                          className="flex items-center gap-1 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
-                        >
-                          <span>{inputProps.selectedAgent}</span>
-                          <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
-                        </button>
-                        {inputProps.showAgentMenu && (
-                          <>
-                            <div className="fixed inset-0 z-40" onClick={() => inputProps.setShowAgentMenu(false)} />
-                            <div className="absolute bottom-full right-0 mb-2 bg-cultivate-bg-elevated rounded-lg shadow-lg border border-cultivate-border-element py-2 z-50 min-w-[200px]">
-                              {inputProps.agents.map((agent) => (
-                                <button
-                                  key={agent.id}
-                                  onClick={() => { inputProps.onAgentSelect(agent.id, agent.name); inputProps.setShowAgentMenu(false); }}
-                                  className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-cultivate-border-element transition-colors ${inputProps.selectedAgent === agent.name ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
-                                >
-                                  {agent.name}
-                                </button>
-                              ))}
-                            </div>
-                          </>
-                        )}
-                      </div>
+                      <Dropdown
+                        variant="pill"
+                        value={inputProps.agents.find((agent) => agent.name === inputProps.selectedAgent)?.id ?? ""}
+                        onChange={(id) => {
+                          const agent = inputProps.agents.find((item) => item.id === id);
+                          if (!agent) return;
+                          inputProps.onAgentSelect(agent.id, agent.name);
+                          inputProps.setShowAgentMenu(false);
+                        }}
+                        options={inputProps.agents.map((agent) => ({ value: agent.id, label: agent.name }))}
+                        placeholder="Select agent..."
+                        className="min-w-[170px] border-0 px-0 py-0 text-sm standalone:text-base lg:text-sm shadow-none hover:border-transparent focus:border-transparent bg-transparent"
+                      />
                     ) : (
                       /* Demo mode: static agent label */
                       <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-secondary">
@@ -1205,31 +1193,19 @@ export default function ConversationView({
                     <div className="flex items-center gap-2">
                       {inputProps ? (
                         /* Real mode: agent dropdown */
-                        <div className="relative">
-                          <button
-                            onClick={() => inputProps.setShowAgentMenu(!inputProps.showAgentMenu)}
-                            className="flex items-center gap-1 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
-                          >
-                            <span>{inputProps.selectedAgent}</span>
-                            <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
-                          </button>
-                          {inputProps.showAgentMenu && (
-                            <>
-                              <div className="fixed inset-0 z-40" onClick={() => inputProps.setShowAgentMenu(false)} />
-                              <div className="absolute bottom-full right-0 mb-2 bg-cultivate-bg-elevated rounded-lg shadow-lg border border-cultivate-border-element py-2 z-50 min-w-[200px]">
-                                {inputProps.agents.map((agent) => (
-                                  <button
-                                    key={agent.id}
-                                    onClick={() => { inputProps.onAgentSelect(agent.id, agent.name); inputProps.setShowAgentMenu(false); }}
-                                    className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-cultivate-border-element transition-colors ${inputProps.selectedAgent === agent.name ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
-                                  >
-                                    {agent.name}
-                                  </button>
-                                ))}
-                              </div>
-                            </>
-                          )}
-                        </div>
+                        <Dropdown
+                          variant="pill"
+                          value={inputProps.agents.find((agent) => agent.name === inputProps.selectedAgent)?.id ?? ""}
+                          onChange={(id) => {
+                            const agent = inputProps.agents.find((item) => item.id === id);
+                            if (!agent) return;
+                            inputProps.onAgentSelect(agent.id, agent.name);
+                            inputProps.setShowAgentMenu(false);
+                          }}
+                          options={inputProps.agents.map((agent) => ({ value: agent.id, label: agent.name }))}
+                          placeholder="Select agent..."
+                          className="min-w-[170px] border-0 px-0 py-0 text-sm standalone:text-base lg:text-sm shadow-none hover:border-transparent focus:border-transparent bg-transparent"
+                        />
                       ) : (
                         /* Demo mode: static agent label */
                         <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-secondary">

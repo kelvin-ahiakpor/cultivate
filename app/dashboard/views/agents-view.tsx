@@ -259,18 +259,18 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
             <Loader2 className="w-6 h-6 text-cultivate-green-light animate-spin" />
           </div>
         ) : isError ? (
-          <div className="bg-cultivate-bg-elevated rounded-xl p-8 text-center mr-3">
+          <div className="bg-cultivate-bg-elevated rounded-xl p-8 text-center lg:mr-0 mr-3">
             <p className="text-sm text-red-400">Failed to load agents. Please try again.</p>
           </div>
         ) : agents.length === 0 ? (
-          <div className="bg-cultivate-bg-elevated rounded-xl p-8 text-center mr-3">
+          <div className="bg-cultivate-bg-elevated rounded-xl p-8 text-center lg:mr-0 mr-3">
             <Bot className="w-10 h-10 text-cultivate-text-tertiary mx-auto mb-3" />
             <p className="text-sm text-cultivate-text-tertiary">
               {searchQuery ? "No agents match your search." : "No agents yet. Create your first agent to get started."}
             </p>
           </div>
         ) : (
-          <div className="space-y-3 mr-3">
+          <div className="space-y-3 lg:mr-0 mr-3">
         {agents.map((agent) => (
           <div key={agent.id}>
             {/* Mobile: Simplified card — tap to edit */}

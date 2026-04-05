@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, ChevronDown, PanelLeft, Loader2, Pencil, WifiOff } from "lucide-react";
+import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, PanelLeft, Loader2, Pencil, WifiOff, Plus } from "lucide-react";
 import { GlassCircleButton, Dropdown } from "@/components/cultivate-ui";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
@@ -73,6 +73,9 @@ export default function KnowledgeView({
   const [duplicateDoc, setDuplicateDoc] = useState<Pick<KnowledgeDoc, "id" | "title" | "fileName" | "agentId" | "agentName"> | null>(null);
   const [assigningDuplicate, setAssigningDuplicate] = useState(false);
   const [showAllAssignedAgents, setShowAllAssignedAgents] = useState(false);
+  const [showAssignAgentControl, setShowAssignAgentControl] = useState(false);
+  const [panelAssignAgentId, setPanelAssignAgentId] = useState("");
+  const [assigningPanelAgent, setAssigningPanelAgent] = useState(false);
   const [processingPollUntil, setProcessingPollUntil] = useState<number | null>(null);
   const [processingDocId, setProcessingDocId] = useState<string | null>(null);
 
@@ -167,6 +170,8 @@ export default function KnowledgeView({
     setEditingTitleDocId(null);
     setRenameTitle("");
     setShowAllAssignedAgents(false);
+    setShowAssignAgentControl(false);
+    setPanelAssignAgentId("");
   };
 
   useEffect(() => {
@@ -202,6 +207,8 @@ export default function KnowledgeView({
 
   useEffect(() => {
     setShowAllAssignedAgents(false);
+    setShowAssignAgentControl(false);
+    setPanelAssignAgentId("");
   }, [viewPanelDoc?.id]);
 
   useEffect(() => {
@@ -502,6 +509,35 @@ export default function KnowledgeView({
     }
   };
 
+  const handleAssignPanelDocument = async () => {
+    if (!viewPanelDoc || !panelAssignAgentId) {
+      notify.error("Select an agent before assigning this document.");
+      return;
+    }
+
+    if (demoMode) {
+      notify.success("Assignment is disabled in demo mode.");
+      return;
+    }
+
+    setAssigningPanelAgent(true);
+    try {
+      const result = await assignDocumentToAgent(viewPanelDoc.id, panelAssignAgentId);
+      await mutateKnowledgeBases();
+      notify.success(
+        typeof result?.message === "string"
+          ? result.message
+          : `Assigned "${viewPanelDoc.title}" to the selected agent.`
+      );
+      setShowAssignAgentControl(false);
+      setPanelAssignAgentId("");
+    } catch (e) {
+      notify.error(e instanceof Error ? e.message : "Assignment failed");
+    } finally {
+      setAssigningPanelAgent(false);
+    }
+  };
+
   const handleUploadSubmit = async () => {
     if (demoMode) { handleCloseUploadModal(); return; }
     if (!uploadTitle.trim() || !uploadAgentId || !uploadFile) {
@@ -559,9 +595,28 @@ export default function KnowledgeView({
     ? (showAllAssignedAgents ? viewPanelDoc.agents : viewPanelDoc.agents.slice(0, 2))
     : [];
 
+  const agentFilterOptions = demoMode
+    ? [{ value: "", label: "All Agents" }, ...demoAgentNames.slice(1).map((name) => ({ value: name, label: name }))]
+    : [{ value: "", label: "All Agents" }, ...realAgents.map((agent) => ({ value: agent.id, label: agent.name }))];
+
+  const uploadAgentOptions = demoMode
+    ? demoAgentNames.slice(1).map((name) => ({ value: name, label: name }))
+    : realAgents.map((agent) => ({ value: agent.id, label: agent.name }));
+
+  const assignableAgentOptions = viewPanelDoc
+    ? (demoMode
+      ? demoAgentNames
+          .slice(1)
+          .filter((name) => !viewPanelDoc.agents.some((agent) => agent.name === name))
+          .map((name) => ({ value: name, label: name }))
+      : realAgents
+          .filter((agent) => !viewPanelDoc.agents.some((assignedAgent) => assignedAgent.id === agent.id))
+          .map((agent) => ({ value: agent.id, label: agent.name })))
+    : [];
+
   // Reset to page 1 when filters change
   const handleAgentChange = (value: string) => {
-    setAgentFilter(value === "All Agents" ? "" : value);
+    setAgentFilter(value);
     setCurrentPage(1);
   };
 
@@ -627,17 +682,13 @@ export default function KnowledgeView({
           {/* Agent Filter — demo: hardcoded names, real: from API */}
           <div className="relative">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary pointer-events-none" />
-            <select
-              value={agentFilter || "All Agents"}
-              onChange={(e) => handleAgentChange(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-cultivate-text-primary focus:outline-none focus:border-cultivate-green-light cursor-pointer appearance-none min-w-[200px]"
-            >
-              <option value="All Agents">All Agents</option>
-              {demoMode
-                ? demoAgentNames.slice(1).map(name => <option key={name} value={name}>{name}</option>)
-                : realAgents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)
-              }
-            </select>
+            <Dropdown
+              variant="field"
+              value={agentFilter}
+              onChange={handleAgentChange}
+              options={agentFilterOptions}
+              className="min-w-[200px] pl-10 bg-cultivate-bg-elevated"
+            />
           </div>
 
           {/* Search */}
@@ -878,20 +929,14 @@ export default function KnowledgeView({
 
                   <div>
                     <label className="block text-sm text-cultivate-text-secondary mb-1.5">Assign to Agent</label>
-                    <div className="relative">
-                      <select
-                        value={uploadAgentId}
-                        onChange={(e) => setUploadAgentId(e.target.value)}
-                        className="w-full px-3 py-2 pr-10 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white focus:outline-none focus:border-cultivate-button-primary appearance-none"
-                      >
-                        <option value="">Select an agent...</option>
-                        {demoMode
-                          ? demoAgentNames.slice(1).map(name => <option key={name} value={name}>{name}</option>)
-                          : realAgents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)
-                        }
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary pointer-events-none" />
-                    </div>
+                    <Dropdown
+                      variant="field"
+                      value={uploadAgentId}
+                      onChange={setUploadAgentId}
+                      options={uploadAgentOptions}
+                      placeholder="Select an agent..."
+                      className="bg-cultivate-bg-elevated"
+                    />
                   </div>
 
                   {/* KB Type */}
@@ -1184,6 +1229,10 @@ export default function KnowledgeView({
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
+                    <span className="text-cultivate-text-secondary">Uploaded by</span>
+                    <span className="text-white">{viewPanelDoc.agronomistName}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
                     <span className="text-cultivate-text-secondary">Uploaded</span>
                     <span className="text-white">{viewPanelDoc.uploadedAt}</span>
                   </div>
@@ -1198,13 +1247,50 @@ export default function KnowledgeView({
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between gap-3 mb-2">
-                    <h3 className="text-xs font-medium text-cultivate-text-secondary uppercase tracking-wide">Used by agents</h3>
-                    <span className="text-xs text-cultivate-text-tertiary">
-                      {viewPanelDoc.agents.length} {viewPanelDoc.agents.length === 1 ? "agent" : "agents"}
-                    </span>
+                <div className="flex items-center justify-between gap-3 mb-2">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xs font-medium text-cultivate-text-secondary uppercase tracking-wide">Used by agents</h3>
+                      {assignableAgentOptions.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAssignAgentControl((current) => !current)}
+                          className="inline-flex items-center gap-1 rounded-md border border-cultivate-border-subtle px-2 py-1 text-[11px] text-cultivate-text-secondary hover:text-white hover:border-cultivate-green-light transition-colors"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Add agent
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-cultivate-text-tertiary">
+                        {viewPanelDoc.agents.length} {viewPanelDoc.agents.length === 1 ? "agent" : "agents"}
+                      </span>
+                    </div>
                   </div>
                   <div className="bg-cultivate-bg-elevated rounded-lg p-3 space-y-2">
+                    {showAssignAgentControl && assignableAgentOptions.length > 0 && (
+                      <div className="rounded-lg border border-cultivate-border-subtle p-3 space-y-2">
+                        <Dropdown
+                          variant="field"
+                          value={panelAssignAgentId}
+                          onChange={setPanelAssignAgentId}
+                          options={assignableAgentOptions}
+                          placeholder="Select an agent..."
+                          className="bg-cultivate-bg-main"
+                        />
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => void handleAssignPanelDocument()}
+                            disabled={!panelAssignAgentId || assigningPanelAgent}
+                            className="inline-flex items-center gap-2 rounded-lg bg-cultivate-button-primary px-3 py-2 text-xs text-white hover:bg-cultivate-button-primary-hover disabled:opacity-40 transition-colors"
+                          >
+                            {assigningPanelAgent && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                            {assigningPanelAgent ? "Assigning..." : "Assign agent"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     {visibleAssignedAgents.map((agent) => (
                       <div key={agent.id} className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2 min-w-0">
@@ -1364,9 +1450,46 @@ export default function KnowledgeView({
             <div className="px-5 py-4 border-b border-cultivate-border-subtle space-y-3">
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-cultivate-text-secondary">Assigned agents</span>
-                  <span className="text-white">{viewPanelDoc.agents.length}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-cultivate-text-secondary">Assigned agents</span>
+                    {assignableAgentOptions.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAssignAgentControl((current) => !current)}
+                        className="inline-flex items-center gap-1 rounded-md border border-cultivate-border-subtle px-2 py-1 text-[11px] text-cultivate-text-secondary hover:text-white hover:border-cultivate-green-light transition-colors"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Add agent
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-white">{viewPanelDoc.agents.length}</span>
+                  </div>
                 </div>
+                {showAssignAgentControl && assignableAgentOptions.length > 0 && (
+                  <div className="rounded-lg border border-cultivate-border-subtle p-3 space-y-2">
+                    <Dropdown
+                      variant="field"
+                      value={panelAssignAgentId}
+                      onChange={setPanelAssignAgentId}
+                      options={assignableAgentOptions}
+                      placeholder="Select an agent..."
+                      className="bg-cultivate-bg-main"
+                    />
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => void handleAssignPanelDocument()}
+                        disabled={!panelAssignAgentId || assigningPanelAgent}
+                        className="inline-flex items-center gap-2 rounded-lg bg-cultivate-button-primary px-3 py-2 text-xs text-white hover:bg-cultivate-button-primary-hover disabled:opacity-40 transition-colors"
+                      >
+                        {assigningPanelAgent && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                        {assigningPanelAgent ? "Assigning..." : "Assign agent"}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-2">
                   {visibleAssignedAgents.map((agent) => (
                     <span
@@ -1395,6 +1518,10 @@ export default function KnowledgeView({
                 <span className={viewPanelDoc.processingState === "FAILED" ? "text-red-400" : "text-white"}>
                   {getSegmentSummary(viewPanelDoc)}
                 </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-cultivate-text-secondary">Uploaded by</span>
+                <span className="text-white">{viewPanelDoc.agronomistName}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-cultivate-text-secondary">Uploaded</span>

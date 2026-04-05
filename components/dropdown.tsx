@@ -43,11 +43,13 @@ export default function Dropdown({
   className = "",
 }: DropdownProps) {
   const isPill = variant === "pill";
+  const hasEmptyOption = options.some((opt) => opt.value === "");
   const normalizedOptions = options.map((opt) => ({
     ...opt,
     value: opt.value === "" ? EMPTY_OPTION_VALUE : opt.value,
   }));
-  const normalizedValue = value === "" ? EMPTY_OPTION_VALUE : value;
+  const normalizedValue =
+    value === "" ? (hasEmptyOption ? EMPTY_OPTION_VALUE : undefined) : value;
 
   return (
     <Select
@@ -60,8 +62,8 @@ export default function Dropdown({
           // Remove shadcn's default focus ring in favour of the border change
           "focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0",
           isPill
-            ? "w-auto px-3 py-1.5 rounded-lg hover:border-cultivate-button-primary"
-            : "w-full px-2.5 py-2 bg-cultivate-bg-main rounded-lg focus:border-cultivate-green-light",
+            ? "w-auto px-2.5 py-1.25 rounded-lg hover:border-cultivate-button-primary"
+            : "w-full px-2.25 py-1.75 bg-cultivate-bg-main rounded-lg focus:border-cultivate-green-light",
           className
         )}
       >
@@ -73,7 +75,7 @@ export default function Dropdown({
       </SelectTrigger>
       <SelectContent
         className={cn(
-          "z-50 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl shadow-xl py-1.5",
+          "z-50 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl shadow-xl py-1",
           isPill ? "min-w-[160px]" : ""
         )}
       >
@@ -84,7 +86,7 @@ export default function Dropdown({
             className={cn(
               // gap-0 overrides shadcn's gap-2 — the flex gap was adding extra space
               // before the ItemText in Safari/WebKit, shifting text rightward.
-              "mx-1.5 px-3 py-2 gap-0 rounded-lg text-sm text-cultivate-text-primary cursor-pointer",
+              "mx-1 py-2 pr-8 pl-2 gap-0 rounded-lg text-sm text-cultivate-text-primary cursor-pointer",
               "focus:bg-cultivate-bg-hover focus:text-cultivate-text-primary",
               "data-[state=checked]:text-cultivate-text-primary"
             )}

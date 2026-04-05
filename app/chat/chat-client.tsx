@@ -7,7 +7,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { signOut } from "next-auth/react";
 import { mutate as globalMutate } from "swr";
-import { CabbageIcon, PaperPlaneIcon, SproutIcon, GlassCircleButton, Tooltip } from "@/components/cultivate-ui";
+import { CabbageIcon, PaperPlaneIcon, SproutIcon, GlassCircleButton, Tooltip, Dropdown } from "@/components/cultivate-ui";
 import ConversationView from "@/components/conversation-view";
 import ChatsView, { mockChats } from "./views/chats-view";
 import FlaggedQueriesView from "./views/flagged-queries-view";
@@ -1092,31 +1092,22 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="relative">
-                              <button
-                                onClick={() => setShowAgentMenu(!showAgentMenu)}
-                                className="flex items-center gap-1 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
-                              >
-                                <span>{selectedAgent}</span>
-                                <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
-                              </button>
-                              {showAgentMenu && (
-                                <>
-                                  <div className="fixed inset-0 z-40" onClick={() => setShowAgentMenu(false)} />
-                                  <div className="absolute bottom-full right-0 mb-2 bg-cultivate-bg-elevated rounded-lg shadow-lg border border-cultivate-border-element py-2 z-50 min-w-[200px]">
-                                    {agents.map((agent) => (
-                                      <button
-                                        key={agent.id}
-                                        onClick={() => { setSelectedAgent(agent.name); setSelectedAgentId(agent.id); setShowAgentMenu(false); setCurrentConversationId(null); setConversationTitle(null); setMessages([]); }}
-                                        className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-cultivate-border-element transition-colors ${selectedAgent === agent.name ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
-                                      >
-                                        {agent.name}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </>
-                              )}
-                            </div>
+                            <Dropdown
+                              variant="pill"
+                              value={selectedAgentId ?? ""}
+                              onChange={(id) => {
+                                const agent = agents.find((item) => item.id === id);
+                                if (!agent) return;
+                                setSelectedAgent(agent.name);
+                                setSelectedAgentId(agent.id);
+                                setCurrentConversationId(null);
+                                setConversationTitle(null);
+                                setMessages([]);
+                              }}
+                              options={agents.map((agent) => ({ value: agent.id, label: agent.name }))}
+                              placeholder="Select agent..."
+                              className="min-w-[170px] border-0 px-0 py-0 text-sm standalone:text-base lg:text-sm shadow-none hover:border-transparent focus:border-transparent bg-transparent"
+                            />
 
                             {/* Language Selector */}
                             <div className="relative">
