@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, ChevronLeft, Plus, X } from "lucide-react";
+import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, ChevronLeft, Plus, X, Loader2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { GlassCircleButton, Dropdown, SystemListSkeleton } from "@/components/cultivate-ui";
 import { useSystems, type FarmerSystemItem } from "@/lib/hooks/use-systems";

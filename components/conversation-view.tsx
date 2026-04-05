@@ -42,7 +42,7 @@
  * diverge in layout or behaviour.
  */
 
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, type DragEvent as ReactDragEvent } from "react";
 import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle, Mic, MicOff, AlertTriangle, AudioLines, Globe, Image, FileText, FolderPlus, PanelLeft, WifiOff, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -185,12 +185,43 @@ export default function ConversationView({
   // Voice input state
   const [voiceState, setVoiceState] = useState<"idle" | "connecting" | "listening" | "error">("idle");
   const connectingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isDraggingImages, setIsDraggingImages] = useState(false);
 
   // Attachment menu state
   const [showAttachMenu, setShowAttachMenu] = useState(false);
 
   const triggerImagePicker = () => {
     imageInputRef.current?.click();
+  };
+
+  const handleComposerDragEnter = (e: ReactDragEvent<HTMLDivElement>) => {
+    if (!inputProps) return;
+    if (!Array.from(e.dataTransfer.items || []).some((item) => item.kind === "file")) return;
+    e.preventDefault();
+    setIsDraggingImages(true);
+  };
+
+  const handleComposerDragOver = (e: ReactDragEvent<HTMLDivElement>) => {
+    if (!inputProps) return;
+    if (!Array.from(e.dataTransfer.items || []).some((item) => item.kind === "file")) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    if (!isDraggingImages) setIsDraggingImages(true);
+  };
+
+  const handleComposerDragLeave = (e: ReactDragEvent<HTMLDivElement>) => {
+    if (!inputProps) return;
+    const relatedTarget = e.relatedTarget;
+    if (relatedTarget instanceof Node && e.currentTarget.contains(relatedTarget)) return;
+    setIsDraggingImages(false);
+  };
+
+  const handleComposerDrop = (e: ReactDragEvent<HTMLDivElement>) => {
+    if (!inputProps) return;
+    e.preventDefault();
+    setIsDraggingImages(false);
+    if (!e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
+    inputProps.onSelectImages(e.dataTransfer.files);
   };
 
   const renderPendingImages = inputProps && inputProps.pendingImages.length > 0 ? (
@@ -635,8 +666,23 @@ export default function ConversationView({
               <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
             )}
           <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-3.5 mb-1 lg:max-w-3xl lg:mx-auto"}`}>
-            <div className="bg-cultivate-bg-elevated rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
+            <div
+              onDragEnter={handleComposerDragEnter}
+              onDragOver={handleComposerDragOver}
+              onDragLeave={handleComposerDragLeave}
+              onDrop={handleComposerDrop}
+              className={`rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)] transition-colors ${
+                isDraggingImages
+                  ? "bg-cultivate-bg-hover ring-1 ring-cultivate-green-light/60"
+                  : "bg-cultivate-bg-elevated"
+              }`}
+            >
                 {renderPendingImages}
+                {isDraggingImages && (
+                  <div className="mb-3 rounded-2xl border border-dashed border-cultivate-green-light/60 bg-cultivate-green-light/8 px-3 py-2 text-sm text-cultivate-green-light">
+                    Drop up to 3 JPG, PNG, or WebP images here
+                  </div>
+                )}
                 <input
                   ref={imageInputRef}
                   type="file"
@@ -1131,8 +1177,23 @@ export default function ConversationView({
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
               )}
               <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-3.5 mb-1"}`}>
-                <div className="bg-cultivate-bg-elevated rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
+                <div
+                  onDragEnter={handleComposerDragEnter}
+                  onDragOver={handleComposerDragOver}
+                  onDragLeave={handleComposerDragLeave}
+                  onDrop={handleComposerDrop}
+                  className={`rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)] transition-colors ${
+                    isDraggingImages
+                      ? "bg-cultivate-bg-hover ring-1 ring-cultivate-green-light/60"
+                      : "bg-cultivate-bg-elevated"
+                  }`}
+                >
                   {renderPendingImages}
+                  {isDraggingImages && (
+                    <div className="mb-3 rounded-2xl border border-dashed border-cultivate-green-light/60 bg-cultivate-green-light/8 px-3 py-2 text-sm text-cultivate-green-light">
+                      Drop up to 3 JPG, PNG, or WebP images here
+                    </div>
+                  )}
                   <input
                     ref={imageInputRef}
                     type="file"
