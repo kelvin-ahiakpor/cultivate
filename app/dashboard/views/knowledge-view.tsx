@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, ChevronDown, PanelLeft, Loader2, Pencil, WifiOff } from "lucide-react";
 import { GlassCircleButton, Dropdown } from "@/components/cultivate-ui";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useKnowledgeBases, uploadDocument, deleteDocument, renameDocument, assignDocumentToAgent, KnowledgeBaseUploadError, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
 import { useAgents } from "@/lib/hooks/use-agents";
@@ -74,6 +74,7 @@ export default function KnowledgeView({
   const [assigningDuplicate, setAssigningDuplicate] = useState(false);
   const [showAllAssignedAgents, setShowAllAssignedAgents] = useState(false);
   const [processingPollUntil, setProcessingPollUntil] = useState<number | null>(null);
+  const [processingDocId, setProcessingDocId] = useState<string | null>(null);
 
   const isOnline = useOnlineStatus();
   const [offlineDocs, setOfflineDocs] = useState<KnowledgeDoc[]>([]);
@@ -219,6 +220,49 @@ export default function KnowledgeView({
 
     return () => window.clearInterval(interval);
   }, [demoMode, isOnline, mutateKnowledgeBases, onlineDocuments, processingPollUntil]);
+
+  useEffect(() => {
+    if (demoMode || !isOnline || !processingDocId) return;
+
+    const stopPollingAt = processingPollUntil ?? Date.now() + 120000;
+
+    const pollDocument = async () => {
+      try {
+        const response = await fetch(`/api/knowledge-bases/${processingDocId}`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const chunkCount = typeof data?.chunkCount === "number" ? data.chunkCount : 0;
+
+        if (chunkCount !== 0) {
+          setProcessingDocId(null);
+          setProcessingPollUntil(null);
+        }
+
+        await mutateKnowledgeBases();
+      } catch {
+        // Ignore transient polling failures; the next interval will retry.
+      }
+    };
+
+    void pollDocument();
+
+    const interval = window.setInterval(() => {
+      if (Date.now() >= stopPollingAt) {
+        setProcessingDocId(null);
+        setProcessingPollUntil(null);
+        window.clearInterval(interval);
+        return;
+      }
+
+      void pollDocument();
+    }, 2500);
+
+    return () => window.clearInterval(interval);
+  }, [demoMode, isOnline, mutateKnowledgeBases, processingDocId, processingPollUntil]);
 
   const getPublicDocumentUrl = (doc: KnowledgeDoc) => doc.fileUrl;
 
@@ -476,8 +520,11 @@ export default function KnowledgeView({
       fd.append("sourceType", uploadSourceType);
       if (uploadDescription.trim()) fd.append("description", uploadDescription.trim());
       fd.append("file", uploadFile);
-      await uploadDocument(fd);
+      const result = await uploadDocument(fd);
       setProcessingPollUntil(Date.now() + 120000);
+      if (typeof result?.id === "string") {
+        setProcessingDocId(result.id);
+      }
       void mutateKnowledgeBases();
       notify.success("Document uploaded. Processing has started in the background.");
       handleCloseUploadModal();
@@ -762,6 +809,7 @@ export default function KnowledgeView({
       {/* Upload Modal */}
       <Dialog open={showUploadModal} onOpenChange={(open) => { if (!open) handleCloseUploadModal(); }}>
         <DialogContent showCloseButton={false} className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-0 w-full max-w-lg max-h-[90vh] flex flex-col gap-0">
+          <DialogTitle className="sr-only">Upload Knowledge Base</DialogTitle>
               {/* Fixed header */}
               <div className="px-6 pt-5 pb-4 flex-shrink-0">
                 <h2 className="text-lg font-medium text-white">Upload Knowledge Base</h2>
@@ -1458,6 +1506,7 @@ export default function KnowledgeView({
       {/* Delete Confirmation Modal */}
       <Dialog open={!!deleteModalDoc} onOpenChange={(open) => { if (!open) setDeleteModalDoc(null); }}>
         <DialogContent showCloseButton={false} className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-full max-w-md">
+          <DialogTitle className="sr-only">Delete Document</DialogTitle>
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Trash2 className="w-5 h-5 text-red-400" />
@@ -1508,6 +1557,7 @@ export default function KnowledgeView({
       {/* Document Selector Modal */}
       <Dialog open={showDocSelectorModal} onOpenChange={(open) => { if (!open) setShowDocSelectorModal(false); }}>
         <DialogContent showCloseButton={false} className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-full max-w-xl">
+          <DialogTitle className="sr-only">Select Document to Update</DialogTitle>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-medium text-white">Select Document to Update</h2>
                 <button

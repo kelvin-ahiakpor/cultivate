@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Flag, Search, CheckCircle, ChevronDown, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft, Loader2, Copy, WifiOff } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { GlassCircleButton, SproutIcon } from "@/components/cultivate-ui";
 import { useFlaggedQueries, reviewFlaggedQuery, type FlaggedQueryItem as FlaggedQuery } from "@/lib/hooks/use-flagged-queries";
 import { useOnlineStatus } from "@/lib/hooks/use-online-status";
@@ -771,6 +771,7 @@ export default function FlaggedView({
           showCloseButton={false}
           className="bg-cultivate-bg-sidebar border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
         >
+          <DialogTitle className="sr-only">Verify Agent Response</DialogTitle>
             <div className="bg-cultivate-bg-sidebar rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
               <div className="flex items-center gap-2 mb-4">
                 <CheckCircle className="w-5 h-5 text-cultivate-green-light" />
@@ -818,6 +819,7 @@ export default function FlaggedView({
           showCloseButton={false}
           className="bg-cultivate-bg-sidebar border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
         >
+          <DialogTitle className="sr-only">Edit Correction</DialogTitle>
           <div className="bg-cultivate-bg-sidebar rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
             <div className="flex items-center gap-2 mb-4">
               <Pencil className="w-5 h-5 text-cultivate-teal" />
@@ -855,6 +857,7 @@ export default function FlaggedView({
       {/* Revoke Confirmation Modal */}
       <Dialog open={showRevokeModal} onOpenChange={(open) => { if (!open) { setShowRevokeModal(false); setRevokingQueryId(null); } }}>
         <DialogContent showCloseButton={false} className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle p-6 rounded-xl shadow-2xl max-w-md w-full">
+          <DialogTitle className="sr-only">Revoke Verification</DialogTitle>
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="w-5 h-5 text-cultivate-beige" />
             <h2 className="text-lg font-medium text-white">

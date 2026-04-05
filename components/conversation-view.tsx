@@ -49,7 +49,7 @@ import remarkGfm from "remark-gfm";
 import { notify } from "@/lib/toast";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon, Tooltip, AnimatedDots } from "@/components/cultivate-ui";
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export interface ConversationMessage {
   id: string;
@@ -1364,6 +1364,7 @@ export default function ConversationView({
             showCloseButton={false}
             className="bg-cultivate-bg-elevated border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
           >
+            <DialogTitle className="sr-only">{isUpdatingFlag ? "Update Flag" : "Flag for Review"}</DialogTitle>
             <div className="bg-cultivate-bg-elevated rounded-lg border border-cultivate-border-element p-5 w-[90vw] max-w-md max-h-[80vh] overflow-y-auto">
               <h3 className="text-base font-semibold text-cultivate-text-primary mb-2">
                 {isUpdatingFlag ? "Update flag" : "Flag for Review"}

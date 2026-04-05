@@ -12,11 +12,15 @@ import { useState, useEffect } from "react";
 import { mutate } from "swr";
 
 export function useOnlineStatus(): boolean {
-  const [isOnline, setIsOnline] = useState(
-    typeof navigator !== "undefined" ? navigator.onLine : true
-  );
+  // Start as `true` to match the server render, then sync the real value
+  // after mount. Using navigator.onLine as the initial value causes a
+  // hydration mismatch when the client is offline (server always renders "online").
+  const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
+    // Sync with actual browser state immediately after mount
+    setIsOnline(navigator.onLine);
+
     function handleOnline() {
       setIsOnline(true);
       // Revalidate all active SWR keys so sidebar + data refresh automatically

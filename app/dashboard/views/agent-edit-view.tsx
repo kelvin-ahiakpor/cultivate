@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ArrowLeft, Bot, Loader2, Save, Pencil, X } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useAgent, updateAgent } from "@/lib/hooks/use-agents";
 import { DEMO_AGENTS } from "@/lib/demo-data";
 import { notify } from "@/lib/toast";
@@ -227,6 +227,7 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
           showCloseButton={false}
           className="bg-cultivate-bg-sidebar border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
         >
+          <DialogTitle className="sr-only">System Prompt</DialogTitle>
           <div className="w-full max-w-3xl bg-cultivate-bg-sidebar border border-cultivate-border-element rounded-2xl shadow-2xl max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-cultivate-border-element">
               <div>

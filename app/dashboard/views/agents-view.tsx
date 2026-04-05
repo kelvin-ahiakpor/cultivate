@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, AlertTriangle, PanelLeft, Eye, Loader2, X, WifiOff } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { GlassCircleButton } from "@/components/cultivate-ui";
 import { useAgents, createAgent, toggleAgentStatus, deleteAgent, type Agent } from "@/lib/hooks/use-agents";
 import { useOnlineStatus } from "@/lib/hooks/use-online-status";
@@ -612,6 +613,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
           showCloseButton={false}
           className="bg-cultivate-bg-sidebar border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
         >
+          <DialogTitle className="sr-only">Create New Agent</DialogTitle>
             <div className="bg-cultivate-bg-sidebar rounded-xl border border-cultivate-border-subtle w-full max-w-lg p-6">
               <h2 className="text-lg font-medium text-white mb-4">Create New Agent</h2>
 
@@ -701,6 +703,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
           showCloseButton={false}
           className="bg-cultivate-bg-sidebar border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
         >
+          <DialogTitle className="sr-only">Deactivate Agent</DialogTitle>
           {deactivateModalAgent && (
             <div className="bg-cultivate-bg-sidebar rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
               <div className="flex items-start gap-3 mb-4">
@@ -749,6 +752,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
           showCloseButton={false}
           className="bg-cultivate-bg-sidebar border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
         >
+          <DialogTitle className="sr-only">Delete Agent</DialogTitle>
           {deleteModalAgent && (
             <div className="bg-cultivate-bg-sidebar rounded-xl border border-cultivate-border-subtle w-full max-w-lg p-6">
               <div className="flex items-start gap-3 mb-4">
