@@ -1,6 +1,6 @@
 /**
  * Test script for DeepL API
- * Run: node test-deepl-api.js
+ * Run: node scripts/translation-tests/test-deepl-api.js
  */
 
 require('dotenv').config();

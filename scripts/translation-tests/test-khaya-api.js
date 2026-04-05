@@ -1,6 +1,6 @@
 /**
  * Test script for Khaya API (Ghana NLP Translation)
- * Run: node test-khaya-api.js
+ * Run: node scripts/translation-tests/test-khaya-api.js
  */
 
 require('dotenv').config();

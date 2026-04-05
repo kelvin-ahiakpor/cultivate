@@ -3,7 +3,7 @@
  * Assigns all unassigned KBs to the first available agent
  */
 import "dotenv/config";
-import { prisma } from "./lib/prisma";
+import { prisma } from "../../lib/prisma";
 
 async function fixOldKBs() {
   // Find KBs with no agent assignments

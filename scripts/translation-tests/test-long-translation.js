@@ -1,6 +1,6 @@
 /**
  * Test Khaya API with long text (to check character limits)
- * Run: node test-long-translation.js
+ * Run: node scripts/translation-tests/test-long-translation.js
  */
 
 require('dotenv').config();
