@@ -212,7 +212,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       const cached = list.find(c => c.id === initialConversationId);
       if (!cached || cancelled) return;
       setConversationTitle(cached.title);
-      setConversationSystem(cached.systemName || cached.agentName);
+      setConversationSystem(cached.systemName || null);
       setSelectedChatId(initialConversationId);
     };
 
@@ -223,7 +223,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
     }) => {
       if (cancelled) return;
       setConversationTitle(convData?.title || null);
-      setConversationSystem(convData?.farmerSystem?.name ?? convData?.agent?.name ?? null);
+      setConversationSystem(convData?.farmerSystem?.name || null);
       setConversationSystemId(convData?.farmerSystem?.id || null);
       setSelectedChatId(initialConversationId);
     };
