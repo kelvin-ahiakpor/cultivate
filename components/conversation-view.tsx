@@ -140,6 +140,8 @@ interface ConversationViewProps {
   highlightFlaggedMessages?: boolean;
   /** Passed from useOnlineStatus(). Disables input + shows offline indicator when false. */
   isOnline?: boolean;
+  onAddToSystem?: () => void;
+  onRemoveFromSystem?: () => void;
 }
 
 export default function ConversationView({
@@ -164,6 +166,8 @@ export default function ConversationView({
   showMessageActions = true,
   highlightFlaggedMessages = false,
   isOnline = true,
+  onAddToSystem,
+  onRemoveFromSystem,
 }: ConversationViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -258,6 +262,8 @@ export default function ConversationView({
             <img
               src={attachment.fileUrl}
               alt={attachment.fileName}
+              loading="lazy"
+              decoding="async"
               className="h-40 w-40 object-cover sm:h-48 sm:w-48"
             />
           </a>
@@ -602,34 +608,45 @@ export default function ConversationView({
 
             {headerMenuOpen && (
               <>
-                <div className="absolute left-0 top-full mt-1 bg-cultivate-bg-sidebar rounded-lg shadow-lg border border-cultivate-border-subtle py-1 z-[101] min-w-[200px] whitespace-nowrap">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
-                    className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2.5 transition-colors"
-                  >
-                    <Share className="w-3.5 h-3.5" />Share
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
-                    className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2.5 transition-colors"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />Rename
-                  </button>
-                  {systemName && (
+                <div className="absolute left-0 top-full mt-1 bg-cultivate-bg-elevated rounded-xl shadow-xl border border-cultivate-border-element py-1.5 z-[101] min-w-[220px] whitespace-nowrap">
+                  <div className="px-1.5">
                     <button
                       onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2.5 transition-colors"
+                      className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
                     >
-                      <Unlink className="w-3.5 h-3.5" />Remove from system
+                      <Share className="w-4 h-4" />Share
                     </button>
-                  )}
-                  <div className="border-t border-cultivate-border-subtle my-1 mx-3" />
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
-                    className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-cultivate-bg-hover hover:text-red-300 flex items-center gap-2.5 transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />Delete
-                  </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
+                      className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                    >
+                      <Pencil className="w-4 h-4" />Rename
+                    </button>
+                    {systemName ? (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); onRemoveFromSystem?.(); }}
+                        className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                      >
+                        <Unlink className="w-4 h-4" />Remove from system
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); onAddToSystem?.(); }}
+                        className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                      >
+                        <FolderPlus className="w-4 h-4" />Add to system
+                      </button>
+                    )}
+                  </div>
+                  <div className="border-t border-cultivate-border-element/70 my-1 mx-1.5" />
+                  <div className="px-1.5">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
+                      className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />Delete
+                    </button>
+                  </div>
                 </div>
                 <div className="fixed inset-0 z-[100]" onClick={() => setHeaderMenuOpen(false)} />
               </>
@@ -680,7 +697,7 @@ export default function ConversationView({
                 {renderPendingImages}
                 {isDraggingImages && (
                   <div className="mb-3 rounded-2xl border border-dashed border-cultivate-green-light/60 bg-cultivate-green-light/8 px-3 py-2 text-sm text-cultivate-green-light">
-                    Drop up to 3 JPG, PNG, or WebP images here
+                    Drop up to 3 images here
                   </div>
                 )}
                 <input
@@ -1191,7 +1208,7 @@ export default function ConversationView({
                   {renderPendingImages}
                   {isDraggingImages && (
                     <div className="mb-3 rounded-2xl border border-dashed border-cultivate-green-light/60 bg-cultivate-green-light/8 px-3 py-2 text-sm text-cultivate-green-light">
-                      Drop up to 3 JPG, PNG, or WebP images here
+                      Drop up to 3 images here
                     </div>
                   )}
                   <input
@@ -1270,16 +1287,29 @@ export default function ConversationView({
                                 <>
                                   <div className="border-t border-cultivate-border-element my-1 mx-2" />
                                   <div className="px-1.5">
-                                    <button
-                                      onClick={() => {
-                                        setShowAttachMenu(false);
-                                        // TODO: Implement add to system
-                                      }}
-                                      className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
-                                    >
-                                      <FolderPlus className="w-4 h-4" />
-                                      Add to system
-                                    </button>
+                                    {systemName ? (
+                                      <button
+                                        onClick={() => {
+                                          setShowAttachMenu(false);
+                                          onRemoveFromSystem?.();
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                                      >
+                                        <Unlink className="w-4 h-4" />
+                                        Remove from system
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => {
+                                          setShowAttachMenu(false);
+                                          onAddToSystem?.();
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                                      >
+                                        <FolderPlus className="w-4 h-4" />
+                                        Add to system
+                                      </button>
+                                    )}
                                   </div>
                                 </>
                               )}

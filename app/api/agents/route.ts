@@ -9,7 +9,7 @@
  */
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
+import { requireAuth, hasRole, apiError, apiSuccess, handleApiError } from "@/lib/api-utils";
 
 // GET /api/agents — List agents for the user's org
 export async function GET(request: NextRequest) {
@@ -38,27 +38,25 @@ export async function GET(request: NextRequest) {
       }),
     };
 
-    const [agents, total] = await Promise.all([
-      prisma.agent.findMany({
-        where,
-        include: {
-          _count: {
-            select: {
-              conversations: true,
-              knowledgeBases: true,
-              flaggedQueries: true,
-            },
-          },
-          agronomist: {
-            select: { id: true, name: true, email: true },
+    const agents = await prisma.agent.findMany({
+      where,
+      include: {
+        _count: {
+          select: {
+            conversations: true,
+            knowledgeBases: true,
+            flaggedQueries: true,
           },
         },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.agent.count({ where }),
-    ]);
+        agronomist: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    });
+    const total = await prisma.agent.count({ where });
 
     return apiSuccess({
       agents,
@@ -70,8 +68,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (err) {
-    console.error("GET /api/agents error:", err);
-    return apiError("Failed to fetch agents", 500);
+    return await handleApiError("GET /api/agents", err, "Failed to fetch agents");
   }
 }
 
@@ -115,7 +112,6 @@ export async function POST(request: NextRequest) {
 
     return apiSuccess(agent, 201);
   } catch (err) {
-    console.error("POST /api/agents error:", err);
-    return apiError("Failed to create agent", 500);
+    return await handleApiError("POST /api/agents", err, "Failed to create agent");
   }
 }

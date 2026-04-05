@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
+import { requireAuth, hasRole, apiError, apiSuccess, handleApiError } from "@/lib/api-utils";
 
 // GET /api/conversations — List conversations
 // FARMER: only their own. AGRONOMIST/ADMIN: all in their org.
@@ -35,25 +35,24 @@ export async function GET(request: NextRequest) {
       where.title = { contains: search, mode: "insensitive" };
     }
 
-    const [conversations, total] = await Promise.all([
-      prisma.conversation.findMany({
-        where,
-        include: {
-          agent: { select: { id: true, name: true } },
-          farmer: { select: { id: true, name: true } },
-          messages: {
-            orderBy: { createdAt: "desc" },
-            take: 1,
-            select: { content: true, role: true, createdAt: true },
-          },
-          _count: { select: { messages: true } },
+    const conversations = await prisma.conversation.findMany({
+      where,
+      include: {
+        agent: { select: { id: true, name: true } },
+        farmer: { select: { id: true, name: true } },
+        farmerSystem: { select: { id: true, name: true } },
+        messages: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { content: true, role: true, createdAt: true },
         },
-        orderBy: { updatedAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.conversation.count({ where }),
-    ]);
+        _count: { select: { messages: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+      skip,
+      take: limit,
+    });
+    const total = await prisma.conversation.count({ where });
 
     // Flatten lastMessage
     const formatted = conversations.map((c) => ({
@@ -67,8 +66,7 @@ export async function GET(request: NextRequest) {
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (err) {
-    console.error("GET /api/conversations error:", err);
-    return apiError("Failed to fetch conversations", 500);
+    return await handleApiError("GET /api/conversations", err, "Failed to fetch conversations");
   }
 }
 
@@ -83,7 +81,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { agentId, title } = body;
+    const { agentId, title, farmerSystemId } = body;
 
     if (!agentId) {
       return apiError("agentId is required", 400);
@@ -104,21 +102,40 @@ export async function POST(request: NextRequest) {
       return apiError("Forbidden", 403);
     }
 
+    let validFarmerSystemId: string | null = null;
+    if (farmerSystemId) {
+      const system = await prisma.farmerSystem.findFirst({
+        where: {
+          id: farmerSystemId,
+          farmerId: session!.user.id,
+          organizationId: session!.user.organizationId,
+        },
+        select: { id: true },
+      });
+
+      if (!system) {
+        return apiError("System not found", 404);
+      }
+
+      validFarmerSystemId = system.id;
+    }
+
     const conversation = await prisma.conversation.create({
       data: {
         title: title || null,
         farmerId: session!.user.id,
         agentId,
+        farmerSystemId: validFarmerSystemId,
       },
       include: {
         agent: { select: { id: true, name: true } },
         farmer: { select: { id: true, name: true } },
+        farmerSystem: { select: { id: true, name: true } },
       },
     });
 
     return apiSuccess(conversation, 201);
   } catch (err) {
-    console.error("POST /api/conversations error:", err);
-    return apiError("Failed to create conversation", 500);
+    return await handleApiError("POST /api/conversations", err, "Failed to create conversation");
   }
 }

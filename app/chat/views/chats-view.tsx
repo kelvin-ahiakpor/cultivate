@@ -78,6 +78,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
           agentName: c.agentName,
           lastMessage: c.lastMessage,
           messageCount: c.messageCount,
+          systemName: c.systemName,
         }))
       : offlineChats.map(c => ({
           id: c.id,
@@ -85,6 +86,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
           agentName: c.agentName,
           lastMessage: c.lastMessage,
           messageCount: c.messageCount,
+          systemName: c.systemName,
         }));
 
   useEffect(() => {

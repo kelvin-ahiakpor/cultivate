@@ -149,6 +149,9 @@ model Conversation {
   agentId String
   agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
 
+  farmerSystemId String?
+  farmerSystem   FarmerSystem? @relation(fields: [farmerSystemId], references: [id], onDelete: SetNull)
+
   messages Message[]
 
   @@map("conversations")
@@ -395,6 +398,8 @@ model FarmerSystem {
 
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  conversations Conversation[]
 
   @@index([farmerId])
   @@map("farmer_systems")

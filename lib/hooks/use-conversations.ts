@@ -11,6 +11,7 @@ export interface ConversationItem {
   title: string;
   farmerName: string;
   agentName: string;
+  systemName?: string;
   /** Relative or formatted time string, e.g. "2 hours ago" */
   lastMessage: string;
   messageCount: number;
@@ -44,6 +45,7 @@ function normalize(raw: {
   title?: string | null;
   agent: { name: string };
   farmer: { name: string };
+  farmerSystem?: { name: string } | null;
   lastMessage?: { createdAt: string } | null;
   _count: { messages: number };
 }): ConversationItem {
@@ -52,6 +54,7 @@ function normalize(raw: {
     title: (raw.title || "Untitled conversation").replace(/^#+\s*/, ""),
     agentName: raw.agent.name,
     farmerName: raw.farmer.name,
+    systemName: raw.farmerSystem?.name || undefined,
     lastMessage: raw.lastMessage ? relativeTime(raw.lastMessage.createdAt) : "No messages",
     messageCount: raw._count.messages,
   };

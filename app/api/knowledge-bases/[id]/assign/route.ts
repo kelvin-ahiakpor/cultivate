@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
+import { requireAuth, hasRole, apiError, apiSuccess, handleApiError } from "@/lib/api-utils";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -26,16 +26,14 @@ export async function POST(
       return apiError("agentId is required", 400);
     }
 
-    const [doc, agent] = await Promise.all([
-      prisma.knowledgeBase.findUnique({
-        where: { id },
-        select: { id: true, organizationId: true },
-      }),
-      prisma.agent.findUnique({
-        where: { id: agentId },
-        select: { id: true, organizationId: true },
-      }),
-    ]);
+    const doc = await prisma.knowledgeBase.findUnique({
+      where: { id },
+      select: { id: true, organizationId: true },
+    });
+    const agent = await prisma.agent.findUnique({
+      where: { id: agentId },
+      select: { id: true, organizationId: true },
+    });
 
     if (!doc) {
       return apiError("Document not found", 404);
@@ -72,7 +70,6 @@ export async function POST(
 
     return apiSuccess({ message: "Document assigned to agent" }, 201);
   } catch (err) {
-    console.error("POST /api/knowledge-bases/[id]/assign error:", err);
-    return apiError("Failed to assign document", 500);
+    return await handleApiError("POST /api/knowledge-bases/[id]/assign", err, "Failed to assign document");
   }
 }

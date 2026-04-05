@@ -9,6 +9,7 @@ async function getConversationWithAuth(id: string, userId: string, organizationI
     include: {
       agent: { select: { id: true, name: true, organizationId: true } },
       farmer: { select: { id: true, name: true } },
+      farmerSystem: { select: { id: true, name: true } },
     },
   });
 

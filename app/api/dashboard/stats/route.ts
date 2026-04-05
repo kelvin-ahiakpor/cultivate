@@ -12,7 +12,7 @@
  * Phase 5 will replace those hardcoded values with a SWR call to this endpoint.
  */
 import { prisma } from "@/lib/prisma";
-import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
+import { requireAuth, hasRole, apiError, apiSuccess, handleApiError } from "@/lib/api-utils";
 
 export async function GET() {
   const { session, error } = await requireAuth();
@@ -26,24 +26,21 @@ export async function GET() {
 
   try {
     // Run all three counts in parallel — they're independent queries
-    const [activeAgents, knowledgeDocs, pendingFlags] = await Promise.all([
-      prisma.agent.count({
-        where: { organizationId: orgId, isActive: true },
-      }),
-      prisma.knowledgeBase.count({
-        where: { organizationId: orgId },
-      }),
-      prisma.flaggedQuery.count({
-        where: {
-          status: "PENDING",
-          agent: { organizationId: orgId },
-        },
-      }),
-    ]);
+    const activeAgents = await prisma.agent.count({
+      where: { organizationId: orgId, isActive: true },
+    });
+    const knowledgeDocs = await prisma.knowledgeBase.count({
+      where: { organizationId: orgId },
+    });
+    const pendingFlags = await prisma.flaggedQuery.count({
+      where: {
+        status: "PENDING",
+        agent: { organizationId: orgId },
+      },
+    });
 
     return apiSuccess({ activeAgents, knowledgeDocs, pendingFlags });
   } catch (err) {
-    console.error("GET /api/dashboard/stats error:", err);
-    return apiError("Failed to fetch dashboard stats", 500);
+    return await handleApiError("GET /api/dashboard/stats", err, "Failed to fetch dashboard stats");
   }
 }

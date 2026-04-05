@@ -28,8 +28,8 @@ import { NextRequest } from "next/server";
 
 // Raise Vercel's function timeout for this route — Claude SSE streams can exceed the 10s default
 export const maxDuration = 60;
-import { prisma } from "@/lib/prisma";
-import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
+import { prisma, recoverFromDatabaseError } from "@/lib/prisma";
+import { requireAuth, hasRole, apiError, apiSuccess, handleApiError } from "@/lib/api-utils";
 import { chatStream, mastraStream, generateTitle } from "@/lib/claude";
 import { scoreConfidence, shouldFlag } from "@/lib/confidence";
 import { calculateCost } from "@/lib/cost";
@@ -123,8 +123,7 @@ export async function GET(
       hasMore: messages.length === limit,
     });
   } catch (err) {
-    console.error("GET /api/conversations/[id]/messages error:", err);
-    return apiError("Failed to fetch messages", 500);
+    return await handleApiError("GET /api/conversations/[id]/messages", err, "Failed to fetch messages");
   }
 }
 
@@ -216,37 +215,40 @@ export async function POST(
       },
     });
 
-    let uploadedAttachments: Array<{ fileUrl: string; mimeType: string }> = [];
+    const uploadedAttachments: Array<{ fileName: string; fileUrl: string; mimeType: string; attachmentType: "IMAGE" }> = [];
 
     try {
       if (imageFiles.length > 0) {
         console.log(`[Conversation ${id}] Step 1.5: Uploading ${imageFiles.length} image attachment(s)...`);
-        uploadedAttachments = await Promise.all(
-          imageFiles.map(async (image, index) => {
-            const arrayBuffer = await image.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-            const fileUrl = await uploadChatImage(
-              buffer,
-              image.name,
-              image.type,
-              conversation.agent.organizationId,
-              userMessage.id,
-              index
-            );
+        for (const [index, image] of imageFiles.entries()) {
+          const arrayBuffer = await image.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          const fileUrl = await uploadChatImage(
+            buffer,
+            image.name,
+            image.type,
+            conversation.agent.organizationId,
+            userMessage.id,
+            index
+          );
 
-            await prisma.messageAttachment.create({
-              data: {
-                messageId: userMessage.id,
-                fileName: image.name,
-                fileUrl,
-                mimeType: image.type,
-                attachmentType: "IMAGE",
-              },
-            });
+          await prisma.messageAttachment.create({
+            data: {
+              messageId: userMessage.id,
+              fileName: image.name,
+              fileUrl,
+              mimeType: image.type,
+              attachmentType: "IMAGE",
+            },
+          });
 
-            return { fileUrl, mimeType: image.type };
-          })
-        );
+          uploadedAttachments.push({
+            fileName: image.name,
+            fileUrl,
+            mimeType: image.type,
+            attachmentType: "IMAGE",
+          });
+        }
       }
     } catch (attachmentError) {
       await prisma.message.delete({ where: { id: userMessage.id } }).catch(() => undefined);
@@ -333,7 +335,13 @@ export async function POST(
         try {
           // Send user message event first
           controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ type: "user_message", message: userMessage })}\n\n`)
+            encoder.encode(`data: ${JSON.stringify({
+              type: "user_message",
+              message: {
+                ...userMessage,
+                attachments: uploadedAttachments,
+              },
+            })}\n\n`)
           );
 
           // Stream assistant response chunks
@@ -480,6 +488,7 @@ export async function POST(
     });
   } catch (err) {
     console.error("POST /api/conversations/[id]/messages error:", err);
+    const databaseBusy = await recoverFromDatabaseError(err);
 
     // Save error message to DB so conversation history is complete
     // This catches errors that happen BEFORE streaming starts (e.g., RAG failures)
@@ -488,7 +497,9 @@ export async function POST(
       const isBillingError = errorMessage.includes("credit balance") || errorMessage.includes("billing");
       const userFacingError = isBillingError
         ? "The AI service is temporarily unavailable due to billing limits. Please contact support."
-        : "Sorry, something went wrong. Please try again.";
+        : databaseBusy
+          ? "Database is busy right now. Please retry in a moment."
+          : "Sorry, something went wrong. Please try again.";
 
       await prisma.message.create({
         data: {
@@ -503,6 +514,9 @@ export async function POST(
       // Don't throw - we still want to return the API error
     }
 
-    return apiError("Failed to send message", 500);
+    return apiError(
+      databaseBusy ? "Database is busy right now. Please retry in a moment." : "Failed to send message",
+      databaseBusy ? 503 : 500
+    );
   }
 }

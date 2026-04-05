@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
+import { requireAuth, hasRole, apiError, apiSuccess, handleApiError } from "@/lib/api-utils";
 import { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -78,24 +78,22 @@ export async function GET(request: NextRequest) {
 
     const orgId = session!.user.organizationId;
 
-    const [documents, total] = await Promise.all([
-      prisma.knowledgeBase.findMany({
-        where,
-        include: {
-          agents: {
-            include: {
-              agent: { select: { id: true, name: true } },
-            },
-            orderBy: { isPrimary: "desc" }, // Primary first
+    const documents = await prisma.knowledgeBase.findMany({
+      where,
+      include: {
+        agents: {
+          include: {
+            agent: { select: { id: true, name: true } },
           },
-          agronomist: { select: { id: true, name: true } },
+          orderBy: { isPrimary: "desc" },
         },
-        orderBy: { uploadedAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.knowledgeBase.count({ where }),
-    ]);
+        agronomist: { select: { id: true, name: true } },
+      },
+      orderBy: { uploadedAt: "desc" },
+      skip,
+      take: limit,
+    });
+    const total = await prisma.knowledgeBase.count({ where });
 
     const referenceCounts = await getReferencedInChatsCounts(
       documents.map((doc) => doc.id),
@@ -112,7 +110,6 @@ export async function GET(request: NextRequest) {
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (err) {
-    console.error("GET /api/knowledge-bases error:", err);
-    return apiError("Failed to fetch knowledge bases", 500);
+    return await handleApiError("GET /api/knowledge-bases", err, "Failed to fetch knowledge bases");
   }
 }

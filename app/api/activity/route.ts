@@ -21,7 +21,7 @@
  */
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
+import { requireAuth, hasRole, apiError, apiSuccess, handleApiError } from "@/lib/api-utils";
 
 interface ActivityItem {
   type: string;
@@ -48,75 +48,68 @@ export async function GET(request: NextRequest) {
   since.setDate(since.getDate() - days);
 
   try {
-    // Run all queries in parallel — they're independent
-    const [flaggedQueries, conversations, agents, knowledgeBases] = await Promise.all([
-      // Flagged queries: new flags + reviewed flags
-      prisma.flaggedQuery.findMany({
-        where: {
-          agent: { organizationId: orgId },
-          OR: [
-            { createdAt: { gte: since } },
-            { reviewedAt: { gte: since } },
-          ],
+    const flaggedQueries = await prisma.flaggedQuery.findMany({
+      where: {
+        agent: { organizationId: orgId },
+        OR: [
+          { createdAt: { gte: since } },
+          { reviewedAt: { gte: since } },
+        ],
+      },
+      include: {
+        message: {
+          select: { content: true },
         },
-        include: {
-          message: {
-            select: { content: true },
-          },
-          agent: {
-            select: { name: true },
-          },
-          agronomist: {
-            select: { name: true },
-          },
+        agent: {
+          select: { name: true },
         },
-        orderBy: { createdAt: "desc" },
-      }),
+        agronomist: {
+          select: { name: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-      // New conversations started
-      prisma.conversation.findMany({
-        where: {
-          createdAt: { gte: since },
-          agent: { organizationId: orgId },
-        },
-        include: {
-          farmer: { select: { name: true } },
-          agent: { select: { name: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      }),
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        createdAt: { gte: since },
+        agent: { organizationId: orgId },
+      },
+      include: {
+        farmer: { select: { name: true } },
+        agent: { select: { name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-      // New agents created
-      prisma.agent.findMany({
-        where: {
-          organizationId: orgId,
-          createdAt: { gte: since },
-        },
-        include: {
-          _count: { select: { knowledgeBases: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      }),
+    const agents = await prisma.agent.findMany({
+      where: {
+        organizationId: orgId,
+        createdAt: { gte: since },
+      },
+      include: {
+        _count: { select: { knowledgeBases: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-      // Knowledge bases uploaded
-      prisma.knowledgeBase.findMany({
-        where: {
-          organizationId: orgId,
-          uploadedAt: { gte: since },
-        },
-        include: {
-          agents: {
-            include: {
-              agent: { select: { name: true } },
-            },
-            where: { isPrimary: true },
-            take: 1,
+    const knowledgeBases = await prisma.knowledgeBase.findMany({
+      where: {
+        organizationId: orgId,
+        uploadedAt: { gte: since },
+      },
+      include: {
+        agents: {
+          include: {
+            agent: { select: { name: true } },
           },
-          agronomist: { select: { name: true } },
+          where: { isPrimary: true },
+          take: 1,
         },
-        orderBy: { uploadedAt: "desc" },
-      }),
-    ]);
+        agronomist: { select: { name: true } },
+      },
+      orderBy: { uploadedAt: "desc" },
+    });
 
     // Merge all activity into a single sorted list
     const activities: ActivityItem[] = [];
@@ -198,7 +191,6 @@ export async function GET(request: NextRequest) {
 
     return apiSuccess({ activities: limited, total: activities.length });
   } catch (err) {
-    console.error("GET /api/activity error:", err);
-    return apiError("Failed to fetch activity feed", 500);
+    return await handleApiError("GET /api/activity", err, "Failed to fetch activity feed");
   }
 }

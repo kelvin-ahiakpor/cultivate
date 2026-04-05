@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { UserRole } from "@prisma/client";
+import { recoverFromDatabaseError } from "@/lib/prisma";
 
 /**
  * Get the authenticated session. Returns null if not logged in.
@@ -40,4 +41,18 @@ export function apiError(message: string, status: number) {
  */
 export function apiSuccess(data: unknown, status = 200) {
   return NextResponse.json(data, { status });
+}
+
+export async function handleApiError(
+  context: string,
+  error: unknown,
+  fallbackMessage: string
+) {
+  console.error(`${context}:`, error);
+
+  if (await recoverFromDatabaseError(error)) {
+    return apiError("Database is busy right now. Please retry in a moment.", 503);
+  }
+
+  return apiError(fallbackMessage, 500);
 }
