@@ -410,7 +410,8 @@ export async function POST(
           // 12. Auto-generate title if first message OR if title generation failed before
           const needsTitle = !conversation.title;
           if (needsTitle) {
-            const title = trimmedContent.length > 0 ? await generateTitle(trimmedContent) : "Image consultation";
+            const rawTitle = trimmedContent.length > 0 ? await generateTitle(trimmedContent) : "Image consultation";
+            const title = rawTitle.replace(/^#+\s*/, "").trim();
             await prisma.conversation.update({
               where: { id },
               data: { title },

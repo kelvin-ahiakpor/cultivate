@@ -74,7 +74,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
     : isOnline
       ? apiConversations.conversations.map(c => ({
           id: c.id,
-          title: c.title.replace(/^#+\s*/, ""),
+          title: c.title,
           agentName: c.agentName,
           lastMessage: c.lastMessage,
           messageCount: c.messageCount,

@@ -214,7 +214,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
         if (cancelled) return;
         const cached = list.find(c => c.id === initialConversationId);
         if (cached) {
-          setConversationTitle(cached.title.replace(/^#+\s*/, "").trim());
+          setConversationTitle(cached.title);
           setConversationSystem(cached.agentName);
           setSelectedChatId(initialConversationId);
         }
@@ -230,7 +230,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       fetch(`/api/conversations/${initialConversationId}/messages`).then(r => r.json()),
     ]).then(([convData, msgData]) => {
       if (cancelled) return;
-      setConversationTitle(convData?.title ? convData.title.replace(/^#+\s*/, "").trim() : null);
+      setConversationTitle(convData?.title || null);
       setConversationSystem(convData?.agent?.name || null);
       setConversationSystem(convData?.farmerSystem?.name || null);
       setConversationSystemId(convData?.farmerSystem?.id || null);
@@ -684,9 +684,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
               // Invalidate ALL conversation SWR keys so sidebar refreshes too
               globalMutate(key => typeof key === "string" && key.startsWith("/api/conversations"));
             } else if (event.type === "title") {
-              // Strip markdown heading prefix (e.g. "# Title" → "Title") and store
-              const cleanTitle = (event.title as string || "").replace(/^#+\s*/, "").trim();
-              setConversationTitle(cleanTitle);
+              setConversationTitle(event.title as string || null);
               // Refresh sidebar so it shows the new title
               globalMutate(key => typeof key === "string" && key.startsWith("/api/conversations"));
             } else if (event.type === "error") {
