@@ -3,6 +3,9 @@
 # AI assistant context (local only)
 CLAUDE.md
 
+# claude worktrees
+.claude/*
+
 # dependencies
 /node_modules
 /.pnp
