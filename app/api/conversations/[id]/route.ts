@@ -2,6 +2,11 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/api-utils";
 
+function normalizeConversationTitle(title: string | null | undefined) {
+  if (!title) return title ?? null;
+  return title.replace(/^#+\s*/, "").trim();
+}
+
 // Helper: check if user can access this conversation
 async function getConversationWithAuth(id: string, userId: string, organizationId: string, role: string) {
   const conversation = await prisma.conversation.findUnique({
@@ -44,7 +49,10 @@ export async function GET(
   if (result.error === "not_found") return apiError("Conversation not found", 404);
   if (result.error === "forbidden") return apiError("Forbidden", 403);
 
-  return apiSuccess(result.conversation);
+  return apiSuccess({
+    ...result.conversation,
+    title: normalizeConversationTitle(result.conversation?.title),
+  });
 }
 
 // PUT /api/conversations/:id — Rename conversation
@@ -66,13 +74,17 @@ export async function PUT(
   try {
     const body = await request.json();
     const { title } = body;
+    const normalizedTitle = normalizeConversationTitle(title);
 
     const conversation = await prisma.conversation.update({
       where: { id },
-      data: { title },
+      data: { title: normalizedTitle },
     });
 
-    return apiSuccess(conversation);
+    return apiSuccess({
+      ...conversation,
+      title: normalizeConversationTitle(conversation.title),
+    });
   } catch (err) {
     console.error("PUT /api/conversations/[id] error:", err);
     return apiError("Failed to update conversation", 500);

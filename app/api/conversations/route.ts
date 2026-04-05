@@ -2,6 +2,11 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess, handleApiError } from "@/lib/api-utils";
 
+function normalizeConversationTitle(title: string | null | undefined) {
+  if (!title) return title ?? null;
+  return title.replace(/^#+\s*/, "").trim();
+}
+
 // GET /api/conversations — List conversations
 // FARMER: only their own. AGRONOMIST/ADMIN: all in their org.
 export async function GET(request: NextRequest) {
@@ -57,6 +62,7 @@ export async function GET(request: NextRequest) {
     // Flatten lastMessage
     const formatted = conversations.map((c) => ({
       ...c,
+      title: normalizeConversationTitle(c.title),
       lastMessage: c.messages[0] || null,
       messages: undefined,
     }));
@@ -82,6 +88,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { agentId, title, farmerSystemId } = body;
+    const normalizedTitle = normalizeConversationTitle(title);
 
     if (!agentId) {
       return apiError("agentId is required", 400);
@@ -122,7 +129,7 @@ export async function POST(request: NextRequest) {
 
     const conversation = await prisma.conversation.create({
       data: {
-        title: title || null,
+        title: normalizedTitle,
         farmerId: session!.user.id,
         agentId,
         farmerSystemId: validFarmerSystemId,
@@ -134,7 +141,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return apiSuccess(conversation, 201);
+    return apiSuccess({
+      ...conversation,
+      title: normalizeConversationTitle(conversation.title),
+    }, 201);
   } catch (err) {
     return await handleApiError("POST /api/conversations", err, "Failed to create conversation");
   }
