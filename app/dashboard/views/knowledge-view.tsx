@@ -72,6 +72,7 @@ export default function KnowledgeView({
   const [duplicateDoc, setDuplicateDoc] = useState<Pick<KnowledgeDoc, "id" | "title" | "fileName" | "agentId" | "agentName"> | null>(null);
   const [assigningDuplicate, setAssigningDuplicate] = useState(false);
   const [showAllAssignedAgents, setShowAllAssignedAgents] = useState(false);
+  const [processingPollUntil, setProcessingPollUntil] = useState<number | null>(null);
 
   const isOnline = useOnlineStatus();
   const [offlineDocs, setOfflineDocs] = useState<KnowledgeDoc[]>([]);
@@ -84,15 +85,16 @@ export default function KnowledgeView({
     itemsPerPage,
     demoMode
   );
+  const { documents: onlineDocuments, mutate: mutateKnowledgeBases } = apiData;
 
   // Fetch real agents for filter dropdown and upload form — also disabled in demo
   const { agents: realAgents } = useAgents("", 1, 100, demoMode);
 
   // Write-through: cache documents when online data arrives
   useEffect(() => {
-    if (demoMode || !isOnline || apiData.documents.length === 0) return;
-    saveAgroCache("knowledge_bases", apiData.documents).catch(() => {});
-  }, [apiData.documents, isOnline, demoMode]);
+    if (demoMode || !isOnline || onlineDocuments.length === 0) return;
+    saveAgroCache("knowledge_bases", onlineDocuments).catch(() => {});
+  }, [onlineDocuments, isOnline, demoMode]);
 
   // Read from IndexedDB when offline
   useEffect(() => {
@@ -103,7 +105,7 @@ export default function KnowledgeView({
   // Demo: filter mockDocuments client-side. Real online: API filtered. Real offline: IndexedDB filtered.
   const sourceData: KnowledgeDoc[] = demoMode
     ? (mockDocuments as KnowledgeDoc[])
-    : isOnline ? apiData.documents : offlineDocs;
+    : isOnline ? onlineDocuments : offlineDocs;
 
   const filteredDocs: KnowledgeDoc[] = demoMode
     ? sourceData.filter((doc) => {
@@ -115,7 +117,7 @@ export default function KnowledgeView({
         return matchesAgent && matchesSearch;
       })
     : isOnline
-      ? apiData.documents
+      ? onlineDocuments
       : offlineDocs.filter((doc) => {
           const matchesAgent = !agentFilter || doc.agentName === agentFilter;
           const matchesSearch =
@@ -191,15 +193,32 @@ export default function KnowledgeView({
 
   useEffect(() => {
     if (!viewPanelDoc || demoMode) return;
-    const latestDoc = apiData.documents.find((doc) => doc.id === viewPanelDoc.id);
+    const latestDoc = onlineDocuments.find((doc) => doc.id === viewPanelDoc.id);
     if (latestDoc) {
       setViewPanelDoc(latestDoc);
     }
-  }, [apiData.documents, viewPanelDoc, demoMode]);
+  }, [onlineDocuments, viewPanelDoc, demoMode]);
 
   useEffect(() => {
     setShowAllAssignedAgents(false);
   }, [viewPanelDoc?.id]);
+
+  useEffect(() => {
+    if (demoMode || !isOnline) return;
+
+    const hasProcessingDocs = onlineDocuments.some((doc) => doc.processingState === "PROCESSING");
+    const shouldKeepPolling = Boolean(processingPollUntil && Date.now() < processingPollUntil);
+
+    if (!hasProcessingDocs && !shouldKeepPolling) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      void mutateKnowledgeBases();
+    }, 2500);
+
+    return () => window.clearInterval(interval);
+  }, [demoMode, isOnline, mutateKnowledgeBases, onlineDocuments, processingPollUntil]);
 
   const getPublicDocumentUrl = (doc: KnowledgeDoc) => doc.fileUrl;
 
@@ -243,7 +262,7 @@ export default function KnowledgeView({
     setDeleting(true);
     try {
       await deleteDocument(deleteModalDoc.id);
-      apiData.mutate();
+      mutateKnowledgeBases();
     } catch (e) {
       console.error("Delete failed:", e);
     } finally {
@@ -284,7 +303,7 @@ export default function KnowledgeView({
     setRenaming(true);
     try {
       await renameDocument(doc.id, trimmedTitle);
-      await apiData.mutate();
+      await mutateKnowledgeBases();
       notify.success("Document name updated.");
 
       if (viewPanelDoc?.id === doc.id) {
@@ -428,7 +447,7 @@ export default function KnowledgeView({
     setAssigningDuplicate(true);
     try {
       const result = await assignDocumentToAgent(duplicateDoc.id, uploadAgentId);
-      await apiData.mutate();
+      await mutateKnowledgeBases();
       notify.success(
         typeof result?.message === "string"
           ? result.message
@@ -461,7 +480,8 @@ export default function KnowledgeView({
       if (uploadDescription.trim()) fd.append("description", uploadDescription.trim());
       fd.append("file", uploadFile);
       await uploadDocument(fd);
-      void apiData.mutate();
+      setProcessingPollUntil(Date.now() + 120000);
+      void mutateKnowledgeBases();
       notify.success("Document uploaded. Processing has started in the background.");
       handleCloseUploadModal();
     } catch (e) {
@@ -482,7 +502,7 @@ export default function KnowledgeView({
   };
 
   // Alphabetically sorted docs for selector modal (demo: mockDocuments, real: current page)
-  const sortedDocuments = [...(demoMode ? (mockDocuments as KnowledgeDoc[]) : apiData.documents)]
+  const sortedDocuments = [...(demoMode ? (mockDocuments as KnowledgeDoc[]) : onlineDocuments)]
     .sort((a, b) => a.title.localeCompare(b.title));
 
   // Filtered docs for selector modal search
