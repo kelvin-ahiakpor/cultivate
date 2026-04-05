@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Bot, Plus, Search, MoreHorizontal, Power, Pencil, Trash2, AlertTriangle, PanelLeft, Eye, Loader2, X, WifiOff } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { GlassCircleButton } from "@/components/cultivate-ui";
+import { GlassCircleButton, AgentListSkeleton } from "@/components/cultivate-ui";
 import { useAgents, createAgent, toggleAgentStatus, deleteAgent, type Agent } from "@/lib/hooks/use-agents";
 import { useOnlineStatus } from "@/lib/hooks/use-online-status";
 import { saveAgroCache, getAgroCache } from "@/lib/offline-storage";
@@ -255,9 +255,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
       {/* Part 2: Scrollable card list */}
       <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar scrollbar-outset">
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 text-cultivate-green-light animate-spin" />
-          </div>
+          <AgentListSkeleton count={4} />
         ) : isError ? (
           <div className="bg-cultivate-bg-elevated rounded-xl p-8 text-center lg:mr-0 mr-3">
             <p className="text-sm text-red-400">Failed to load agents. Please try again.</p>

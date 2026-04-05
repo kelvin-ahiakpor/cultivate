@@ -131,6 +131,14 @@ export { WaveIcon, AnimatedDots } from "@/components/wave-icon";
 
 export { CabbageIcon, PaperPlaneIcon, SproutIcon, SEND_ICONS } from "@/components/send-icons";
 
+export {
+  Skeleton,
+  AgentListSkeleton,
+  DocumentListSkeleton,
+  FlaggedListSkeleton,
+  ConversationListSkeleton,
+} from "@/components/skeleton";
+
 // ============================================================================
 // 3. SHADCN PRIMITIVES (no restyling needed)
 // ============================================================================

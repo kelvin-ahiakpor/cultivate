@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageCircle, Search, PanelLeft, Loader2 } from "lucide-react";
-import { GlassCircleButton } from "@/components/cultivate-ui";
+import { MessageCircle, Search, PanelLeft } from "lucide-react";
+import { GlassCircleButton, ConversationListSkeleton } from "@/components/cultivate-ui";
 import ConversationView, { type ConversationMessage } from "@/components/conversation-view";
 import { useConversations, type ConversationItem } from "@/lib/hooks/use-conversations";
 import { DEMO_DASHBOARD_CHATS, DEMO_FARMER_CONVO_MESSAGES } from "@/lib/demo-data";
@@ -220,8 +220,8 @@ export default function ChatsView({
 
       <div className="flex-1 overflow-y-auto min-h-0 pb-6 thin-scrollbar scrollbar-outset">
         {!demoMode && apiData.isLoading && (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-6 h-6 text-cultivate-text-tertiary animate-spin" />
+          <div className="mr-3">
+            <ConversationListSkeleton count={6} />
           </div>
         )}
 

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Flag, Search, CheckCircle, ChevronDown, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft, Loader2, Copy, WifiOff } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { GlassCircleButton, SproutIcon } from "@/components/cultivate-ui";
+import { GlassCircleButton, SproutIcon, FlaggedListSkeleton } from "@/components/cultivate-ui";
 import { useFlaggedQueries, reviewFlaggedQuery, type FlaggedQueryItem as FlaggedQuery } from "@/lib/hooks/use-flagged-queries";
 import { useOnlineStatus } from "@/lib/hooks/use-online-status";
 import { saveAgroCache, getAgroCache } from "@/lib/offline-storage";
@@ -453,8 +453,13 @@ export default function FlaggedView({
 
       {/* Part 2: Scrollable card list */}
       <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar scrollbar-outset pb-6">
+      {!demoMode && isOnline && apiData.isLoading && (
+        <div className="mr-3">
+          <FlaggedListSkeleton count={5} />
+        </div>
+      )}
       {/* Flagged Query Cards */}
-      <div className="space-y-3 mr-3">
+      <div className={`space-y-3 mr-3 ${!demoMode && isOnline && apiData.isLoading ? "hidden" : ""}`}>
         {paginatedQueries.map((query) => (
           <div
             key={query.id}
