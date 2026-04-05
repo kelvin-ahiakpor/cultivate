@@ -214,7 +214,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
         if (cancelled) return;
         const cached = list.find(c => c.id === initialConversationId);
         if (cached) {
-          setConversationTitle(cached.title);
+          setConversationTitle(cached.title.replace(/^#+\s*/, "").trim());
           setConversationSystem(cached.agentName);
           setSelectedChatId(initialConversationId);
         }
@@ -230,7 +230,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       fetch(`/api/conversations/${initialConversationId}/messages`).then(r => r.json()),
     ]).then(([convData, msgData]) => {
       if (cancelled) return;
-      setConversationTitle(convData?.title || null);
+      setConversationTitle(convData?.title ? convData.title.replace(/^#+\s*/, "").trim() : null);
       setConversationSystem(convData?.agent?.name || null);
       setConversationSystem(convData?.farmerSystem?.name || null);
       setConversationSystemId(convData?.farmerSystem?.id || null);
