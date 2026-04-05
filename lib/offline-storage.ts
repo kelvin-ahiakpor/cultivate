@@ -28,6 +28,7 @@ export interface CachedConversation {
   systemName?: string;
   lastMessage: string;
   messageCount: number;
+  systemName?: string | null;
   /** Cached timestamp (ms) — used for sorting + pruning */
   cachedAt: number;
 }

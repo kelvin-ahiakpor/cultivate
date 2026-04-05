@@ -51,18 +51,29 @@ async function ensureBucket(
   supabase: SupabaseClient,
   bucketName: string,
   allowedMimeTypes: string[],
-  fileSizeLimit: number
+  fileSizeLimit: number,
+  isPublic: boolean
 ) {
   const { data: buckets } = await supabase.storage.listBuckets();
-  const exists = buckets?.some((b: { name: string }) => b.name === bucketName);
+  const existingBucket = buckets?.find((b: { name: string; public?: boolean }) => b.name === bucketName);
+  const exists = !!existingBucket;
   if (!exists) {
     const { error } = await supabase.storage.createBucket(bucketName, {
-      public: true, // public URLs work without auth
+      public: isPublic,
       allowedMimeTypes,
       fileSizeLimit,
     });
     if (error && !error.message.includes("already exists")) {
       throw new Error(`Failed to create storage bucket: ${error.message}`);
+    }
+  } else if (existingBucket?.public !== isPublic) {
+    const { error } = await supabase.storage.updateBucket(bucketName, {
+      public: isPublic,
+      allowedMimeTypes,
+      fileSizeLimit,
+    });
+    if (error) {
+      throw new Error(`Failed to update storage bucket: ${error.message}`);
     }
   }
 }
@@ -82,7 +93,8 @@ export async function uploadFile(
     supabase,
     KNOWLEDGE_BUCKET,
     ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"],
-    52428800
+    52428800,
+    true
   );
   const path = getStoragePath(organizationId, knowledgeBaseId, fileName);
 
@@ -145,30 +157,35 @@ export async function downloadFile(
 function getChatImagePath(
   organizationId: string,
   messageId: string,
-  fileName: string,
-  index: number
+  attachmentId: string,
+  fileName: string
 ): string {
   const extension = getFileExtension(fileName);
-  return `${organizationId}/messages/${messageId}/image-${index + 1}.${extension}`;
+  return `${organizationId}/messages/${messageId}/${attachmentId}.${extension}`;
+}
+
+export function getMessageAttachmentUrl(attachmentId: string): string {
+  return `/api/message-attachments/${attachmentId}`;
 }
 
 export async function uploadChatImage(
   file: Buffer,
+  attachmentId: string,
   fileName: string,
   contentType: string,
   organizationId: string,
-  messageId: string,
-  index: number
-): Promise<string> {
+  messageId: string
+): Promise<{ storagePath: string }> {
   const supabase = getClient();
   await ensureBucket(
     supabase,
     CHAT_IMAGE_BUCKET,
     ["image/jpeg", "image/png", "image/webp"],
-    10485760
+    10485760,
+    false
   );
 
-  const path = getChatImagePath(organizationId, messageId, fileName, index);
+  const path = getChatImagePath(organizationId, messageId, attachmentId, fileName);
 
   const { error } = await supabase.storage
     .from(CHAT_IMAGE_BUCKET)
@@ -181,6 +198,21 @@ export async function uploadChatImage(
     throw new Error(`Failed to upload chat image: ${error.message}`);
   }
 
-  const { data } = supabase.storage.from(CHAT_IMAGE_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  return { storagePath: path };
+}
+
+export async function createSignedChatImageUrl(
+  storagePath: string,
+  expiresInSeconds = 600
+): Promise<string> {
+  const supabase = getClient();
+  const { data, error } = await supabase.storage
+    .from(CHAT_IMAGE_BUCKET)
+    .createSignedUrl(storagePath, expiresInSeconds);
+
+  if (error || !data?.signedUrl) {
+    throw new Error(`Failed to create signed chat image URL: ${error?.message || "unknown error"}`);
+  }
+
+  return data.signedUrl;
 }

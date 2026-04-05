@@ -21,7 +21,7 @@ export interface Chat {
   agentName: string;
   lastMessage: string;
   messageCount: number;
-  systemName?: string;
+  systemName?: string | null;
 }
 
 // Demo mock data — sourced from lib/demo-data.ts
@@ -34,7 +34,7 @@ const getMockConversationMessages = (chatId: string): ChatMessage[] => {
 };
 
 interface ChatsViewProps {
-  onChatSelect?: (chatId: string | null, title?: string, systemName?: string) => void;
+  onChatSelect?: (chatId: string | null, title?: string, systemName?: string | null) => void;
   initialChatId?: string | null;
   onChatOpened?: () => void;
   onConversationOpen?: (isOpen: boolean) => void;

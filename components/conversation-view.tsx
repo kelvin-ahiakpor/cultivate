@@ -100,7 +100,7 @@ export interface InputProps {
   setShowAgentMenu: (v: boolean) => void;
   isStreaming: boolean;
   pendingImages: PendingImageAttachment[];
-  onSelectImages: (files: FileList | File[]) => void;
+  onSelectImages: (files: FileList | File[]) => void | Promise<void>;
   onRemovePendingImage: (id: string) => void;
   // Translation
   selectedLanguage: string;
@@ -256,7 +256,7 @@ export default function ConversationView({
             key={attachment.id}
             href={attachment.fileUrl}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="block overflow-hidden rounded-xl border border-cultivate-border-element bg-cultivate-bg-main"
           >
             <img

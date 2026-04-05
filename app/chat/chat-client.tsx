@@ -377,7 +377,36 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
     });
   };
 
-  const handleSelectImages = (files: FileList | File[]) => {
+  const convertImageToWebp = async (file: File): Promise<File> => {
+    const imageBitmap = await createImageBitmap(file);
+    const maxDimension = 1600;
+    const scale = Math.min(1, maxDimension / Math.max(imageBitmap.width, imageBitmap.height));
+    const width = Math.max(1, Math.round(imageBitmap.width * scale));
+    const height = Math.max(1, Math.round(imageBitmap.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas not available for image processing");
+    ctx.drawImage(imageBitmap, 0, 0, width, height);
+    imageBitmap.close();
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((nextBlob) => {
+        if (nextBlob) resolve(nextBlob);
+        else reject(new Error("Failed to encode image"));
+      }, "image/webp", 0.82);
+    });
+
+    const baseName = file.name.replace(/\.[^.]+$/, "") || "image";
+    return new File([blob], `${baseName}.webp`, {
+      type: "image/webp",
+      lastModified: Date.now(),
+    });
+  };
+
+  const handleSelectImages = async (files: FileList | File[]) => {
     const requestedFiles = Array.from(files);
     const nextFiles = requestedFiles.filter((file) => ["image/jpeg", "image/png", "image/webp"].includes(file.type));
     if (nextFiles.length === 0) {
@@ -394,13 +423,25 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       return;
     }
 
-    const nextImages = nextFiles.map((file) => ({
-      id: genId(),
-      file,
-      previewUrl: URL.createObjectURL(file),
-    }));
+    try {
+      const convertedFiles = await Promise.all(nextFiles.map(async (file) => {
+        try {
+          return await convertImageToWebp(file);
+        } catch {
+          return file;
+        }
+      }));
 
-    setPendingImages((prev) => [...prev, ...nextImages]);
+      const nextImages = convertedFiles.map((file) => ({
+        id: genId(),
+        file,
+        previewUrl: URL.createObjectURL(file),
+      }));
+
+      setPendingImages((prev) => [...prev, ...nextImages]);
+    } catch (error) {
+      notify.error(error instanceof Error ? error.message : "Failed to process images.");
+    }
   };
 
   const handleRemovePendingImage = (id: string) => {
@@ -450,7 +491,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       event.preventDefault();
       globalDragCounterRef.current = 0;
       setIsGlobalImageDragActive(false);
-      handleSelectImages(event.dataTransfer.files);
+      void handleSelectImages(event.dataTransfer.files);
     };
 
     window.addEventListener("dragenter", handleWindowDragEnter);
@@ -563,7 +604,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
     e.preventDefault();
     setIsDraggingWelcomeImages(false);
     if (!e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
-    handleSelectImages(e.dataTransfer.files);
+    void handleSelectImages(e.dataTransfer.files);
   };
 
   const handleSend = async () => {
@@ -716,7 +757,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   };
 
   // Load an existing conversation into the main chat view (used by sidebar click + ChatsView selection)
-  const loadExistingConversation = async (chatId: string, chatTitle: string, systemName?: string) => {
+  const loadExistingConversation = async (chatId: string, chatTitle: string, systemName?: string | null) => {
     setCurrentConversationId(chatId);
     setConversationTitle(chatTitle || null);
     setConversationSystem(systemName || null);
@@ -1397,7 +1438,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                           className="hidden"
                           onChange={(e) => {
                             if (!e.target.files || e.target.files.length === 0) return;
-                            handleSelectImages(e.target.files);
+                            void handleSelectImages(e.target.files);
                             e.target.value = "";
                           }}
                         />

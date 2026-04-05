@@ -34,10 +34,32 @@ import { chatStream, mastraStream, generateTitle } from "@/lib/claude";
 import { scoreConfidence, shouldFlag } from "@/lib/confidence";
 import { calculateCost } from "@/lib/cost";
 import { retrieveContext } from "@/lib/mastra-rag"; // NOW USES MASTRA RAG
-import { uploadChatImage } from "@/lib/supabase-storage";
+import { createSignedChatImageUrl, getMessageAttachmentUrl, uploadChatImage } from "@/lib/supabase-storage";
 
 const MAX_IMAGE_ATTACHMENTS = 3;
 const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+function serializeAttachment(attachment: {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  storagePath?: string | null;
+  mimeType: string;
+  attachmentType: "IMAGE";
+  width?: number | null;
+  height?: number | null;
+}) {
+  return {
+    id: attachment.id,
+    fileName: attachment.fileName,
+    fileUrl: attachment.storagePath ? getMessageAttachmentUrl(attachment.id) : attachment.fileUrl,
+    mimeType: attachment.mimeType,
+    attachmentType: attachment.attachmentType,
+    width: attachment.width ?? null,
+    height: attachment.height ?? null,
+  };
+}
+
 
 // GET /api/conversations/:id/messages — List messages (cursor-based pagination)
 export async function GET(
@@ -101,6 +123,7 @@ export async function GET(
             id: true,
             fileName: true,
             fileUrl: true,
+            storagePath: true,
             mimeType: true,
             attachmentType: true,
             width: true,
@@ -115,6 +138,7 @@ export async function GET(
     // Transform to include isFlagged boolean
     const messagesWithFlags = messages.map(msg => ({
       ...msg,
+      attachments: msg.attachments.map(serializeAttachment),
       isFlagged: !!msg.flaggedQuery,
     }));
 
@@ -215,38 +239,45 @@ export async function POST(
       },
     });
 
-    const uploadedAttachments: Array<{ fileName: string; fileUrl: string; mimeType: string; attachmentType: "IMAGE" }> = [];
+    const uploadedAttachments: Array<{ id: string; fileName: string; fileUrl: string; storagePath?: string | null; mimeType: string; attachmentType: "IMAGE"; width?: number | null; height?: number | null }> = [];
 
     try {
       if (imageFiles.length > 0) {
         console.log(`[Conversation ${id}] Step 1.5: Uploading ${imageFiles.length} image attachment(s)...`);
-        for (const [index, image] of imageFiles.entries()) {
+        for (const image of imageFiles) {
+          const attachmentId = crypto.randomUUID();
           const arrayBuffer = await image.arrayBuffer();
           const buffer = Buffer.from(arrayBuffer);
-          const fileUrl = await uploadChatImage(
+          const { storagePath } = await uploadChatImage(
             buffer,
+            attachmentId,
             image.name,
             image.type,
             conversation.agent.organizationId,
-            userMessage.id,
-            index
+            userMessage.id
           );
 
           await prisma.messageAttachment.create({
             data: {
+              id: attachmentId,
               messageId: userMessage.id,
               fileName: image.name,
-              fileUrl,
+              fileUrl: getMessageAttachmentUrl(attachmentId),
+              storagePath,
               mimeType: image.type,
               attachmentType: "IMAGE",
             },
           });
 
           uploadedAttachments.push({
+            id: attachmentId,
             fileName: image.name,
-            fileUrl,
+            fileUrl: getMessageAttachmentUrl(attachmentId),
+            storagePath,
             mimeType: image.type,
             attachmentType: "IMAGE",
+            width: null,
+            height: null,
           });
         }
       }
@@ -267,19 +298,25 @@ export async function POST(
         attachments: {
           select: {
             fileUrl: true,
+            storagePath: true,
             mimeType: true,
           },
         },
       },
     });
 
-    const conversationHistory = history
-      .reverse()
-      .map((msg) => ({
+    const conversationHistory = await Promise.all(
+      history.reverse().map(async (msg) => ({
         role: msg.role.toLowerCase() as "user" | "assistant",
         content: msg.content,
-        attachments: msg.attachments,
-      }));
+        attachments: await Promise.all(msg.attachments.map(async (attachment) => ({
+          fileUrl: attachment.storagePath
+            ? await createSignedChatImageUrl(attachment.storagePath, 900)
+            : attachment.fileUrl,
+          mimeType: attachment.mimeType,
+        }))),
+      }))
+    );
 
     // 3. Check if this is the first message (for auto-title)
     const isFirstMessage = conversationHistory.length === 0;
@@ -309,12 +346,19 @@ export async function POST(
 
     // 5. Stream Claude response via SSE (using Mastra agent with weather tool)
     console.log(`[Conversation ${id}] Step 5: Starting Mastra agent stream...`);
+    const userImagesForClaude = await Promise.all(uploadedAttachments.map(async (attachment) => ({
+      fileUrl: attachment.storagePath
+        ? await createSignedChatImageUrl(attachment.storagePath, 900)
+        : attachment.fileUrl,
+      mimeType: attachment.mimeType,
+    })));
+    const clientUploadedAttachments = uploadedAttachments.map(serializeAttachment);
     const streamInput = {
       systemPrompt: conversation.agent.systemPrompt,
       responseStyle: conversation.agent.responseStyle,
       conversationHistory,
       userMessage: trimmedContent,
-      userImages: uploadedAttachments,
+      userImages: userImagesForClaude,
       knowledgeContext: rag.hasContext ? rag.context : undefined,
     };
 
@@ -339,7 +383,7 @@ export async function POST(
               type: "user_message",
               message: {
                 ...userMessage,
-                attachments: uploadedAttachments,
+                attachments: clientUploadedAttachments,
               },
             })}\n\n`)
           );

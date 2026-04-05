@@ -190,6 +190,7 @@ model MessageAttachment {
   id             String                @id @default(cuid())
   fileName       String
   fileUrl        String
+  storagePath    String?
   mimeType       String
   attachmentType MessageAttachmentType @default(IMAGE)
   width          Int?
