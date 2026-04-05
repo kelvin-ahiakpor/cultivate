@@ -19,6 +19,15 @@ export interface DemoChatMessage {
   id: string;
   role: "USER" | "ASSISTANT";
   content: string;
+  attachments?: {
+    id: string;
+    fileName: string;
+    fileUrl: string;
+    mimeType: string;
+    attachmentType: "IMAGE";
+    width?: number | null;
+    height?: number | null;
+  }[];
   timestamp: string;
   confidenceScore?: number;
   isFlagged?: boolean;

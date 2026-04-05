@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { signOut } from "next-auth/react";
 import { mutate as globalMutate } from "swr";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon, GlassCircleButton, Tooltip, Dropdown } from "@/components/cultivate-ui";
-import ConversationView from "@/components/conversation-view";
+import ConversationView, { type MessageAttachment, type PendingImageAttachment } from "@/components/conversation-view";
 import ChatsView, { mockChats } from "./views/chats-view";
 import FlaggedQueriesView from "./views/flagged-queries-view";
 import SystemsView from "./views/systems-view";
@@ -103,6 +103,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
     id: string;
     role: "USER" | "ASSISTANT";
     content: string;
+    attachments?: MessageAttachment[];
     confidenceScore?: number;
     isFlagged?: boolean;
     flaggedQuery?: {
@@ -115,6 +116,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
     };
   }
   const [inputValue, setInputValue] = useState("");
+  const [pendingImages, setPendingImages] = useState<PendingImageAttachment[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
@@ -224,6 +226,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
         id: m.id,
         role: m.role as "USER" | "ASSISTANT",
         content: m.content,
+        attachments: m.attachments,
         confidenceScore: m.confidenceScore,
         isFlagged: m.isFlagged,
         flaggedQuery: m.flaggedQuery,
@@ -341,9 +344,51 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   // iOS Safari < 15.4 doesn't support crypto.randomUUID — use this instead
   const genId = () => crypto.randomUUID?.() ?? (Math.random().toString(36).slice(2) + Date.now().toString(36));
 
+  const clearPendingImages = () => {
+    setPendingImages((prev) => {
+      prev.forEach((image) => URL.revokeObjectURL(image.previewUrl));
+      return [];
+    });
+  };
+
+  const handleSelectImages = (files: FileList | File[]) => {
+    const nextFiles = Array.from(files).filter((file) => ["image/jpeg", "image/png", "image/webp"].includes(file.type));
+    if (nextFiles.length === 0) {
+      notify.error("Only JPG, PNG, and WebP images are supported.");
+      return;
+    }
+
+    if (pendingImages.length + nextFiles.length > 3) {
+      notify.error("You can attach up to 3 images per message.");
+      return;
+    }
+
+    const nextImages = nextFiles.map((file) => ({
+      id: genId(),
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+
+    setPendingImages((prev) => [...prev, ...nextImages]);
+  };
+
+  const handleRemovePendingImage = (id: string) => {
+    setPendingImages((prev) => {
+      const image = prev.find((item) => item.id === id);
+      if (image) URL.revokeObjectURL(image.previewUrl);
+      return prev.filter((item) => item.id !== id);
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      pendingImages.forEach((image) => URL.revokeObjectURL(image.previewUrl));
+    };
+  }, [pendingImages]);
+
   const handleSend = async () => {
     const text = inputValue.trim();
-    if (!text || isStreaming || demoMode) return;
+    if ((!text && pendingImages.length === 0) || isStreaming || demoMode) return;
 
     const agentId = selectedAgentId || agents[0]?.id;
     if (!agentId) return;
@@ -351,12 +396,27 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
     setInputValue("");
     setIsStreaming(true);
     setStreamingContent("");
+    const imagesToSend = pendingImages;
+    setPendingImages([]);
 
     // Translate user message to English if needed
-    const { translatedText: englishText } = await translateToEnglish(text, selectedLanguage);
+    const englishText = text
+      ? (await translateToEnglish(text, selectedLanguage)).translatedText
+      : "";
 
     // Add user message to UI immediately (show original text, not translated)
-    const userMsg: ChatMessage = { id: genId(), role: "USER", content: text };
+    const userMsg: ChatMessage = {
+      id: genId(),
+      role: "USER",
+      content: text,
+      attachments: imagesToSend.map((image) => ({
+        id: image.id,
+        fileName: image.file.name,
+        fileUrl: image.previewUrl,
+        mimeType: image.file.type,
+        attachmentType: "IMAGE",
+      })),
+    };
     setMessages(prev => [...prev, userMsg]);
 
     try {
@@ -379,10 +439,13 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       }
 
       // Send message — SSE stream (send English text to backend)
+      const formData = new FormData();
+      formData.set("content", englishText);
+      imagesToSend.forEach((image) => formData.append("images", image.file));
+
       const res = await fetch(`/api/conversations/${convId}/messages`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: englishText }),
+        body: formData,
       });
 
       if (!res.ok) {
@@ -417,6 +480,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                 id: event.message?.id || genId(),
                 role: "ASSISTANT",
                 content: translatedContent,
+                attachments: event.message?.attachments,
                 confidenceScore: event.message?.confidenceScore,
                 isFlagged: event.message?.isFlagged,
                 flaggedQuery: event.message?.flaggedQuery,
@@ -445,6 +509,8 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       }
     } catch (err) {
       console.error("Send failed:", err);
+      setMessages(prev => prev.filter((msg) => msg.id !== userMsg.id));
+      setPendingImages(prev => [...imagesToSend, ...prev]);
       // Show friendly error message (hide technical details from user)
       setMessages(prev => [...prev, {
         id: genId(),
@@ -479,6 +545,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
         id: m.id,
         role: m.role as "USER" | "ASSISTANT",
         content: m.content,
+        attachments: m.attachments,
         confidenceScore: m.confidenceScore,
         isFlagged: m.isFlagged,
         flaggedQuery: m.flaggedQuery,
@@ -501,6 +568,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
             id: m.id,
             role: m.role,
             content: m.content,
+            attachments: m.attachments,
             confidenceScore: m.confidenceScore,
             isFlagged: m.isFlagged,
             flaggedQuery: m.flaggedQuery
@@ -1158,7 +1226,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
 
                             <button
                               onClick={() => { handleSend(); setSendIcon(s => s === "cabbage" ? "plane" : s === "plane" ? "sprout" : "cabbage"); }}
-                              disabled={isStreaming || !inputValue.trim()}
+                              disabled={isStreaming || (inputValue.trim().length === 0 && pendingImages.length === 0)}
                               className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               {sendIcon === "cabbage" && <CabbageIcon />}
@@ -1190,6 +1258,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                     value: inputValue,
                     onChange: setInputValue,
                     onSend: handleSend,
+                    canSend: inputValue.trim().length > 0 || pendingImages.length > 0,
                     onNewChat: () => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setStreamingContent(""); },
                     agents,
                     selectedAgent,
@@ -1199,6 +1268,9 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                     showAgentMenu,
                     setShowAgentMenu,
                     isStreaming,
+                    pendingImages,
+                    onSelectImages: handleSelectImages,
+                    onRemovePendingImage: handleRemovePendingImage,
                     // Translation
                     selectedLanguage,
                     onLanguageSelect: (lang) => setSelectedLanguage(lang as SupportedLanguage),

@@ -173,6 +173,7 @@ model Message {
   feedback     Feedback?
   flaggedQuery FlaggedQuery?
   apiUsage     ApiUsage[]
+  attachments  MessageAttachment[]
 
   @@map("messages")
 }
@@ -180,6 +181,26 @@ model Message {
 enum MessageRole {
   USER
   ASSISTANT
+}
+
+model MessageAttachment {
+  id             String                @id @default(cuid())
+  fileName       String
+  fileUrl        String
+  mimeType       String
+  attachmentType MessageAttachmentType @default(IMAGE)
+  width          Int?
+  height         Int?
+  createdAt      DateTime              @default(now())
+
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@map("message_attachments")
+}
+
+enum MessageAttachmentType {
+  IMAGE
 }
 
 // Agronomist-uploaded knowledge documents

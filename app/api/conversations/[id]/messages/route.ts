@@ -30,10 +30,14 @@ import { NextRequest } from "next/server";
 export const maxDuration = 60;
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
-import { mastraStream, generateTitle } from "@/lib/claude"; // Phase 6: Using Mastra agent with weather tool
+import { chatStream, mastraStream, generateTitle } from "@/lib/claude";
 import { scoreConfidence, shouldFlag } from "@/lib/confidence";
 import { calculateCost } from "@/lib/cost";
 import { retrieveContext } from "@/lib/mastra-rag"; // NOW USES MASTRA RAG
+import { uploadChatImage } from "@/lib/supabase-storage";
+
+const MAX_IMAGE_ATTACHMENTS = 3;
+const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 // GET /api/conversations/:id/messages — List messages (cursor-based pagination)
 export async function GET(
@@ -91,6 +95,17 @@ export async function GET(
             agronomistResponse: true,
             verificationNotes: true,
           }
+        },
+        attachments: {
+          select: {
+            id: true,
+            fileName: true,
+            fileUrl: true,
+            mimeType: true,
+            attachmentType: true,
+            width: true,
+            height: true,
+          },
         },
       },
       orderBy: { createdAt: "asc" },
@@ -157,14 +172,38 @@ export async function POST(
       return apiError("Forbidden", 403);
     }
 
-    const body = await request.json();
-    const { content } = body;
+    const contentType = request.headers.get("content-type") || "";
 
-    if (!content || typeof content !== "string" || content.trim().length === 0) {
-      return apiError("Message content is required", 400);
+    let content = "";
+    let imageFiles: File[] = [];
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      const rawContent = formData.get("content");
+      content = typeof rawContent === "string" ? rawContent : "";
+      imageFiles = formData
+        .getAll("images")
+        .filter((value): value is File => value instanceof File && value.size > 0);
+    } else {
+      const body = await request.json();
+      content = typeof body.content === "string" ? body.content : "";
     }
 
     const trimmedContent = content.trim();
+
+    if (trimmedContent.length === 0 && imageFiles.length === 0) {
+      return apiError("Message content or at least one image is required", 400);
+    }
+
+    if (imageFiles.length > MAX_IMAGE_ATTACHMENTS) {
+      return apiError(`You can attach up to ${MAX_IMAGE_ATTACHMENTS} images per message`, 400);
+    }
+
+    for (const image of imageFiles) {
+      if (!ALLOWED_IMAGE_MIME_TYPES.has(image.type)) {
+        return apiError("Only JPG, PNG, and WebP images are supported", 400);
+      }
+    }
 
     // 1. Save user message
     console.log(`[Conversation ${id}] Step 1: Saving user message...`);
@@ -177,13 +216,59 @@ export async function POST(
       },
     });
 
+    let uploadedAttachments: Array<{ fileUrl: string; mimeType: string }> = [];
+
+    try {
+      if (imageFiles.length > 0) {
+        console.log(`[Conversation ${id}] Step 1.5: Uploading ${imageFiles.length} image attachment(s)...`);
+        uploadedAttachments = await Promise.all(
+          imageFiles.map(async (image, index) => {
+            const arrayBuffer = await image.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const fileUrl = await uploadChatImage(
+              buffer,
+              image.name,
+              image.type,
+              conversation.agent.organizationId,
+              userMessage.id,
+              index
+            );
+
+            await prisma.messageAttachment.create({
+              data: {
+                messageId: userMessage.id,
+                fileName: image.name,
+                fileUrl,
+                mimeType: image.type,
+                attachmentType: "IMAGE",
+              },
+            });
+
+            return { fileUrl, mimeType: image.type };
+          })
+        );
+      }
+    } catch (attachmentError) {
+      await prisma.message.delete({ where: { id: userMessage.id } }).catch(() => undefined);
+      throw attachmentError;
+    }
+
     // 2. Load conversation history (last 20 messages for context)
     console.log(`[Conversation ${id}] Step 2: Loading conversation history...`);
     const history = await prisma.message.findMany({
       where: { conversationId: id, id: { not: userMessage.id } },
       orderBy: { createdAt: "desc" },
       take: 20,
-      select: { role: true, content: true },
+      select: {
+        role: true,
+        content: true,
+        attachments: {
+          select: {
+            fileUrl: true,
+            mimeType: true,
+          },
+        },
+      },
     });
 
     const conversationHistory = history
@@ -191,6 +276,7 @@ export async function POST(
       .map((msg) => ({
         role: msg.role.toLowerCase() as "user" | "assistant",
         content: msg.content,
+        attachments: msg.attachments,
       }));
 
     // 3. Check if this is the first message (for auto-title)
@@ -200,12 +286,17 @@ export async function POST(
     // 4. Retrieve relevant knowledge context via RAG
     //    Embeds the farmer's question, searches Mastra vector store for similar chunks,
     //    and formats them as context for Claude's system prompt.
-    console.log(`[Conversation ${id}] Step 4: Retrieving RAG context for query...`);
-    const rag = await retrieveContext(trimmedContent, conversation.agent.id, conversation.agent.organizationId);
-    if (rag.hasContext) {
-      console.log(`[Conversation ${id}] ✅ Found ${rag.chunks.length} relevant chunks from knowledge bases`);
+    let rag = { hasContext: false, chunks: [] as Awaited<ReturnType<typeof retrieveContext>>["chunks"], context: "" };
+    if (trimmedContent.length > 0) {
+      console.log(`[Conversation ${id}] Step 4: Retrieving RAG context for query...`);
+      rag = await retrieveContext(trimmedContent, conversation.agent.id, conversation.agent.organizationId);
+      if (rag.hasContext) {
+        console.log(`[Conversation ${id}] ✅ Found ${rag.chunks.length} relevant chunks from knowledge bases`);
+      } else {
+        console.log(`[Conversation ${id}] No RAG context found (agent has no knowledge or no relevant chunks)`);
+      }
     } else {
-      console.log(`[Conversation ${id}] No RAG context found (agent has no knowledge or no relevant chunks)`);
+      console.log(`[Conversation ${id}] Step 4: Skipping RAG retrieval for image-only message`);
     }
 
     // 4.5. Fetch user's location from database (for weather tool)
@@ -216,16 +307,23 @@ export async function POST(
 
     // 5. Stream Claude response via SSE (using Mastra agent with weather tool)
     console.log(`[Conversation ${id}] Step 5: Starting Mastra agent stream...`);
-    const { stream, getUsage } = await mastraStream({
+    const streamInput = {
       systemPrompt: conversation.agent.systemPrompt,
       responseStyle: conversation.agent.responseStyle,
       conversationHistory,
       userMessage: trimmedContent,
+      userImages: uploadedAttachments,
       knowledgeContext: rag.hasContext ? rag.context : undefined,
-      // User context - location from settings for weather tool
-      userLocation: farmer?.location || undefined,
-      userName: user.name,
-    });
+    };
+
+    const { stream, getUsage } = uploadedAttachments.length > 0
+      ? await chatStream(streamInput)
+      : await mastraStream({
+          ...streamInput,
+          // User context - location from settings for weather tool
+          userLocation: farmer?.location || undefined,
+          userName: user.name,
+        });
 
     let fullResponse = "";
 
@@ -304,7 +402,7 @@ export async function POST(
           // 12. Auto-generate title if first message OR if title generation failed before
           const needsTitle = !conversation.title;
           if (needsTitle) {
-            const title = await generateTitle(trimmedContent);
+            const title = trimmedContent.length > 0 ? await generateTitle(trimmedContent) : "Image consultation";
             await prisma.conversation.update({
               where: { id },
               data: { title },

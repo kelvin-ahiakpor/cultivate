@@ -43,7 +43,7 @@
  */
 
 import { useRef, useEffect, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle, Mic, MicOff, AlertTriangle, AudioLines, Globe, Image, FileText, FolderPlus, PanelLeft, WifiOff } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Unlink, Box, Loader2, Copy, Check, ThumbsUp, Flag, RotateCw, CheckCircle, Mic, MicOff, AlertTriangle, AudioLines, Globe, Image, FileText, FolderPlus, PanelLeft, WifiOff, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { notify } from "@/lib/toast";
@@ -56,6 +56,7 @@ export interface ConversationMessage {
   role: "USER" | "ASSISTANT";
   content: string;
   confidenceScore?: number;
+  attachments?: MessageAttachment[];
   isFlagged?: boolean;
   flaggedQuery?: {
     id: string;
@@ -67,11 +68,28 @@ export interface ConversationMessage {
   };
 }
 
+export interface MessageAttachment {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  mimeType: string;
+  attachmentType: "IMAGE";
+  width?: number | null;
+  height?: number | null;
+}
+
+export interface PendingImageAttachment {
+  id: string;
+  file: File;
+  previewUrl: string;
+}
+
 /** Props for the live send input (real mode only). Omit entirely for demo. */
 export interface InputProps {
   value: string;
   onChange: (v: string) => void;
   onSend: () => void;
+  canSend: boolean;
   onNewChat: () => void;
   agents: { id: string; name: string }[];
   selectedAgent: string;
@@ -81,6 +99,9 @@ export interface InputProps {
   showAgentMenu: boolean;
   setShowAgentMenu: (v: boolean) => void;
   isStreaming: boolean;
+  pendingImages: PendingImageAttachment[];
+  onSelectImages: (files: FileList | File[]) => void;
+  onRemovePendingImage: (id: string) => void;
   // Translation
   selectedLanguage: string;
   onLanguageSelect: (lang: string) => void;
@@ -145,6 +166,7 @@ export default function ConversationView({
   isOnline = true,
 }: ConversationViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [flaggedMessages, setFlaggedMessages] = useState<Set<string>>(new Set());
   const [flaggingInProgress, setFlaggingInProgress] = useState<Set<string>>(new Set());
   const [copiedMessages, setCopiedMessages] = useState<Set<string>>(new Set());
@@ -166,6 +188,52 @@ export default function ConversationView({
 
   // Attachment menu state
   const [showAttachMenu, setShowAttachMenu] = useState(false);
+
+  const triggerImagePicker = () => {
+    imageInputRef.current?.click();
+  };
+
+  const renderPendingImages = inputProps && inputProps.pendingImages.length > 0 ? (
+    <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+      {inputProps.pendingImages.map((image) => (
+        <div key={image.id} className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border border-cultivate-border-element bg-cultivate-bg-main">
+          <img src={image.previewUrl} alt="" className="h-full w-full object-cover" />
+          <button
+            type="button"
+            onClick={() => inputProps.onRemovePendingImage(image.id)}
+            className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white transition-colors hover:bg-black/85"
+            title="Remove image"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      ))}
+    </div>
+  ) : null;
+
+  const renderMessageAttachments = (attachments?: MessageAttachment[]) => {
+    if (!attachments || attachments.length === 0) return null;
+
+    return (
+      <div className="mb-3 flex flex-wrap gap-2">
+        {attachments.map((attachment) => (
+          <a
+            key={attachment.id}
+            href={attachment.fileUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="block overflow-hidden rounded-xl border border-cultivate-border-element bg-cultivate-bg-main"
+          >
+            <img
+              src={attachment.fileUrl}
+              alt={attachment.fileName}
+              className="h-40 w-40 object-cover sm:h-48 sm:w-48"
+            />
+          </a>
+        ))}
+      </div>
+    );
+  };
 
   // Stable callback to prevent recognition from restarting on every render
   const handleTranscript = useCallback((text: string, isFinal: boolean) => {
@@ -566,14 +634,27 @@ export default function ConversationView({
             {isStandalone && (
               <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
             )}
-            <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-3.5 mb-1 lg:max-w-3xl lg:mx-auto"}`}>
-              <div className="bg-cultivate-bg-elevated rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
+          <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-3.5 mb-1 lg:max-w-3xl lg:mx-auto"}`}>
+            <div className="bg-cultivate-bg-elevated rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
+                {renderPendingImages}
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    if (!inputProps || !e.target.files || e.target.files.length === 0) return;
+                    inputProps.onSelectImages(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
                 <textarea
                   placeholder={!isOnline ? "No connection · read only" : "How can I help you today?"}
                   rows={1}
                   value={inputProps?.value ?? ""}
                   onChange={inputProps && isOnline ? (e) => inputProps.onChange(e.target.value) : undefined}
-                  onKeyDown={inputProps && isOnline ? (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); inputProps.onSend(); } } : undefined}
+                  onKeyDown={inputProps && isOnline ? (e) => { if (e.key === "Enter" && !e.shiftKey && inputProps.canSend) { e.preventDefault(); inputProps.onSend(); } } : undefined}
                   readOnly={!inputProps || voiceState !== "idle" || !isOnline}
                   className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-cultivate-text-tertiary bg-transparent text-sm standalone:text-base lg:text-sm"
                 />
@@ -600,7 +681,7 @@ export default function ConversationView({
                               <button
                                 onClick={() => {
                                   setShowAttachMenu(false);
-                                  // TODO: Implement image upload
+                                  triggerImagePicker();
                                 }}
                                 className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
                               >
@@ -753,7 +834,7 @@ export default function ConversationView({
                       ) : (
                         <button
                           onClick={() => { inputProps.onSend(); inputProps.onSendIconCycle(); }}
-                          disabled={!inputProps.value.trim()}
+                          disabled={!inputProps.canSend}
                           className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors disabled:opacity-40"
                         >
                           {inputProps.sendIcon === "cabbage" && <CabbageIcon />}
@@ -791,7 +872,10 @@ export default function ConversationView({
                       {msg.role === "USER" ? (
                         <div className="flex justify-end">
                           <div className="max-w-[75%] bg-cultivate-bg-elevated rounded-2xl px-4 py-3">
-                            <p className="text-base text-white whitespace-pre-wrap">{msg.content}</p>
+                            {renderMessageAttachments(msg.attachments)}
+                            {msg.content && (
+                              <p className="text-base text-white whitespace-pre-wrap">{msg.content}</p>
+                            )}
                           </div>
                         </div>
                       ) : (
@@ -804,6 +888,7 @@ export default function ConversationView({
                             {highlightFlaggedMessages && msg.isFlagged && (
                               <div className="absolute -inset-2 rounded-[1.5rem] border-2 border-cultivate-beige/30 pointer-events-none" />
                             )}
+                            {renderMessageAttachments(msg.attachments)}
                             <div className="prose prose-base prose-invert max-w-none text-cultivate-text-primary leading-relaxed prose-p:my-1 prose-headings:text-cultivate-text-primary prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-cultivate-text-primary prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                             </div>
@@ -1047,6 +1132,19 @@ export default function ConversationView({
               )}
               <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-3.5 mb-1"}`}>
                 <div className="bg-cultivate-bg-elevated rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
+                  {renderPendingImages}
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      if (!inputProps || !e.target.files || e.target.files.length === 0) return;
+                      inputProps.onSelectImages(e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
                   <textarea
                     placeholder={
                       inputProps
@@ -1062,7 +1160,7 @@ export default function ConversationView({
                     rows={1}
                     value={inputProps?.value ?? ""}
                     onChange={inputProps ? (e) => inputProps.onChange(e.target.value) : undefined}
-                    onKeyDown={inputProps ? (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); inputProps.onSend(); } } : undefined}
+                    onKeyDown={inputProps ? (e) => { if (e.key === "Enter" && !e.shiftKey && inputProps.canSend) { e.preventDefault(); inputProps.onSend(); } } : undefined}
                     readOnly={!inputProps || voiceState !== "idle"}
                     className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-cultivate-text-tertiary bg-transparent text-sm standalone:text-base lg:text-sm"
                   />
@@ -1089,7 +1187,7 @@ export default function ConversationView({
                                 <button
                                   onClick={() => {
                                     setShowAttachMenu(false);
-                                    // TODO: Implement image upload
+                                    triggerImagePicker();
                                   }}
                                   className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
                                 >
@@ -1254,7 +1352,7 @@ export default function ConversationView({
                         ) : (
                           <button
                             onClick={() => { inputProps.onSend(); inputProps.onSendIconCycle(); }}
-                            disabled={!inputProps.value.trim()}
+                            disabled={!inputProps.canSend}
                             className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors disabled:opacity-40"
                           >
                             {inputProps.sendIcon === "cabbage" && <CabbageIcon />}

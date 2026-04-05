@@ -25,9 +25,19 @@ const anthropic = new Anthropic({
 export interface ChatInput {
   systemPrompt: string;
   responseStyle: string | null;
-  conversationHistory: { role: "user" | "assistant"; content: string }[];
+  conversationHistory: {
+    role: "user" | "assistant";
+    content: string;
+    attachments?: ChatImageInput[];
+  }[];
   userMessage: string;
+  userImages?: ChatImageInput[];
   knowledgeContext?: string; // RAG chunks injected here in Phase 3
+}
+
+export interface ChatImageInput {
+  fileUrl: string;
+  mimeType: string;
 }
 
 export interface ChatResult {
@@ -72,6 +82,52 @@ If you're unsure whether something is farming-related, err on the side of cautio
   return prompt;
 }
 
+function buildMessageContent(
+  text: string,
+  attachments?: ChatImageInput[]
+): string | Array<
+  | { type: "text"; text: string }
+  | { type: "image"; source: { type: "url"; url: string } }
+> {
+  const contentBlocks: Array<
+    | { type: "text"; text: string }
+    | { type: "image"; source: { type: "url"; url: string } }
+  > = [];
+
+  if (text.trim().length > 0) {
+    contentBlocks.push({ type: "text", text });
+  }
+
+  for (const attachment of attachments ?? []) {
+    contentBlocks.push({
+      type: "image",
+      source: {
+        type: "url",
+        url: attachment.fileUrl,
+      },
+    });
+  }
+
+  if (contentBlocks.length === 0) {
+    return text;
+  }
+
+  return contentBlocks;
+}
+
+function buildAnthropicMessages(input: ChatInput) {
+  return [
+    ...input.conversationHistory.map((msg) => ({
+      role: msg.role as "user" | "assistant",
+      content: buildMessageContent(msg.content, msg.attachments),
+    })),
+    {
+      role: "user" as const,
+      content: buildMessageContent(input.userMessage, input.userImages),
+    },
+  ];
+}
+
 /**
  * Non-streaming chat call. Waits for the full response before returning.
  * Simpler but worse UX (farmer sees a blank screen while waiting).
@@ -84,13 +140,7 @@ export async function chat(input: ChatInput): Promise<ChatResult> {
     model: "claude-sonnet-4-5-20250929",
     max_tokens: 1024,
     system: systemPrompt,
-    messages: [
-      ...input.conversationHistory.map((msg) => ({
-        role: msg.role as "user" | "assistant",
-        content: msg.content,
-      })),
-      { role: "user", content: input.userMessage },
-    ],
+    messages: buildAnthropicMessages(input),
   });
 
   const content = response.content
@@ -134,13 +184,7 @@ export async function chatStream(input: ChatInput): Promise<{
     model: "claude-sonnet-4-5-20250929",
     max_tokens: 1024,
     system: systemPrompt,
-    messages: [
-      ...input.conversationHistory.map((msg) => ({
-        role: msg.role as "user" | "assistant",
-        content: msg.content,
-      })),
-      { role: "user", content: input.userMessage },
-    ],
+    messages: buildAnthropicMessages(input),
   });
 
   // Async generator that yields each text chunk as Claude produces it.
