@@ -25,6 +25,7 @@ export interface CachedConversation {
   id: string;
   title: string;
   agentName: string;
+  systemName?: string;
   lastMessage: string;
   messageCount: number;
   /** Cached timestamp (ms) — used for sorting + pruning */

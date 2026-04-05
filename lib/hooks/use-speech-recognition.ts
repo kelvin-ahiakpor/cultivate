@@ -50,12 +50,6 @@ interface ISpeechRecognition extends EventTarget {
   abort(): void;
 }
 
-// Browser compatibility: Check for SpeechRecognition API
-const SpeechRecognition =
-  (typeof window !== "undefined" &&
-    ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)) ||
-  null;
-
 export interface UseSpeechRecognitionOptions {
   lang?: string; // Language code (default: "en-US")
   continuous?: boolean; // Keep recording until manually stopped (default: false)
@@ -109,18 +103,24 @@ export function useSpeechRecognition(
   const [transcript, setTranscript] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSupported, setIsSupported] = useState(false);
 
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
-  const isSupported = SpeechRecognition !== null;
 
   useEffect(() => {
-    if (!isSupported) {
+    const SpeechRecognitionCtor =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    const supported = Boolean(SpeechRecognitionCtor);
+    setIsSupported(supported);
+
+    if (!supported) {
       setError("Speech recognition is not supported in this browser");
       return;
     }
 
     // Initialize recognition instance
-    const recognition = new SpeechRecognition() as ISpeechRecognition;
+    const recognition = new SpeechRecognitionCtor() as ISpeechRecognition;
     recognition.continuous = continuous;
     recognition.interimResults = interimResults;
     recognition.lang = lang;
