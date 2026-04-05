@@ -58,11 +58,11 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F9F3EF] to-green-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-cultivate-cream to-green-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl p-6 sm:p-10 w-full max-w-md">
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-6">
-            <Sprout className="w-8 h-8 text-[#536d3d]" />
+            <Sprout className="w-8 h-8 text-cultivate-green-dark" />
             <span className="text-xl font-semibold text-gray-900">Cultivate</span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Sign in</h1>
@@ -80,7 +80,7 @@ function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full pb-2 border-b-2 border-gray-300 focus:border-[#536d3d] focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
+              className="w-full pb-2 border-b-2 border-gray-300 focus:border-cultivate-green-dark focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
               placeholder="Email"
             />
           </div>
@@ -92,7 +92,7 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full pb-2 border-b-2 border-gray-300 focus:border-[#536d3d] focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
+              className="w-full pb-2 border-b-2 border-gray-300 focus:border-cultivate-green-dark focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
               placeholder="Password"
             />
           </div>
@@ -101,7 +101,7 @@ function LoginForm() {
             No account?{" "}
             <Link
               href="/signup"
-              className="text-[#536d3d] hover:text-[#8b7355] hover:underline font-medium transition-colors"
+              className="text-cultivate-green-dark hover:text-cultivate-brown-mid hover:underline font-medium transition-colors"
             >
               Create one!
             </Link>
@@ -111,7 +111,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={isLoading}
-              className="bg-cultivate-green-dark text-white py-2 px-6 rounded-none font-medium hover:bg-[#3d5229] focus:outline-none focus:ring-2 focus:ring-[#536d3d] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+              className="bg-cultivate-green-dark text-white py-2 px-6 rounded-none font-medium hover:bg-cultivate-green-deep focus:outline-none focus:ring-2 focus:ring-cultivate-green-dark focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
             >
               {isLoading ? "Signing in..." : "Sign in"}
             </button>
@@ -125,7 +125,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-[#F9F3EF] to-green-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-cultivate-cream to-green-50 flex items-center justify-center">
         <div className="text-gray-600">Loading...</div>
       </div>
     }>

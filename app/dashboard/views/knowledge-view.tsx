@@ -147,7 +147,7 @@ export default function KnowledgeView({
 
   const getChunkCountTone = (doc: KnowledgeDoc) => {
     if (doc.processingState === "FAILED") return "text-red-400";
-    if (doc.processingState === "PROCESSING") return "text-[#e8c8ab]";
+    if (doc.processingState === "PROCESSING") return "text-cultivate-beige";
     return "text-cultivate-text-secondary";
   };
 
@@ -547,7 +547,7 @@ export default function KnowledgeView({
             {isOnline && (
               <button
                 onClick={handleOpenUploadModal}
-                className="w-11 h-11 bg-[#5a7048] hover:bg-[#4a5d38] rounded-full flex items-center justify-center transition-colors"
+                className="w-11 h-11 bg-cultivate-button-primary hover:bg-cultivate-button-primary-hover rounded-full flex items-center justify-center transition-colors"
                 aria-label="Upload Document"
               >
                 <Upload className="w-5 h-5 text-white" />
@@ -567,7 +567,7 @@ export default function KnowledgeView({
           {isOnline && (
             <button
               onClick={handleOpenUploadModal}
-              className="flex items-center gap-2 px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-cultivate-button-primary text-white rounded-lg hover:bg-cultivate-button-primary-hover transition-colors text-sm"
             >
               <Upload className="w-4 h-4" />
               Upload Document
@@ -583,7 +583,7 @@ export default function KnowledgeView({
             <select
               value={agentFilter || "All Agents"}
               onChange={(e) => handleAgentChange(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-cultivate-text-primary focus:outline-none focus:border-[#85b878] cursor-pointer appearance-none min-w-[200px]"
+              className="pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-cultivate-text-primary focus:outline-none focus:border-cultivate-green-light cursor-pointer appearance-none min-w-[200px]"
             >
               <option value="All Agents">All Agents</option>
               {demoMode
@@ -601,7 +601,7 @@ export default function KnowledgeView({
               placeholder="Search docs..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+              className="w-full pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light"
             />
           </div>
         </div>
@@ -640,7 +640,7 @@ export default function KnowledgeView({
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white truncate mb-1">{doc.title}</p>
                 </div>
-                <div className="w-8 h-8 bg-[#3B3B3B] rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 bg-cultivate-border-element rounded-lg flex items-center justify-center flex-shrink-0">
                   <Eye className="w-4 h-4 text-cultivate-green-light" />
                 </div>
               </div>
@@ -659,9 +659,9 @@ export default function KnowledgeView({
               } cursor-pointer`}
             >
               <div onClick={() => handleViewDocument(doc)} className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 bg-[#3B3B3B] rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 bg-cultivate-border-element rounded-lg flex items-center justify-center flex-shrink-0">
                   {doc.fileType === "PDF" ? (
-                    <FileText className="w-4 h-4 text-[#e8c8ab]" />
+                    <FileText className="w-4 h-4 text-cultivate-beige" />
                   ) : (
                     <File className="w-4 h-4 text-cultivate-teal" />
                   )}
@@ -686,7 +686,7 @@ export default function KnowledgeView({
                   <button
                     onClick={(e) => e.stopPropagation()}
                     disabled={!isOnline}
-                    className="p-1 hover:bg-[#3B3B3B] rounded transition-colors disabled:opacity-30"
+                    className="p-1 hover:bg-cultivate-border-element rounded transition-colors disabled:opacity-30"
                   >
                     <MoreHorizontal className="w-4 h-4 text-cultivate-text-primary" />
                   </button>
@@ -741,7 +741,7 @@ export default function KnowledgeView({
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-cultivate-border-element hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Prev
             </button>
@@ -751,7 +751,7 @@ export default function KnowledgeView({
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-cultivate-border-element hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Next
             </button>
@@ -761,7 +761,7 @@ export default function KnowledgeView({
 
       {/* Upload Modal */}
       <Dialog open={showUploadModal} onOpenChange={(open) => { if (!open) handleCloseUploadModal(); }}>
-        <DialogContent showCloseButton={false} className="bg-[#1C1C1C] border border-cultivate-border-subtle rounded-xl p-0 w-full max-w-lg max-h-[90vh] flex flex-col gap-0">
+        <DialogContent showCloseButton={false} className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-0 w-full max-w-lg max-h-[90vh] flex flex-col gap-0">
               {/* Fixed header */}
               <div className="px-6 pt-5 pb-4 flex-shrink-0">
                 <h2 className="text-lg font-medium text-white">Upload Knowledge Base</h2>
@@ -781,7 +781,7 @@ export default function KnowledgeView({
                           value="new"
                           checked={uploadType === 'new'}
                           onChange={() => setUploadType('new')}
-                          className="accent-[#5a7048]"
+                          className="accent-cultivate-button-primary"
                         />
                         <span className="text-sm text-white">Uploading a new document</span>
                       </label>
@@ -792,7 +792,7 @@ export default function KnowledgeView({
                           value="update"
                           checked={uploadType === 'update'}
                           onChange={() => setUploadType('update')}
-                          className="accent-[#5a7048]"
+                          className="accent-cultivate-button-primary"
                         />
                         <span className="text-sm text-white">Updating an existing document</span>
                       </label>
@@ -806,7 +806,7 @@ export default function KnowledgeView({
                       <button
                         type="button"
                         onClick={() => setShowDocSelectorModal(true)}
-                        className="w-full px-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-left hover:border-[#5a7048] transition-colors"
+                        className="w-full px-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-left hover:border-cultivate-button-primary transition-colors"
                       >
                         {updateDocId ? (
                           <span className="text-white">{sortedDocuments.find(d => d.id === updateDocId)?.title}</span>
@@ -824,7 +824,7 @@ export default function KnowledgeView({
                       value={uploadTitle}
                       onChange={(e) => setUploadTitle(e.target.value)}
                       placeholder="e.g. Maize Farming Best Practices"
-                      className="w-full px-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
+                      className="w-full px-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-button-primary"
                     />
                   </div>
 
@@ -834,7 +834,7 @@ export default function KnowledgeView({
                       <select
                         value={uploadAgentId}
                         onChange={(e) => setUploadAgentId(e.target.value)}
-                        className="w-full px-3 py-2 pr-10 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white focus:outline-none focus:border-[#5a7048] appearance-none"
+                        className="w-full px-3 py-2 pr-10 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white focus:outline-none focus:border-cultivate-button-primary appearance-none"
                       >
                         <option value="">Select an agent...</option>
                         {demoMode
@@ -912,7 +912,7 @@ export default function KnowledgeView({
                       onChange={(e) => setUploadDescription(e.target.value)}
                       placeholder="What does this document cover?"
                       rows={3}
-                      className="w-full px-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048] resize-none"
+                      className="w-full px-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-button-primary resize-none"
                     />
                   </div>
 
@@ -934,7 +934,7 @@ export default function KnowledgeView({
                       }
                     }}
                     className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
-                      dragOver ? 'border-[#85b878] bg-cultivate-green-light/5' : 'border-cultivate-border-element'
+                      dragOver ? 'border-cultivate-green-light bg-cultivate-green-light/5' : 'border-cultivate-border-element'
                     }`}
                   >
                     {uploadFile ? (
@@ -948,7 +948,7 @@ export default function KnowledgeView({
                         <Upload className="w-6 h-6 text-cultivate-text-tertiary mx-auto mb-2" />
                         <p className="text-sm text-cultivate-text-primary mb-1">Drag and drop your file here</p>
                         <p className="text-xs text-cultivate-text-tertiary mb-2">or</p>
-                        <label className="inline-block px-3 py-1.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-xs text-cultivate-text-primary hover:border-[#85b878] transition-colors cursor-pointer">
+                        <label className="inline-block px-3 py-1.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-xs text-cultivate-text-primary hover:border-cultivate-green-light transition-colors cursor-pointer">
                           Browse Files
                           <input
                             type="file"
@@ -988,7 +988,7 @@ export default function KnowledgeView({
                 <button
                   onClick={handleUploadSubmit}
                   disabled={uploading}
-                  className="px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-cultivate-button-primary text-white rounded-lg hover:bg-cultivate-button-primary-hover transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
                 >
                   {uploading && <Loader2 className="w-4 h-4 animate-spin" />}
                   {uploading ? "Uploading..." : "Upload"}
@@ -1001,10 +1001,10 @@ export default function KnowledgeView({
         <>
           <div className="fixed inset-0 bg-black/70 z-[60]" onClick={() => setDuplicateDoc(null)} />
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
+            <div className="bg-cultivate-bg-sidebar rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
               <div className="flex items-start gap-3 mb-4">
-                <div className="w-10 h-10 bg-[#e8c8ab]/15 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-5 h-5 text-[#e8c8ab]" />
+                <div className="w-10 h-10 bg-cultivate-beige/15 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-5 h-5 text-cultivate-beige" />
                 </div>
                 <div>
                   <h2 className="text-lg font-medium text-white">Document Already Exists</h2>
@@ -1029,7 +1029,7 @@ export default function KnowledgeView({
               </div>
 
               {!uploadAgentId && (
-                <p className="text-sm text-[#e8c8ab] mb-4">Pick an agent in the upload form first if you want to assign this existing document.</p>
+                <p className="text-sm text-cultivate-beige mb-4">Pick an agent in the upload form first if you want to assign this existing document.</p>
               )}
 
               <div className="flex items-center justify-end gap-3">
@@ -1043,7 +1043,7 @@ export default function KnowledgeView({
                 <button
                   onClick={handleAssignDuplicateDocument}
                   disabled={assigningDuplicate || !uploadAgentId}
-                  className="px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-cultivate-button-primary text-white rounded-lg hover:bg-cultivate-button-primary-hover transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
                 >
                   {assigningDuplicate && <Loader2 className="w-4 h-4 animate-spin" />}
                   {assigningDuplicate ? "Assigning..." : "Assign to Agent"}
@@ -1065,7 +1065,7 @@ export default function KnowledgeView({
           <div className="lg:hidden fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-none">
             <div
               onClick={(e) => e.stopPropagation()}
-              className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl pointer-events-auto"
+              className="bg-cultivate-bg-sidebar rounded-xl border border-cultivate-border-subtle w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl pointer-events-auto"
             >
             {/* Panel Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-cultivate-border-subtle">
@@ -1176,7 +1176,7 @@ export default function KnowledgeView({
                       <button
                         type="button"
                         onClick={() => setShowAllAssignedAgents((current) => !current)}
-                        className="text-xs text-cultivate-green-light hover:text-[#9dcf84] transition-colors"
+                        className="text-xs text-cultivate-green-light hover:text-cultivate-green-pale transition-colors"
                       >
                         {showAllAssignedAgents
                           ? "Show fewer agents"
@@ -1195,7 +1195,7 @@ export default function KnowledgeView({
                     </div>
                   ) : chunksError ? (
                     <div className="p-3 bg-cultivate-bg-hover border border-cultivate-border-subtle rounded-lg">
-                      <p className={`text-sm ${chunksError.includes("still processing") ? "text-[#e8c8ab]" : "text-red-400"}`}>{chunksError}</p>
+                      <p className={`text-sm ${chunksError.includes("still processing") ? "text-cultivate-beige" : "text-red-400"}`}>{chunksError}</p>
                     </div>
                   ) : chunks.length === 0 ? (
                     <div className="p-3 bg-cultivate-bg-hover border border-cultivate-border-subtle rounded-lg">
@@ -1228,7 +1228,7 @@ export default function KnowledgeView({
                 <button
                   type="button"
                   onClick={() => handleDownloadDocument(viewPanelDoc)}
-                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#85b878] transition-colors flex items-center justify-center gap-2"
+                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-cultivate-green-light transition-colors flex items-center justify-center gap-2"
                 >
                   <Download className="w-3.5 h-3.5" />
                   Download
@@ -1236,7 +1236,7 @@ export default function KnowledgeView({
                 <button
                   type="button"
                   onClick={() => handleStartUpdate(viewPanelDoc)}
-                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#85b878] transition-colors flex items-center justify-center gap-2"
+                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-cultivate-green-light transition-colors flex items-center justify-center gap-2"
                 >
                   <Upload className="w-3.5 h-3.5" />
                   Update
@@ -1255,7 +1255,7 @@ export default function KnowledgeView({
           </div>
 
           {/* Desktop: Side panel */}
-          <div className="hidden lg:flex fixed top-0 right-0 h-full w-[600px] bg-[#1C1C1C] border-l border-cultivate-border-subtle z-50 flex-col shadow-2xl">
+          <div className="hidden lg:flex fixed top-0 right-0 h-full w-[600px] bg-cultivate-bg-sidebar border-l border-cultivate-border-subtle z-50 flex-col shadow-2xl">
             {/* Panel Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-cultivate-border-subtle">
               <div>
@@ -1333,7 +1333,7 @@ export default function KnowledgeView({
                     <button
                       type="button"
                       onClick={() => setShowAllAssignedAgents((current) => !current)}
-                      className="inline-flex items-center rounded-full px-2.5 py-1 text-xs border border-cultivate-border-subtle text-cultivate-text-secondary hover:text-white hover:border-[#85b878] transition-colors"
+                      className="inline-flex items-center rounded-full px-2.5 py-1 text-xs border border-cultivate-border-subtle text-cultivate-text-secondary hover:text-white hover:border-cultivate-green-light transition-colors"
                     >
                       {showAllAssignedAgents
                         ? "Show less"
@@ -1363,7 +1363,7 @@ export default function KnowledgeView({
               <button
                 type="button"
                 onClick={() => openDocumentInline(viewPanelDoc)}
-                className="flex items-center gap-2 text-sm text-cultivate-green-light hover:text-[#9dcf84] transition-colors"
+                className="flex items-center gap-2 text-sm text-cultivate-green-light hover:text-cultivate-green-pale transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 Open original document
@@ -1397,7 +1397,7 @@ export default function KnowledgeView({
                     </div>
                   ) : chunksError ? (
                     <div className="p-3 bg-cultivate-bg-hover border border-cultivate-border-subtle rounded-lg">
-                      <p className={`text-sm ${chunksError.includes("still processing") ? "text-[#e8c8ab]" : "text-red-400"}`}>{chunksError}</p>
+                      <p className={`text-sm ${chunksError.includes("still processing") ? "text-cultivate-beige" : "text-red-400"}`}>{chunksError}</p>
                     </div>
                   ) : chunks.length === 0 ? (
                     <div className="p-3 bg-cultivate-bg-hover border border-cultivate-border-subtle rounded-lg">
@@ -1429,7 +1429,7 @@ export default function KnowledgeView({
               <button
                 type="button"
                 onClick={() => handleDownloadDocument(viewPanelDoc)}
-                className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#85b878] transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-cultivate-green-light transition-colors flex items-center justify-center gap-2"
               >
                 <Download className="w-3.5 h-3.5" />
                 Download
@@ -1437,7 +1437,7 @@ export default function KnowledgeView({
               <button
                 type="button"
                 onClick={() => handleStartUpdate(viewPanelDoc)}
-                className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#85b878] transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-cultivate-green-light transition-colors flex items-center justify-center gap-2"
               >
                 <Upload className="w-3.5 h-3.5" />
                 Update
@@ -1457,7 +1457,7 @@ export default function KnowledgeView({
 
       {/* Delete Confirmation Modal */}
       <Dialog open={!!deleteModalDoc} onOpenChange={(open) => { if (!open) setDeleteModalDoc(null); }}>
-        <DialogContent showCloseButton={false} className="bg-[#1C1C1C] border border-cultivate-border-subtle rounded-xl p-6 w-full max-w-md">
+        <DialogContent showCloseButton={false} className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-full max-w-md">
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Trash2 className="w-5 h-5 text-red-400" />
@@ -1507,7 +1507,7 @@ export default function KnowledgeView({
 
       {/* Document Selector Modal */}
       <Dialog open={showDocSelectorModal} onOpenChange={(open) => { if (!open) setShowDocSelectorModal(false); }}>
-        <DialogContent showCloseButton={false} className="bg-[#1C1C1C] border border-cultivate-border-subtle rounded-xl p-6 w-full max-w-xl">
+        <DialogContent showCloseButton={false} className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-full max-w-xl">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-medium text-white">Select Document to Update</h2>
                 <button
@@ -1527,7 +1527,7 @@ export default function KnowledgeView({
                   value={docSearchQuery}
                   onChange={(e) => setDocSearchQuery(e.target.value)}
                   placeholder="Search docs..."
-                  className="w-full pl-9 pr-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
+                  className="w-full pl-9 pr-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-button-primary"
                 />
               </div>
 
@@ -1545,7 +1545,7 @@ export default function KnowledgeView({
                       onClick={() => handleSelectDocument(doc.id)}
                       className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors ${
                         updateDocId === doc.id
-                          ? 'bg-[#5a7048] text-white'
+                          ? 'bg-cultivate-button-primary text-white'
                           : 'hover:bg-cultivate-bg-elevated text-cultivate-text-primary'
                       }`}
                     >

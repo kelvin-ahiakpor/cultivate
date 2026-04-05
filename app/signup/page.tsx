@@ -126,11 +126,11 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F9F3EF] to-green-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-cultivate-cream to-green-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl p-6 sm:p-10 w-full max-w-md">
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-6">
-            <Sprout className="w-8 h-8 text-[#536d3d]" />
+            <Sprout className="w-8 h-8 text-cultivate-green-dark" />
             <span className="text-xl font-semibold text-gray-900">Cultivate</span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Create account</h1>
@@ -149,7 +149,7 @@ export default function SignupPage() {
               value={formData.name}
               onChange={handleChange}
               required
-              className="w-full pb-2 border-b-2 border-gray-300 focus:border-[#536d3d] focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
+              className="w-full pb-2 border-b-2 border-gray-300 focus:border-cultivate-green-dark focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
               placeholder="Full Name"
             />
           </div>
@@ -162,7 +162,7 @@ export default function SignupPage() {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full pb-2 border-b-2 border-gray-300 focus:border-[#536d3d] focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
+              className="w-full pb-2 border-b-2 border-gray-300 focus:border-cultivate-green-dark focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
               placeholder="Email"
             />
           </div>
@@ -174,7 +174,7 @@ export default function SignupPage() {
               type="tel"
               value={formData.phone}
               onChange={handleChange}
-              className="w-full pb-2 border-b-2 border-gray-300 focus:border-[#536d3d] focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
+              className="w-full pb-2 border-b-2 border-gray-300 focus:border-cultivate-green-dark focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
               placeholder="Phone (Optional)"
             />
           </div>
@@ -187,7 +187,7 @@ export default function SignupPage() {
               value={formData.password}
               onChange={handleChange}
               required
-              className="w-full pb-2 border-b-2 border-gray-300 focus:border-[#536d3d] focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
+              className="w-full pb-2 border-b-2 border-gray-300 focus:border-cultivate-green-dark focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
               placeholder="Password"
             />
           </div>
@@ -200,7 +200,7 @@ export default function SignupPage() {
               value={formData.confirmPassword}
               onChange={handleChange}
               required
-              className="w-full pb-2 border-b-2 border-gray-300 focus:border-[#536d3d] focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
+              className="w-full pb-2 border-b-2 border-gray-300 focus:border-cultivate-green-dark focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
               placeholder="Confirm Password"
             />
           </div>
@@ -211,7 +211,7 @@ export default function SignupPage() {
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="w-full pb-2 border-b-2 border-gray-300 focus:border-[#536d3d] focus:outline-none transition-colors text-gray-900"
+              className="w-full pb-2 border-b-2 border-gray-300 focus:border-cultivate-green-dark focus:outline-none transition-colors text-gray-900"
             >
               <option value="FARMER">Farmer</option>
               <option value="AGRONOMIST">Agronomist</option>
@@ -225,7 +225,7 @@ export default function SignupPage() {
               value={formData.organizationId}
               onChange={handleChange}
               required
-              className="w-full pb-2 border-b-2 border-gray-300 focus:border-[#536d3d] focus:outline-none transition-colors text-gray-900"
+              className="w-full pb-2 border-b-2 border-gray-300 focus:border-cultivate-green-dark focus:outline-none transition-colors text-gray-900"
             >
               {organizations.length === 0 && (
                 <option value="">Loading organizations...</option>
@@ -242,7 +242,7 @@ export default function SignupPage() {
             Already have an account?{" "}
             <Link
               href="/login"
-              className="text-[#536d3d] hover:text-[#8b7355] hover:underline font-medium transition-colors"
+              className="text-cultivate-green-dark hover:text-cultivate-brown-mid hover:underline font-medium transition-colors"
             >
               Sign in!
             </Link>
@@ -252,7 +252,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="bg-cultivate-green-dark text-white py-2 px-6 rounded-none font-medium hover:bg-[#3d5229] focus:outline-none focus:ring-2 focus:ring-[#536d3d] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+              className="bg-cultivate-green-dark text-white py-2 px-6 rounded-none font-medium hover:bg-cultivate-green-deep focus:outline-none focus:ring-2 focus:ring-cultivate-green-dark focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
             >
               {isLoading ? "Creating account..." : "Create account"}
             </button>

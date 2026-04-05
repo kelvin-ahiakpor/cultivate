@@ -26,14 +26,14 @@ export function LandingNav({ session }: LandingNavProps) {
       <div className="flex justify-between items-center">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <Sprout className="w-8 h-8 text-[#536d3d]" />
+          <Sprout className="w-8 h-8 text-cultivate-green-dark" />
         </Link>
 
         {/* Desktop nav links */}
         <div className="hidden lg:flex items-center gap-10 text-[15px]">
-          <a href="#platform" className="text-gray-800 hover:text-[#536d3d] transition-colors font-medium">Platform</a>
-          <a href="#about" className="text-gray-800 hover:text-[#536d3d] transition-colors font-medium">About Us</a>
-          <a href="#contact" className="text-gray-800 hover:text-[#536d3d] transition-colors font-medium">Contact Us</a>
+          <a href="#platform" className="text-gray-800 hover:text-cultivate-green-dark transition-colors font-medium">Platform</a>
+          <a href="#about" className="text-gray-800 hover:text-cultivate-green-dark transition-colors font-medium">About Us</a>
+          <a href="#contact" className="text-gray-800 hover:text-cultivate-green-dark transition-colors font-medium">Contact Us</a>
         </div>
 
         {/* Right: auth buttons (desktop) + hamburger (mobile) */}
@@ -48,7 +48,7 @@ export function LandingNav({ session }: LandingNavProps) {
                 <MessageSquare className="w-4 h-4" />
               </Link>
               <div className="relative group hidden lg:block">
-                <button className="w-10 h-10 bg-[#536d3d] hover:bg-[#85b878] text-white rounded-full transition-all duration-300 flex items-center justify-center shadow-md">
+                <button className="w-10 h-10 bg-cultivate-green-dark hover:bg-cultivate-green-light text-white rounded-full transition-all duration-300 flex items-center justify-center shadow-md">
                   <User className="w-5 h-5" />
                 </button>
                 <div className="absolute right-0 top-12 w-48 bg-white rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
@@ -67,7 +67,7 @@ export function LandingNav({ session }: LandingNavProps) {
             <>
               <Link
                 href="/signup"
-                className="hidden lg:flex bg-[#85b878] hover:bg-[#536d3d] text-white px-8 py-3 rounded-full transition-all duration-300 font-medium shadow-md hover:shadow-lg items-center gap-2"
+                className="hidden lg:flex bg-cultivate-green-light hover:bg-cultivate-green-dark text-white px-8 py-3 rounded-full transition-all duration-300 font-medium shadow-md hover:shadow-lg items-center gap-2"
               >
                 Sign Up
                 <ArrowRight className="w-4 h-4" />
@@ -102,9 +102,9 @@ export function LandingNav({ session }: LandingNavProps) {
         }`}
       >
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-4 space-y-1">
-          <a href="#platform" onClick={() => setOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-[#536d3d] hover:bg-gray-50 rounded-xl transition-colors font-medium">Platform</a>
-          <a href="#about" onClick={() => setOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-[#536d3d] hover:bg-gray-50 rounded-xl transition-colors font-medium">About Us</a>
-          <a href="#contact" onClick={() => setOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-[#536d3d] hover:bg-gray-50 rounded-xl transition-colors font-medium">Contact Us</a>
+          <a href="#platform" onClick={() => setOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-cultivate-green-dark hover:bg-gray-50 rounded-xl transition-colors font-medium">Platform</a>
+          <a href="#about" onClick={() => setOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-cultivate-green-dark hover:bg-gray-50 rounded-xl transition-colors font-medium">About Us</a>
+          <a href="#contact" onClick={() => setOpen(false)} className="flex items-center min-h-[44px] px-4 py-2 text-gray-800 hover:text-cultivate-green-dark hover:bg-gray-50 rounded-xl transition-colors font-medium">Contact Us</a>
 
           <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">
             {session ? (
@@ -119,7 +119,7 @@ export function LandingNav({ session }: LandingNavProps) {
                 <Link
                   href="/dashboard"
                   onClick={() => setOpen(false)}
-                  className="flex items-center justify-center bg-[#536d3d] text-white py-3 rounded-xl font-medium min-h-[44px]"
+                  className="flex items-center justify-center bg-cultivate-green-dark text-white py-3 rounded-xl font-medium min-h-[44px]"
                 >
                   Dashboard
                 </Link>
@@ -135,7 +135,7 @@ export function LandingNav({ session }: LandingNavProps) {
                 <Link
                   href="/signup"
                   onClick={() => setOpen(false)}
-                  className="flex items-center justify-center gap-2 bg-[#85b878] text-white py-3 rounded-xl font-medium min-h-[44px]"
+                  className="flex items-center justify-center gap-2 bg-cultivate-green-light text-white py-3 rounded-xl font-medium min-h-[44px]"
                 >
                   Sign Up <ArrowRight className="w-4 h-4" />
                 </Link>

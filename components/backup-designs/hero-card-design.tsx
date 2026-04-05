@@ -13,19 +13,19 @@ export default function HeroCardDesign() {
           <nav className="relative z-50 px-8 lg:px-12 py-6">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <Sprout className="w-8 h-8 text-[#536d3d]" />
+                <Sprout className="w-8 h-8 text-cultivate-green-dark" />
               </div>
               <div className="hidden lg:flex items-center gap-10 text-[15px]">
-                <a href="/" className="text-gray-700 hover:text-[#536d3d] transition-colors font-medium">Homepage</a>
-                <a href="#how-it-works" className="text-gray-700 hover:text-[#536d3d] transition-colors font-medium">Platform</a>
-                <a href="#why-cultivate" className="text-gray-700 hover:text-[#536d3d] transition-colors font-medium">About Us</a>
-                <a href="#trust" className="text-gray-700 hover:text-[#536d3d] transition-colors font-medium">Careers</a>
-                <a href="#contact" className="text-gray-700 hover:text-[#536d3d] transition-colors font-medium">Contact Us</a>
+                <a href="/" className="text-gray-700 hover:text-cultivate-green-dark transition-colors font-medium">Homepage</a>
+                <a href="#how-it-works" className="text-gray-700 hover:text-cultivate-green-dark transition-colors font-medium">Platform</a>
+                <a href="#why-cultivate" className="text-gray-700 hover:text-cultivate-green-dark transition-colors font-medium">About Us</a>
+                <a href="#trust" className="text-gray-700 hover:text-cultivate-green-dark transition-colors font-medium">Careers</a>
+                <a href="#contact" className="text-gray-700 hover:text-cultivate-green-dark transition-colors font-medium">Contact Us</a>
               </div>
               <div className="flex items-center gap-3">
                 <Link
                   href="/signup"
-                  className="bg-[#85b878] hover:bg-[#536d3d] text-white px-8 py-3 rounded-full transition-all duration-300 font-medium shadow-md hover:shadow-lg flex items-center gap-2"
+                  className="bg-cultivate-green-light hover:bg-cultivate-green-dark text-white px-8 py-3 rounded-full transition-all duration-300 font-medium shadow-md hover:shadow-lg flex items-center gap-2"
                 >
                   Sign Up
                   <ArrowRight className="w-4 h-4" />
@@ -49,8 +49,8 @@ export default function HeroCardDesign() {
               <div className="relative flex items-center justify-center lg:justify-start">
                 {/* Large gradient ball */}
                 <div className="relative w-[400px] h-[400px] lg:w-[500px] lg:h-[500px]">
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#85b878]/60 via-[#608e96]/50 to-[#536d3d]/40 blur-2xl opacity-80"></div>
-                  <div className="absolute inset-8 rounded-full bg-gradient-to-br from-[#85b878] via-[#608e96] to-[#536d3d] shadow-2xl"></div>
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cultivate-green-light/60 via-cultivate-teal/50 to-cultivate-green-dark/40 blur-2xl opacity-80"></div>
+                  <div className="absolute inset-8 rounded-full bg-gradient-to-br from-cultivate-green-light via-cultivate-teal to-cultivate-green-dark shadow-2xl"></div>
                 </div>
 
                 {/* Try Demo Button - Bottom Left */}
@@ -68,11 +68,11 @@ export default function HeroCardDesign() {
               <div className="space-y-6 lg:pr-12">
                 <div className="space-y-3">
                   <h1 className="text-6xl lg:text-8xl font-bold leading-[1.1] font-serif">
-                    <span className="text-[#4a3728]">Expert farming</span>
+                    <span className="text-cultivate-brown-dark">Expert farming</span>
                     <br />
-                    <span className="text-[#4a3728]">advice,</span>
+                    <span className="text-cultivate-brown-dark">advice,</span>
                     <br />
-                    <span className="relative inline-block text-[#85b878]">
+                    <span className="relative inline-block text-cultivate-green-light">
                       anytime
                       <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 400 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M5 15C50 8 150 5 200 8C250 11 350 10 395 12" stroke="#85b878" strokeWidth="6" strokeLinecap="round" opacity="0.4"/>

@@ -27,7 +27,7 @@ export function CultivateButton({ className, ...props }: CultivateButtonProps) {
   return (
     <Button
       className={cn(
-        "bg-cultivate-green-dark hover:bg-[#3d5229] text-white font-medium transition-colors",
+        "bg-cultivate-green-dark hover:bg-cultivate-green-deep text-white font-medium transition-colors",
         className
       )}
       {...props}

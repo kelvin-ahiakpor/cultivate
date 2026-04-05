@@ -5,5 +5,5 @@ export const viewport: Viewport = {
 };
 
 export default function ChatLayout({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-[100dvh] bg-[#1E1E1E]">{children}</div>;
+  return <div className="min-h-[100dvh] bg-cultivate-bg-main">{children}</div>;
 }

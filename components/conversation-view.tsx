@@ -439,7 +439,7 @@ export default function ConversationView({
           <button
             onClick={onBack}
             aria-label="Open menu"
-            className="w-9 h-9 flex items-center justify-center bg-cultivate-bg-elevated hover:bg-[#3B3B3B] rounded-lg transition-colors flex-shrink-0"
+            className="w-9 h-9 flex items-center justify-center bg-cultivate-bg-elevated hover:bg-cultivate-border-element rounded-lg transition-colors flex-shrink-0"
           >
             <PanelLeft className="w-4 h-4 text-cultivate-text-primary rotate-180" />
           </button>
@@ -463,7 +463,7 @@ export default function ConversationView({
           {showNewChatButton ? (
             <button
               onClick={onNewChat}
-              className="w-11 h-11 bg-cultivate-bg-elevated hover:bg-[#3B3B3B] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+              className="w-11 h-11 bg-cultivate-bg-elevated hover:bg-cultivate-border-element rounded-full flex items-center justify-center transition-colors flex-shrink-0"
             >
               <Plus className="w-5 h-5 text-cultivate-green-light" />
             </button>
@@ -503,7 +503,7 @@ export default function ConversationView({
 
             {headerMenuOpen && (
               <>
-                <div className="absolute left-0 top-full mt-1 bg-[#1C1C1C] rounded-lg shadow-lg border border-cultivate-border-subtle py-1 z-[101] min-w-[200px] whitespace-nowrap">
+                <div className="absolute left-0 top-full mt-1 bg-cultivate-bg-sidebar rounded-lg shadow-lg border border-cultivate-border-subtle py-1 z-[101] min-w-[200px] whitespace-nowrap">
                   <button
                     onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
                     className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover hover:text-white flex items-center gap-2.5 transition-colors"
@@ -542,9 +542,9 @@ export default function ConversationView({
       )}
 
       {highlightFlaggedMessages && flaggedCount > 0 && (
-        <div className="flex-shrink-0 px-3 lg:px-4 py-2 bg-[#e8c8ab]/5 border-y border-[#e8c8ab]/10 flex items-center gap-2">
-          <Flag className="w-3.5 h-3.5 text-[#e8c8ab]" />
-          <span className="text-xs text-[#e8c8ab]">
+        <div className="flex-shrink-0 px-3 lg:px-4 py-2 bg-cultivate-beige/5 border-y border-cultivate-beige/10 flex items-center gap-2">
+          <Flag className="w-3.5 h-3.5 text-cultivate-beige" />
+          <span className="text-xs text-cultivate-beige">
             {flaggedCount === 1
               ? "1 flagged assistant message highlighted below"
               : `${flaggedCount} flagged assistant messages highlighted below`}
@@ -564,7 +564,7 @@ export default function ConversationView({
               Desktop/web: solid bg, centered max width */}
           <div className={`${isStandalone ? "relative z-30 bg-transparent pb-4 pt-0" : "bg-cultivate-bg-main pb-2 lg:pb-6"}`}>
             {isStandalone && (
-              <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent backdrop-blur-[0.5px]" />
+              <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
             )}
             <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-3.5 mb-1 lg:max-w-3xl lg:mx-auto"}`}>
               <div className="bg-cultivate-bg-elevated rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
@@ -575,7 +575,7 @@ export default function ConversationView({
                   onChange={inputProps && isOnline ? (e) => inputProps.onChange(e.target.value) : undefined}
                   onKeyDown={inputProps && isOnline ? (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); inputProps.onSend(); } } : undefined}
                   readOnly={!inputProps || voiceState !== "idle" || !isOnline}
-                  className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-[#6B6B6B] bg-transparent text-sm standalone:text-base lg:text-sm"
+                  className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-cultivate-text-tertiary bg-transparent text-sm standalone:text-base lg:text-sm"
                 />
                 <div className="flex items-center justify-between mt-2">
                   {/* Left: attachment menu + voice input (only in real mode) */}
@@ -703,7 +703,7 @@ export default function ConversationView({
                                 <button
                                   key={agent.id}
                                   onClick={() => { inputProps.onAgentSelect(agent.id, agent.name); inputProps.setShowAgentMenu(false); }}
-                                  className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors ${inputProps.selectedAgent === agent.name ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
+                                  className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-cultivate-border-element transition-colors ${inputProps.selectedAgent === agent.name ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
                                 >
                                   {agent.name}
                                 </button>
@@ -739,7 +739,7 @@ export default function ConversationView({
                                 <button
                                   key={lang.code}
                                   onClick={() => { inputProps.onLanguageSelect(lang.code); inputProps.setShowLanguageMenu(false); }}
-                                  className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors flex items-center gap-2 ${inputProps.selectedLanguage === lang.code ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
+                                  className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-cultivate-border-element transition-colors flex items-center gap-2 ${inputProps.selectedLanguage === lang.code ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
                                 >
                                   <span>{lang.flag}</span>
                                   <span>{lang.name}</span>
@@ -766,7 +766,7 @@ export default function ConversationView({
                         <button
                           onClick={() => { inputProps.onSend(); inputProps.onSendIconCycle(); }}
                           disabled={!inputProps.value.trim()}
-                          className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-[#536d3d] transition-colors disabled:opacity-40"
+                          className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors disabled:opacity-40"
                         >
                           {inputProps.sendIcon === "cabbage" && <CabbageIcon />}
                           {inputProps.sendIcon === "plane" && <PaperPlaneIcon />}
@@ -774,7 +774,7 @@ export default function ConversationView({
                         </button>
                       )
                     ) : (
-                      <button className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-[#536d3d] transition-colors opacity-40 cursor-default">
+                      <button className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors opacity-40 cursor-default">
                         <CabbageIcon />
                       </button>
                     )}
@@ -810,11 +810,11 @@ export default function ConversationView({
                         <div className="group">
                           <div className={`rounded-2xl transition-colors ${
                             highlightFlaggedMessages && msg.isFlagged
-                              ? "relative border border-[#e8c8ab]/20 bg-[#e8c8ab]/5 px-4 py-3"
+                              ? "relative border border-cultivate-beige/20 bg-cultivate-beige/5 px-4 py-3"
                               : ""
                           }`}>
                             {highlightFlaggedMessages && msg.isFlagged && (
-                              <div className="absolute -inset-2 rounded-[1.5rem] border-2 border-[#e8c8ab]/30 pointer-events-none" />
+                              <div className="absolute -inset-2 rounded-[1.5rem] border-2 border-cultivate-beige/30 pointer-events-none" />
                             )}
                             <div className="prose prose-base prose-invert max-w-none text-cultivate-text-primary leading-relaxed prose-p:my-1 prose-headings:text-cultivate-text-primary prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-cultivate-text-primary prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
@@ -823,7 +823,7 @@ export default function ConversationView({
 
                           {/* Agronomist correction (shown below message) */}
                           {msg.role === "ASSISTANT" && msg.flaggedQuery?.status === "CORRECTED" && msg.flaggedQuery?.agronomistResponse && (
-                            <div className="mt-3 pl-4 border-l-2 border-[#85b878]/30">
+                            <div className="mt-3 pl-4 border-l-2 border-cultivate-green-light/30">
                               <div className="flex items-center gap-2 mb-2">
                                 <div className="w-6 h-6 rounded-full bg-cultivate-green-light/20 flex items-center justify-center flex-shrink-0">
                                   <CheckCircle className="w-3.5 h-3.5 text-cultivate-green-light" />
@@ -840,7 +840,7 @@ export default function ConversationView({
 
                           {/* Agronomist verification notes (shown below message) */}
                           {msg.role === "ASSISTANT" && msg.flaggedQuery?.status === "VERIFIED" && msg.flaggedQuery?.verificationNotes && (
-                            <div className="mt-3 pl-4 border-l-2 border-[#85b878]/30">
+                            <div className="mt-3 pl-4 border-l-2 border-cultivate-green-light/30">
                               <div className="flex items-center gap-2 mb-2">
                                 <div className="w-6 h-6 rounded-full bg-cultivate-green-light/20 flex items-center justify-center flex-shrink-0">
                                   <CheckCircle className="w-3.5 h-3.5 text-cultivate-green-light" />
@@ -862,7 +862,7 @@ export default function ConversationView({
                             if (!currentReason) return null;
 
                             return (
-                              <div className="mt-3 pl-4 border-l-2 border-[#9C9A92]/30">
+                              <div className="mt-3 pl-4 border-l-2 border-cultivate-text-secondary/30">
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="text-xs font-medium text-cultivate-text-secondary">Why You Flagged This</span>
                                   {reasons.length > 1 && (
@@ -999,7 +999,7 @@ export default function ConversationView({
                               {msg.confidenceScore !== undefined && msg.confidenceScore !== null && (
                                 <span className={`text-xs font-medium ${
                                   msg.confidenceScore < 0.6
-                                    ? "text-[#e8c8ab]"
+                                    ? "text-cultivate-beige"
                                     : msg.confidenceScore < 0.8
                                       ? "text-cultivate-teal"
                                       : "text-cultivate-green-light"
@@ -1008,7 +1008,7 @@ export default function ConversationView({
                                 </span>
                               )}
                               {msg.isFlagged && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-[#e8c8ab]/10 px-2 py-0.5 text-xs text-[#e8c8ab]">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-cultivate-beige/10 px-2 py-0.5 text-xs text-cultivate-beige">
                                   <Flag className="w-3 h-3" />
                                   Flagged
                                 </span>
@@ -1055,7 +1055,7 @@ export default function ConversationView({
                 Desktop/web: solid bg, centered max width */}
             <div className={`${showComposer ? `sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-cultivate-bg-main pb-2"}` : "hidden"}`}>
               {isStandalone && (
-                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent backdrop-blur-[0.5px]" />
+                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
               )}
               <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-3.5 mb-1"}`}>
                 <div className="bg-cultivate-bg-elevated rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)]">
@@ -1076,7 +1076,7 @@ export default function ConversationView({
                     onChange={inputProps ? (e) => inputProps.onChange(e.target.value) : undefined}
                     onKeyDown={inputProps ? (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); inputProps.onSend(); } } : undefined}
                     readOnly={!inputProps || voiceState !== "idle"}
-                    className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-[#6B6B6B] bg-transparent text-sm standalone:text-base lg:text-sm"
+                    className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-cultivate-text-tertiary bg-transparent text-sm standalone:text-base lg:text-sm"
                   />
                   <div className="flex items-center justify-between mt-2">
                     {/* Left: attachment menu + voice input (only in real mode) */}
@@ -1170,7 +1170,7 @@ export default function ConversationView({
                           {voiceState === "connecting" && (
                             <button
                               onClick={handleVoiceClick}
-                              className="px-3 py-1.5 bg-cultivate-green-light hover:bg-[#536d3d] rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
+                              className="px-3 py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
                             >
                               <AnimatedDots type="pulse" />
                               <span>Cancel</span>
@@ -1180,7 +1180,7 @@ export default function ConversationView({
                           {voiceState === "listening" && (
                             <button
                               onClick={handleVoiceClick}
-                              className="px-3 py-1.5 bg-cultivate-green-light hover:bg-[#536d3d] rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
+                              className="px-3 py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
                             >
                               <AnimatedDots type="wave" />
                               <span>Stop</span>
@@ -1221,7 +1221,7 @@ export default function ConversationView({
                                   <button
                                     key={agent.id}
                                     onClick={() => { inputProps.onAgentSelect(agent.id, agent.name); inputProps.setShowAgentMenu(false); }}
-                                    className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors ${inputProps.selectedAgent === agent.name ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
+                                    className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-cultivate-border-element transition-colors ${inputProps.selectedAgent === agent.name ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
                                   >
                                     {agent.name}
                                   </button>
@@ -1257,7 +1257,7 @@ export default function ConversationView({
                                   <button
                                     key={lang.code}
                                     onClick={() => { inputProps.onLanguageSelect(lang.code); inputProps.setShowLanguageMenu(false); }}
-                                    className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors flex items-center gap-2 ${inputProps.selectedLanguage === lang.code ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
+                                    className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-cultivate-border-element transition-colors flex items-center gap-2 ${inputProps.selectedLanguage === lang.code ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
                                   >
                                     <span>{lang.flag}</span>
                                     <span>{lang.name}</span>
@@ -1279,7 +1279,7 @@ export default function ConversationView({
                           <button
                             onClick={() => { inputProps.onSend(); inputProps.onSendIconCycle(); }}
                             disabled={!inputProps.value.trim()}
-                            className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-[#536d3d] transition-colors disabled:opacity-40"
+                            className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors disabled:opacity-40"
                           >
                             {inputProps.sendIcon === "cabbage" && <CabbageIcon />}
                             {inputProps.sendIcon === "plane" && <PaperPlaneIcon />}
@@ -1287,7 +1287,7 @@ export default function ConversationView({
                           </button>
                         )
                       ) : (
-                        <button className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-[#536d3d] transition-colors opacity-40 cursor-default">
+                        <button className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors opacity-40 cursor-default">
                           <CabbageIcon />
                         </button>
                       )}
@@ -1421,7 +1421,7 @@ export default function ConversationView({
                   e.target.style.height = e.target.scrollHeight + "px";
                 }}
                 placeholder={isUpdatingFlag ? "Add update..." : "Why are you flagging this? (optional)"}
-                className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm placeholder-[#6B6B6B] border border-cultivate-border-element rounded-lg resize-none focus:outline-none focus:border-[#85b878] mb-3 overflow-hidden"
+                className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm placeholder-cultivate-text-tertiary border border-cultivate-border-element rounded-lg resize-none focus:outline-none focus:border-cultivate-green-light mb-3 overflow-hidden"
                 rows={1}
                 style={{ minHeight: "36px" }}
                 disabled={isUpdatingFlag && !canAddMore}
@@ -1429,14 +1429,14 @@ export default function ConversationView({
               <div className="flex items-center gap-2 justify-end">
                 <button
                   onClick={() => { setShowFlagModal(false); setFlagReason(""); setCopiedFlagMessages(new Set()); }}
-                  className="px-3 py-1.5 text-xs text-cultivate-text-primary hover:bg-[#3B3B3B] rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-xs text-cultivate-text-primary hover:bg-cultivate-border-element rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={submitFlag}
                   disabled={isUpdatingFlag && !canAddMore}
-                  className="px-3 py-1.5 text-xs bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors disabled:opacity-40"
+                  className="px-3 py-1.5 text-xs bg-cultivate-button-primary text-white rounded-lg hover:bg-cultivate-button-primary-hover transition-colors disabled:opacity-40"
                 >
                   {isUpdatingFlag ? "Add Update" : "Submit"}
                 </button>
