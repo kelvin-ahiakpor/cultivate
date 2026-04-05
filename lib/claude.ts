@@ -35,9 +35,12 @@ export interface ChatInput {
   knowledgeContext?: string; // RAG chunks injected here in Phase 3
 }
 
+type ChatImageMimeType = "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+
 export interface ChatImageInput {
-  fileUrl: string;
-  mimeType: string;
+  fileUrl?: string;
+  base64Data?: string;
+  mimeType: ChatImageMimeType;
 }
 
 export interface ChatResult {
@@ -85,20 +88,28 @@ If you're unsure whether something is farming-related, err on the side of cautio
 function buildMessageContent(
   text: string,
   attachments?: ChatImageInput[]
-): string | Array<
-  | { type: "text"; text: string }
-  | { type: "image"; source: { type: "url"; url: string } }
-> {
-  const contentBlocks: Array<
-    | { type: "text"; text: string }
-    | { type: "image"; source: { type: "url"; url: string } }
-  > = [];
+): string | Anthropic.ContentBlockParam[] {
+  const contentBlocks: Anthropic.ContentBlockParam[] = [];
 
   if (text.trim().length > 0) {
     contentBlocks.push({ type: "text", text });
   }
 
   for (const attachment of attachments ?? []) {
+    if (attachment.base64Data) {
+      contentBlocks.push({
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: attachment.mimeType as Anthropic.Base64ImageSource["media_type"],
+          data: attachment.base64Data,
+        },
+      });
+      continue;
+    }
+
+    if (!attachment.fileUrl) continue;
+
     contentBlocks.push({
       type: "image",
       source: {
@@ -109,7 +120,7 @@ function buildMessageContent(
   }
 
   if (contentBlocks.length === 0) {
-    return text;
+    return [{ type: "text", text: "[Image attachment unavailable]" }];
   }
 
   return contentBlocks;

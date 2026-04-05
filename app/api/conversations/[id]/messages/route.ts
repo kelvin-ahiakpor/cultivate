@@ -30,11 +30,11 @@ import { NextRequest } from "next/server";
 export const maxDuration = 60;
 import { prisma, recoverFromDatabaseError } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess, handleApiError } from "@/lib/api-utils";
-import { chatStream, mastraStream, generateTitle } from "@/lib/claude";
+import { chatStream, mastraStream, generateTitle, type ChatImageInput } from "@/lib/claude";
 import { scoreConfidence, shouldFlag } from "@/lib/confidence";
 import { calculateCost } from "@/lib/cost";
 import { retrieveContext } from "@/lib/mastra-rag"; // NOW USES MASTRA RAG
-import { createSignedChatImageUrl, getMessageAttachmentUrl, uploadChatImage } from "@/lib/supabase-storage";
+import { downloadChatImage, getMessageAttachmentUrl, uploadChatImage } from "@/lib/supabase-storage";
 
 const MAX_IMAGE_ATTACHMENTS = 3;
 const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -58,6 +58,21 @@ function serializeAttachment(attachment: {
     width: attachment.width ?? null,
     height: attachment.height ?? null,
   };
+}
+
+async function mapAttachmentForClaude(attachment: {
+  fileUrl: string;
+  storagePath?: string | null;
+  mimeType: string;
+}): Promise<ChatImageInput | null> {
+  if (attachment.storagePath) {
+    return {
+      base64Data: (await downloadChatImage(attachment.storagePath)).toString("base64"),
+      mimeType: attachment.mimeType as ChatImageInput["mimeType"],
+    };
+  }
+
+  return null;
 }
 
 
@@ -240,6 +255,7 @@ export async function POST(
     });
 
     const uploadedAttachments: Array<{ id: string; fileName: string; fileUrl: string; storagePath?: string | null; mimeType: string; attachmentType: "IMAGE"; width?: number | null; height?: number | null }> = [];
+    const uploadedImagesForClaude: ChatImageInput[] = [];
 
     try {
       if (imageFiles.length > 0) {
@@ -248,6 +264,10 @@ export async function POST(
           const attachmentId = crypto.randomUUID();
           const arrayBuffer = await image.arrayBuffer();
           const buffer = Buffer.from(arrayBuffer);
+          uploadedImagesForClaude.push({
+            base64Data: buffer.toString("base64"),
+            mimeType: image.type as ChatImageInput["mimeType"],
+          });
           const { storagePath } = await uploadChatImage(
             buffer,
             attachmentId,
@@ -309,12 +329,9 @@ export async function POST(
       history.reverse().map(async (msg) => ({
         role: msg.role.toLowerCase() as "user" | "assistant",
         content: msg.content,
-        attachments: await Promise.all(msg.attachments.map(async (attachment) => ({
-          fileUrl: attachment.storagePath
-            ? await createSignedChatImageUrl(attachment.storagePath, 900)
-            : attachment.fileUrl,
-          mimeType: attachment.mimeType,
-        }))),
+        attachments: (
+          await Promise.all(msg.attachments.map((attachment) => mapAttachmentForClaude(attachment)))
+        ).filter((attachment): attachment is ChatImageInput => !!attachment),
       }))
     );
 
@@ -346,19 +363,13 @@ export async function POST(
 
     // 5. Stream Claude response via SSE (using Mastra agent with weather tool)
     console.log(`[Conversation ${id}] Step 5: Starting Mastra agent stream...`);
-    const userImagesForClaude = await Promise.all(uploadedAttachments.map(async (attachment) => ({
-      fileUrl: attachment.storagePath
-        ? await createSignedChatImageUrl(attachment.storagePath, 900)
-        : attachment.fileUrl,
-      mimeType: attachment.mimeType,
-    })));
     const clientUploadedAttachments = uploadedAttachments.map(serializeAttachment);
     const streamInput = {
       systemPrompt: conversation.agent.systemPrompt,
       responseStyle: conversation.agent.responseStyle,
       conversationHistory,
       userMessage: trimmedContent,
-      userImages: userImagesForClaude,
+      userImages: uploadedImagesForClaude,
       knowledgeContext: rag.hasContext ? rag.context : undefined,
     };
 

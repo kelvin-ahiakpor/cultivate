@@ -216,3 +216,15 @@ export async function createSignedChatImageUrl(
 
   return data.signedUrl;
 }
+
+export async function downloadChatImage(storagePath: string): Promise<Buffer> {
+  const supabase = getClient();
+  const { data, error } = await supabase.storage.from(CHAT_IMAGE_BUCKET).download(storagePath);
+
+  if (error || !data) {
+    throw new Error(`Failed to download chat image: ${error?.message}`);
+  }
+
+  const arrayBuffer = await data.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
