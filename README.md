@@ -149,6 +149,13 @@ For detailed setup instructions, see [SETUP.md](./SETUP.md).
 - [x] Manual flagging, updates, and unflagging for assistant messages
 - [x] Translation and speech-input support
 - [x] Farmer systems and settings views
+- [x] Inline profile name editing in settings
+
+#### PWA & UX Refinements
+- [x] Role-aware PWA startup routing (`/` -> `/dashboard` or `/chat`)
+- [x] Click-anywhere knowledge upload dropzone with immediate file replacement
+- [x] Shared inline-edit component used across settings and knowledge-base title editing
+- [x] Root utility/test scripts moved under `scripts/`
 
 ### 🚧 In Progress / Next Steps
 
@@ -189,6 +196,9 @@ cultivate/
 │   ├── migrations/               # Migration history
 │   └── seed.ts                   # Test data seeder
 ├── public/                       # Static assets
+├── scripts/                      # Developer utilities and manual test scripts
+│   ├── debug/                    # DB inspection / one-off repair scripts
+│   └── translation-tests/        # Manual translation API probes
 ├── types/                        # TypeScript types
 ├── .env                          # Environment variables (not in git)
 ├── prisma.config.ts              # Prisma 7 configuration

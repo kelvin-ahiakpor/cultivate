@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Settings, MapPin, ChevronLeft, Loader2, Check, AlertCircle } from "lucide-react";
 import { GlassCircleButton } from "@/components/cultivate-ui";
+import { InlineEditableText } from "@/components/inline-editable-text";
 import { notify } from "@/lib/toast";
 
 interface SettingsViewProps {
@@ -26,15 +27,16 @@ export default function SettingsView({
   onBack,
   onLocationUpdate
 }: SettingsViewProps) {
+  const [displayName, setDisplayName] = useState(user.name || "");
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState(user.name || "");
+  const [isSavingName, setIsSavingName] = useState(false);
   const [location, setLocation] = useState(user.location || "");
   const [gpsCoordinates, setGpsCoordinates] = useState(user.gpsCoordinates || "");
   const [isDetecting, setIsDetecting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-
-  const [name, setName] = useState(user.name || "");
-  const [isSavingName, setIsSavingName] = useState(false);
-  const [hasNameChanges, setHasNameChanges] = useState(false);
+  const nameRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const changed = location !== (user.location || "") || gpsCoordinates !== (user.gpsCoordinates || "");
@@ -42,8 +44,61 @@ export default function SettingsView({
   }, [location, gpsCoordinates, user.location, user.gpsCoordinates]);
 
   useEffect(() => {
-    setHasNameChanges(name !== (user.name || ""));
-  }, [name, user.name]);
+    setDisplayName(user.name || "");
+    setNameDraft(user.name || "");
+  }, [user.name]);
+
+  useEffect(() => {
+    if (!editingName || !nameRef.current) return;
+    const el = nameRef.current;
+    el.focus();
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  }, [editingName]);
+
+  const handleSaveName = async () => {
+    const trimmedName = nameDraft.trim();
+    if (!trimmedName) {
+      notify.error("Name cannot be empty");
+      return;
+    }
+
+    if (trimmedName === displayName) {
+      setEditingName(false);
+      return;
+    }
+
+    setIsSavingName(true);
+    try {
+      const response = await fetch("/api/user/location", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: trimmedName,
+          location: location.trim() || null,
+          gpsCoordinates: gpsCoordinates.trim() || null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save name");
+      }
+
+      setDisplayName(trimmedName);
+      setNameDraft(trimmedName);
+      setEditingName(false);
+      notify.success("Name updated");
+    } catch (error) {
+      console.error("Save name error:", error);
+      notify.error("Failed to save name");
+    } finally {
+      setIsSavingName(false);
+    }
+  };
 
   const handleDetectLocation = () => {
     if (!navigator.geolocation) {
@@ -59,7 +114,6 @@ export default function SettingsView({
         const coords = `${lat},${lon}`;
         setGpsCoordinates(coords);
 
-        // Reverse geocode to get city name
         try {
           const response = await fetch(
             `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
@@ -94,34 +148,6 @@ export default function SettingsView({
         maximumAge: 300000,
       }
     );
-  };
-
-  const handleSaveName = async () => {
-    if (!name.trim()) {
-      notify.error("Name cannot be empty");
-      return;
-    }
-
-    setIsSavingName(true);
-    try {
-      const response = await fetch("/api/users/me", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save name");
-      }
-
-      notify.success("Name updated");
-      setHasNameChanges(false);
-    } catch (error) {
-      console.error("Save name error:", error);
-      notify.error("Failed to save name");
-    } finally {
-      setIsSavingName(false);
-    }
   };
 
   const handleSave = async () => {
@@ -160,9 +186,7 @@ export default function SettingsView({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* PART 1: Fixed Header */}
       <div className="flex-shrink-0">
-        {/* Mobile header */}
         <div className="lg:hidden flex items-center justify-between pt-16 pb-4 px-4 relative">
           <div className="absolute left-4">
             {onBack ? (
@@ -181,7 +205,6 @@ export default function SettingsView({
           <div className="absolute right-4 w-10"></div>
         </div>
 
-        {/* Desktop header */}
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-serif text-cultivate-text-primary">Settings</h1>
@@ -190,11 +213,9 @@ export default function SettingsView({
         </div>
       </div>
 
-      {/* PART 2: Scrollable Content */}
       <div className="relative flex-1 min-h-0">
         <div className="h-full overflow-y-auto thin-scrollbar scrollbar-outset px-4 lg:px-0">
           <div className="max-w-2xl mx-auto pb-8">
-            {/* Location Section */}
             <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-6 mb-6">
               <div className="flex items-start gap-3 mb-4">
                 <div className="p-2 bg-cultivate-bg-hover rounded-lg">
@@ -209,7 +230,6 @@ export default function SettingsView({
               </div>
 
               <div className="space-y-4">
-                {/* Detect Location Button */}
                 <button
                   onClick={handleDetectLocation}
                   disabled={isDetecting}
@@ -228,7 +248,6 @@ export default function SettingsView({
                   )}
                 </button>
 
-                {/* Manual Location Input */}
                 <div>
                   <label className="block text-sm text-cultivate-text-secondary mb-2">
                     City/Region <span className="text-cultivate-text-tertiary">(e.g., Accra, Ghana or Volta Region)</span>
@@ -242,7 +261,6 @@ export default function SettingsView({
                   />
                 </div>
 
-                {/* GPS Coordinates Input */}
                 <div>
                   <label className="block text-sm text-cultivate-text-secondary mb-2">
                     GPS Coordinates <span className="text-cultivate-text-tertiary">(optional, format: lat,lon)</span>
@@ -256,7 +274,6 @@ export default function SettingsView({
                   />
                 </div>
 
-                {/* Info note */}
                 <div className="flex items-start gap-2 p-3 bg-cultivate-bg-hover rounded-lg">
                   <AlertCircle className="w-4 h-4 text-cultivate-teal mt-0.5 flex-shrink-0" />
                   <p className="text-xs text-cultivate-text-secondary">
@@ -264,7 +281,6 @@ export default function SettingsView({
                   </p>
                 </div>
 
-                {/* Save Button */}
                 {hasChanges && (
                   <button
                     onClick={handleSave}
@@ -287,7 +303,6 @@ export default function SettingsView({
               </div>
             </div>
 
-            {/* Account Info Section */}
             <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-6">
               <div className="flex items-start gap-3 mb-4">
                 <div className="p-2 bg-cultivate-bg-hover rounded-lg">
@@ -299,40 +314,30 @@ export default function SettingsView({
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <label className="block text-sm text-cultivate-text-secondary mb-2">Name</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Your name"
-                    className="w-full px-3 py-2.5 bg-cultivate-bg-main border border-cultivate-border-element rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-button-primary"
+                  <label className="block text-xs text-cultivate-text-tertiary mb-1">Name</label>
+                  <InlineEditableText
+                    value={nameDraft}
+                    editing={editingName}
+                    isSaving={isSavingName}
+                    onStartEdit={() => setEditingName(true)}
+                    onChange={setNameDraft}
+                    onConfirm={handleSaveName}
+                    onCancel={() => {
+                      setNameDraft(displayName);
+                      setEditingName(false);
+                    }}
+                    buttonAriaLabel="Edit name"
+                    inputRef={nameRef}
+                    displayClassName="text-sm text-cultivate-text-primary"
+                    editorClassName="min-w-0 bg-transparent p-0 m-0 text-sm text-cultivate-text-primary outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-cultivate-text-secondary mb-2">Email</label>
-                  <p className="px-3 py-2.5 text-sm text-cultivate-text-secondary">{user.email}</p>
+                  <label className="block text-xs text-cultivate-text-tertiary mb-1">Email</label>
+                  <p className="text-sm text-cultivate-text-primary">{user.email}</p>
                 </div>
-                {hasNameChanges && (
-                  <button
-                    onClick={handleSaveName}
-                    disabled={isSavingName}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-cultivate-button-primary text-white text-sm rounded-lg hover:bg-cultivate-button-primary-hover transition-colors disabled:opacity-40"
-                  >
-                    {isSavingName ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Saving...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-4 h-4" />
-                        <span>Save name</span>
-                      </>
-                    )}
-                  </button>
-                )}
               </div>
             </div>
           </div>

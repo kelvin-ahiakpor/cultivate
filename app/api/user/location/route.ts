@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 /**
  * PATCH /api/user/location
- * Update the authenticated user's location and GPS coordinates
+ * Update the authenticated user's profile fields used in settings
  */
 export async function PATCH(request: NextRequest) {
   const { session, error } = await requireAuth();
@@ -12,7 +12,17 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { location, gpsCoordinates } = body;
+    const { name, location, gpsCoordinates } = body;
+
+    if (name !== null && name !== undefined) {
+      if (typeof name !== "string") {
+        return NextResponse.json(apiError("Invalid name format", 400), { status: 400 });
+      }
+
+      if (name.trim().length === 0) {
+        return NextResponse.json(apiError("Name cannot be empty", 400), { status: 400 });
+      }
+    }
 
     // Validate input
     if (location !== null && location !== undefined && typeof location !== "string") {
@@ -44,11 +54,13 @@ export async function PATCH(request: NextRequest) {
     const updatedUser = await prisma.user.update({
       where: { id: session!.user.id },
       data: {
+        ...(name !== undefined ? { name: name.trim() } : {}),
         location: location?.trim() || null,
         gpsCoordinates: gpsCoordinates?.trim() || null,
       },
       select: {
         id: true,
+        name: true,
         location: true,
         gpsCoordinates: true,
       },

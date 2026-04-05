@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, PanelLeft, Loader2, Pencil, WifiOff, Plus } from "lucide-react";
+import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, PanelLeft, Loader2, WifiOff, Plus } from "lucide-react";
 import { GlassCircleButton, Dropdown } from "@/components/cultivate-ui";
+import { InlineEditableText } from "@/components/inline-editable-text";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useKnowledgeBases, uploadDocument, deleteDocument, renameDocument, assignDocumentToAgent, KnowledgeBaseUploadError, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
@@ -1178,51 +1179,23 @@ export default function KnowledgeView({
             {/* Panel Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-cultivate-border-subtle">
               <div className="flex-1 min-w-0 pr-2">
-                {editingTitleDocId === viewPanelDoc.id ? (
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div
-                      ref={inlineTitleRef}
-                      contentEditable
-                      suppressContentEditableWarning
-                      onInput={(e) => {
-                        const nextValue = e.currentTarget.textContent || "";
-                        renameDraftRef.current = nextValue;
-                        setRenameTitle(nextValue);
-                      }}
-                      onBlur={() => {
-                        if (!renaming) void handleRenameConfirm(viewPanelDoc);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          void handleRenameConfirm(viewPanelDoc);
-                        }
-                        if (e.key === "Escape") handleCancelInlineRename();
-                      }}
-                      className="min-w-0 flex-1 bg-transparent p-0 m-0 font-sans text-[0.875rem] leading-[1.25rem] font-medium text-white outline-none"
-                    >
-                      {renameTitle}
-                    </div>
-                    {renaming ? (
-                      <Loader2 className="w-3.5 h-3.5 text-cultivate-text-secondary animate-spin flex-shrink-0" />
-                    ) : null}
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-2 min-w-0">
-                      <h2 className="text-[0.875rem] leading-[1.25rem] font-medium text-white truncate">{viewPanelDoc.title}</h2>
-                      <button
-                        type="button"
-                        onClick={() => handleStartInlineRename(viewPanelDoc)}
-                        className="p-1 hover:bg-cultivate-bg-elevated rounded-md transition-colors flex-shrink-0"
-                        aria-label="Edit document name"
-                      >
-                        <Pencil className="w-3.5 h-3.5 text-cultivate-text-secondary" />
-                      </button>
-                    </div>
-                    <p className="text-xs text-cultivate-text-secondary mt-0.5 truncate">{viewPanelDoc.fileType}</p>
-                  </>
-                )}
+                <InlineEditableText
+                  value={renameTitle || viewPanelDoc.title}
+                  editing={editingTitleDocId === viewPanelDoc.id}
+                  isSaving={renaming}
+                  onStartEdit={() => handleStartInlineRename(viewPanelDoc)}
+                  onChange={(nextValue) => {
+                    renameDraftRef.current = nextValue;
+                    setRenameTitle(nextValue);
+                  }}
+                  onConfirm={() => handleRenameConfirm(viewPanelDoc)}
+                  onCancel={handleCancelInlineRename}
+                  buttonAriaLabel="Edit document name"
+                  inputRef={inlineTitleRef}
+                  displayClassName="text-[0.875rem] leading-[1.25rem] font-medium text-white truncate"
+                  editorClassName="min-w-0 bg-transparent p-0 m-0 font-sans text-[0.875rem] leading-[1.25rem] font-medium text-white outline-none"
+                />
+                <p className="text-xs text-cultivate-text-secondary mt-0.5 truncate">{viewPanelDoc.fileType}</p>
               </div>
               <button
                 type="button"
@@ -1408,48 +1381,23 @@ export default function KnowledgeView({
             {/* Panel Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-cultivate-border-subtle">
               <div>
-                {editingTitleDocId === viewPanelDoc.id ? (
-                  <div className="flex items-center gap-2 min-w-0 max-w-[420px]">
-                    <div
-                      ref={inlineTitleRef}
-                      contentEditable
-                      suppressContentEditableWarning
-                      onInput={(e) => {
-                        const nextValue = e.currentTarget.textContent || "";
-                        renameDraftRef.current = nextValue;
-                        setRenameTitle(nextValue);
-                      }}
-                      onBlur={() => {
-                        if (!renaming) void handleRenameConfirm(viewPanelDoc);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          void handleRenameConfirm(viewPanelDoc);
-                        }
-                        if (e.key === "Escape") handleCancelInlineRename();
-                      }}
-                      className="min-w-0 flex-1 bg-transparent p-0 m-0 font-sans text-[0.875rem] leading-[1.25rem] font-medium text-white outline-none"
-                    >
-                      {renameTitle}
-                    </div>
-                    {renaming ? (
-                      <Loader2 className="w-3.5 h-3.5 text-cultivate-text-secondary animate-spin flex-shrink-0" />
-                    ) : null}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 min-w-0 max-w-[420px]">
-                    <h2 className="text-[0.875rem] leading-[1.25rem] font-medium text-white truncate">{viewPanelDoc.title}</h2>
-                    <button
-                      type="button"
-                      onClick={() => handleStartInlineRename(viewPanelDoc)}
-                      className="p-1 hover:bg-cultivate-bg-elevated rounded-md transition-colors flex-shrink-0"
-                      aria-label="Edit document name"
-                    >
-                      <Pencil className="w-3.5 h-3.5 text-cultivate-text-secondary" />
-                    </button>
-                  </div>
-                )}
+                <InlineEditableText
+                  value={renameTitle || viewPanelDoc.title}
+                  editing={editingTitleDocId === viewPanelDoc.id}
+                  isSaving={renaming}
+                  onStartEdit={() => handleStartInlineRename(viewPanelDoc)}
+                  onChange={(nextValue) => {
+                    renameDraftRef.current = nextValue;
+                    setRenameTitle(nextValue);
+                  }}
+                  onConfirm={() => handleRenameConfirm(viewPanelDoc)}
+                  onCancel={handleCancelInlineRename}
+                  buttonAriaLabel="Edit document name"
+                  inputRef={inlineTitleRef}
+                  className="flex items-center gap-2 min-w-0 max-w-[420px]"
+                  displayClassName="text-[0.875rem] leading-[1.25rem] font-medium text-white truncate"
+                  editorClassName="min-w-0 bg-transparent p-0 m-0 font-sans text-[0.875rem] leading-[1.25rem] font-medium text-white outline-none"
+                />
                 <p className="text-xs text-cultivate-text-secondary mt-0.5">{viewPanelDoc.fileName} · {viewPanelDoc.fileType}</p>
               </div>
               <button
