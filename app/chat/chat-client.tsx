@@ -200,12 +200,13 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
     window.history.replaceState(null, "", "/chat" + (query ? "?" + query : ""));
   }, [activeView, currentConversationId, demoMode]);
 
-  // On mount: if a conversation ID was in the URL, restore it (fetch title + messages in parallel)
+  // On mount: if a conversation ID was in the URL, restore it.
+  // Online: serve cached messages instantly then revalidate from API in background (no spinner if cached).
+  // Offline: serve from IndexedDB only.
   useEffect(() => {
     if (!initialConversationId || demoMode) return;
     let cancelled = false;
 
-    // Offline: serve what's in IndexedDB
     if (!navigator.onLine) {
       Promise.all([
         getConversationList(),
@@ -225,6 +226,27 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       return () => { cancelled = true; };
     }
 
+    // Step 1: paint from cache immediately — clears spinner before network responds
+    let hasCache = false;
+    Promise.all([
+      getConversationList(),
+      getConversationMessages(initialConversationId),
+    ]).then(([list, msgs]) => {
+      if (cancelled) return;
+      const cached = list.find(c => c.id === initialConversationId);
+      if (cached) {
+        setConversationTitle(cached.title);
+        setConversationSystem(cached.agentName);
+        setSelectedChatId(initialConversationId);
+      }
+      if (msgs && msgs.length > 0) {
+        hasCache = true;
+        setMessages(msgs);
+        setMessagesLoading(false); // instant — no spinner
+      }
+    }).catch(() => {/* cache miss, keep spinner until API responds */});
+
+    // Step 2: revalidate from API silently in background
     Promise.all([
       fetch(`/api/conversations/${initialConversationId}`).then(r => r.json()),
       fetch(`/api/conversations/${initialConversationId}/messages`).then(r => r.json()),
@@ -247,17 +269,16 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       })) : [];
       if (mapped.length > 0) {
         setMessages(mapped);
-        // Cache for next offline visit
-        saveConversationMessages(initialConversationId, mapped).catch(() => {/* non-critical */});
+        saveConversationMessages(initialConversationId, mapped).catch(() => {});
       }
     }).catch(() => {
-      if (cancelled) return;
-      // Conversation gone — reset to clean state
+      if (cancelled || hasCache) return; // cached data still visible — don't reset
       setCurrentConversationId(null);
       window.history.replaceState(null, "", "/chat");
     }).finally(() => {
       if (!cancelled) setMessagesLoading(false);
     });
+
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
