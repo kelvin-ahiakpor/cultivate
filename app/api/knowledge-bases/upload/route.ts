@@ -21,7 +21,7 @@
  * Steps 4-8 run after the initial response so the agronomist
  * doesn't wait for the full pipeline to complete.
  */
-import { after, NextRequest } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { spawn } from "child_process";
 import { writeFile, unlink } from "fs/promises";
 import { join } from "path";
@@ -40,6 +40,72 @@ const ALLOWED_TYPES: Record<string, string> = {
 };
 
 export const maxDuration = 300;
+
+function scheduleKnowledgeBaseProcessing({
+  knowledgeBaseId,
+  buffer,
+  fileType,
+  organizationId,
+  fileName,
+}: {
+  knowledgeBaseId: string;
+  buffer: Buffer;
+  fileType: "pdf" | "docx" | "txt";
+  organizationId: string;
+  fileName: string;
+}) {
+  const isProductionLike = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
+
+  if (isProductionLike) {
+    after(async () => {
+      try {
+        const chunkCount = await processKnowledgeBaseDocument({
+          knowledgeBaseId,
+          buffer,
+          fileType,
+          organizationId,
+          fileName,
+        });
+        console.log(`✅ Document ${knowledgeBaseId} processed successfully after response (${chunkCount} chunks)`);
+      } catch (processingError) {
+        console.error(`❌ Document ${knowledgeBaseId} failed in post-response processing:`, processingError);
+      }
+    });
+
+    return Promise.resolve();
+  }
+
+  return (async () => {
+    const tmpPath = join(tmpdir(), `cultivate-upload-${knowledgeBaseId}.${fileType}`);
+    await writeFile(tmpPath, buffer);
+
+    const scriptPath = join(process.cwd(), "lib", "workers", "process-document-script.ts");
+    const childProcess = spawn("npx", ["tsx", scriptPath, knowledgeBaseId, tmpPath, fileType], {
+      stdio: "pipe",
+      detached: false,
+    });
+
+    childProcess.stdout.on("data", (data) => {
+      console.log(`[Document ${knowledgeBaseId}]:`, data.toString().trim());
+    });
+
+    childProcess.stderr.on("data", (data) => {
+      const msg = data.toString().trim();
+      if (msg.includes("DeprecationWarning") || msg.includes("--trace-deprecation")) return;
+      console.error(`[Document ${knowledgeBaseId} ERROR]:`, msg);
+    });
+
+    childProcess.on("exit", async (code) => {
+      await unlink(tmpPath).catch(() => {});
+
+      if (code === 0) {
+        console.log(`✅ Document ${knowledgeBaseId} processed successfully`);
+      } else {
+        console.error(`❌ Document processing failed with exit code ${code}`);
+      }
+    });
+  })();
+}
 
 export async function POST(request: NextRequest) {
   const { session, error } = await requireAuth();
@@ -73,6 +139,8 @@ export async function POST(request: NextRequest) {
       return apiError("Unsupported file type. Use PDF, DOCX, or TXT.", 400);
     }
 
+    const buffer = Buffer.from(await file.arrayBuffer());
+
     // Verify agent belongs to user's org
     const agent = await prisma.agent.findUnique({ where: { id: agentId } });
     if (!agent || agent.organizationId !== session!.user.organizationId) {
@@ -83,6 +151,106 @@ export async function POST(request: NextRequest) {
     const normalizedKbType = kbType as KnowledgeBaseType;
     const normalizedContentType = contentType ? (contentType as ContentType) : null;
     const normalizedSourceType = sourceType as SourceType;
+
+    const existingDocument = await prisma.knowledgeBase.findFirst({
+      where: {
+        organizationId: orgId,
+        fileName: {
+          equals: file.name,
+          mode: "insensitive",
+        },
+      },
+      include: {
+        agents: {
+          include: {
+            agent: { select: { id: true, name: true } },
+          },
+          orderBy: { isPrimary: "desc" },
+        },
+      },
+    });
+
+    if (existingDocument) {
+      if (existingDocument.chunkCount === -1) {
+        let fileUrl: string;
+
+        try {
+          fileUrl = await uploadFile(buffer, file.name, file.type, orgId, existingDocument.id);
+        } catch (uploadError) {
+          throw uploadError;
+        }
+
+        await prisma.knowledgeBase.update({
+          where: { id: existingDocument.id },
+          data: {
+            title,
+            fileName: file.name,
+            fileUrl,
+            fileType,
+            kbType: normalizedKbType,
+            contentType: normalizedContentType,
+            sourceType: normalizedSourceType,
+            description,
+            agronomistId: session!.user.id,
+            chunkCount: 0,
+            version: { increment: 1 },
+          },
+        });
+
+        const existingAssignment = await prisma.agentKnowledgeBase.findUnique({
+          where: {
+            agentId_knowledgeBaseId: {
+              agentId,
+              knowledgeBaseId: existingDocument.id,
+            },
+          },
+        });
+
+        if (!existingAssignment) {
+          await prisma.agentKnowledgeBase.create({
+            data: {
+              agentId,
+              knowledgeBaseId: existingDocument.id,
+              isPrimary: false,
+            },
+          });
+        }
+
+        await scheduleKnowledgeBaseProcessing({
+          knowledgeBaseId: existingDocument.id,
+          buffer,
+          fileType: fileType as "pdf" | "docx" | "txt",
+          organizationId: orgId,
+          fileName: file.name,
+        });
+
+        return apiSuccess(
+          {
+            id: existingDocument.id,
+            fileUrl,
+            retriedExisting: true,
+            message: "Existing failed document found. Processing has been restarted.",
+          },
+          200
+        );
+      }
+
+      const primaryAgent = existingDocument.agents.find((assignment) => assignment.isPrimary)?.agent;
+      return NextResponse.json(
+        {
+          error: "A document with this file name already exists.",
+          code: "DUPLICATE_DOCUMENT",
+          document: {
+            id: existingDocument.id,
+            title: existingDocument.title,
+            fileName: existingDocument.fileName,
+            agentId: primaryAgent?.id ?? "",
+            agentName: primaryAgent?.name ?? "Unassigned",
+          },
+        },
+        { status: 409 }
+      );
+    }
 
     // 1. Create KB record first (so we have an ID for the storage path)
     const knowledgeBase = await prisma.knowledgeBase.create({
@@ -110,7 +278,6 @@ export async function POST(request: NextRequest) {
     });
 
     // 3. Upload file to Supabase Storage
-    const buffer = Buffer.from(await file.arrayBuffer());
     let fileUrl: string;
 
     try {
@@ -130,54 +297,13 @@ export async function POST(request: NextRequest) {
       data: { fileUrl },
     });
 
-    const isProductionLike = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
-
-    if (isProductionLike) {
-      after(async () => {
-        try {
-          const chunkCount = await processKnowledgeBaseDocument({
-            knowledgeBaseId: knowledgeBase.id,
-            buffer,
-            fileType: fileType as "pdf" | "docx" | "txt",
-            organizationId: orgId,
-            fileName: file.name,
-          });
-          console.log(`✅ Document ${knowledgeBase.id} processed successfully after response (${chunkCount} chunks)`);
-        } catch (processingError) {
-          console.error(`❌ Document ${knowledgeBase.id} failed in post-response processing:`, processingError);
-        }
-      });
-    } else {
-      // Local dev keeps the worker process to isolate memory from Turbopack.
-      const tmpPath = join(tmpdir(), `cultivate-upload-${knowledgeBase.id}.${fileType}`);
-      await writeFile(tmpPath, buffer);
-
-      const scriptPath = join(process.cwd(), "lib", "workers", "process-document-script.ts");
-      const childProcess = spawn("npx", ["tsx", scriptPath, knowledgeBase.id, tmpPath, fileType], {
-        stdio: "pipe",
-        detached: false,
-      });
-
-      childProcess.stdout.on("data", (data) => {
-        console.log(`[Document ${knowledgeBase.id}]:`, data.toString().trim());
-      });
-
-      childProcess.stderr.on("data", (data) => {
-        const msg = data.toString().trim();
-        if (msg.includes("DeprecationWarning") || msg.includes("--trace-deprecation")) return;
-        console.error(`[Document ${knowledgeBase.id} ERROR]:`, msg);
-      });
-
-      childProcess.on("exit", async (code) => {
-        await unlink(tmpPath).catch(() => {});
-
-        if (code === 0) {
-          console.log(`✅ Document ${knowledgeBase.id} processed successfully`);
-        } else {
-          console.error(`❌ Document processing failed with exit code ${code}`);
-        }
-      });
-    }
+    await scheduleKnowledgeBaseProcessing({
+      knowledgeBaseId: knowledgeBase.id,
+      buffer,
+      fileType: fileType as "pdf" | "docx" | "txt",
+      organizationId: orgId,
+      fileName: file.name,
+    });
 
     return apiSuccess(
       {

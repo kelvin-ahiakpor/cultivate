@@ -44,6 +44,12 @@ const vectorStore = new PgVector({
   connectionString: process.env.DATABASE_URL!,
 });
 
+function sanitizeExtractedText(text: string): string {
+  return text
+    .replace(/\u0000/g, "")
+    .replace(/\r\n/g, "\n");
+}
+
 // ============================================================================
 // DOCUMENT PARSING
 // ============================================================================
@@ -59,7 +65,7 @@ const vectorStore = new PgVector({
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   const { extractText } = await import("unpdf");
   const { text } = await extractText(new Uint8Array(buffer), { mergePages: true });
-  return text;
+  return sanitizeExtractedText(text);
 }
 
 /**
@@ -75,9 +81,9 @@ export async function extractText(
     case "docx":
       const mammoth = await import("mammoth");
       const result = await mammoth.extractRawText({ buffer });
-      return result.value;
+      return sanitizeExtractedText(result.value);
     case "txt":
-      return buffer.toString("utf-8");
+      return sanitizeExtractedText(buffer.toString("utf-8"));
     default:
       throw new Error(`Unsupported file type: ${fileType}`);
   }
@@ -115,7 +121,7 @@ interface KnowledgeBaseRef {
  * Chunks will vary naturally (typically 400-800 tokens) based on semantic boundaries
  */
 export async function chunkText(text: string): Promise<Chunk[]> {
-  const doc = MDocument.fromText(text);
+  const doc = MDocument.fromText(sanitizeExtractedText(text));
 
   const mastraChunks = await doc.chunk({
     strategy: "recursive",
@@ -124,7 +130,7 @@ export async function chunkText(text: string): Promise<Chunk[]> {
   });
 
   return mastraChunks.map((chunk, index) => ({
-    content: chunk.text,
+    content: sanitizeExtractedText(chunk.text),
     chunkIndex: index,
     tokenCount: Math.ceil(chunk.text.length / 4), // rough estimate
   }));

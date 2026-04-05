@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, ChevronDown, PanelLeft, Loader2, Pencil, WifiOff } from "lucide-react";
 import { GlassCircleButton, Dropdown } from "@/components/cultivate-ui";
-import { useKnowledgeBases, uploadDocument, deleteDocument, renameDocument, assignDocumentToAgent, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
+import { useKnowledgeBases, uploadDocument, deleteDocument, renameDocument, assignDocumentToAgent, KnowledgeBaseUploadError, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
 import { useAgents } from "@/lib/hooks/use-agents";
 import { useOnlineStatus } from "@/lib/hooks/use-online-status";
 import { saveAgroCache, getAgroCache } from "@/lib/offline-storage";
@@ -69,8 +69,9 @@ export default function KnowledgeView({
   const [updateDocId, setUpdateDocId] = useState<string>('');
   const [showDocSelectorModal, setShowDocSelectorModal] = useState(false);
   const [docSearchQuery, setDocSearchQuery] = useState('');
-  const [duplicateDoc, setDuplicateDoc] = useState<KnowledgeDoc | null>(null);
+  const [duplicateDoc, setDuplicateDoc] = useState<Pick<KnowledgeDoc, "id" | "title" | "fileName" | "agentId" | "agentName"> | null>(null);
   const [assigningDuplicate, setAssigningDuplicate] = useState(false);
+  const [showAllAssignedAgents, setShowAllAssignedAgents] = useState(false);
 
   const isOnline = useOnlineStatus();
   const [offlineDocs, setOfflineDocs] = useState<KnowledgeDoc[]>([]);
@@ -162,6 +163,7 @@ export default function KnowledgeView({
     setViewPanelDoc(null);
     setEditingTitleDocId(null);
     setRenameTitle("");
+    setShowAllAssignedAgents(false);
   };
 
   useEffect(() => {
@@ -194,6 +196,10 @@ export default function KnowledgeView({
       setViewPanelDoc(latestDoc);
     }
   }, [apiData.documents, viewPanelDoc, demoMode]);
+
+  useEffect(() => {
+    setShowAllAssignedAgents(false);
+  }, [viewPanelDoc?.id]);
 
   const getPublicDocumentUrl = (doc: KnowledgeDoc) => doc.fileUrl;
 
@@ -443,15 +449,6 @@ export default function KnowledgeView({
       return;
     }
 
-    // Check for duplicate file name
-    const duplicate = apiData.documents.find(
-      (doc) => doc.fileName.toLowerCase() === uploadFile.name.toLowerCase()
-    );
-    if (duplicate) {
-      setDuplicateDoc(duplicate);
-      return;
-    }
-
     setUploading(true);
     setUploadError("");
     try {
@@ -468,7 +465,11 @@ export default function KnowledgeView({
       notify.success("Document uploaded. Processing has started in the background.");
       handleCloseUploadModal();
     } catch (e) {
-      setUploadError(e instanceof Error ? e.message : "Upload failed");
+      if (e instanceof KnowledgeBaseUploadError && e.code === "DUPLICATE_DOCUMENT" && e.document) {
+        setDuplicateDoc(e.document);
+      } else {
+        setUploadError(e instanceof Error ? e.message : "Upload failed");
+      }
     } finally {
       setUploading(false);
     }
@@ -489,6 +490,10 @@ export default function KnowledgeView({
     doc.title.toLowerCase().includes(docSearchQuery.toLowerCase()) ||
     doc.fileName.toLowerCase().includes(docSearchQuery.toLowerCase())
   );
+
+  const visibleAssignedAgents = viewPanelDoc
+    ? (showAllAssignedAgents ? viewPanelDoc.agents : viewPanelDoc.agents.slice(0, 2))
+    : [];
 
   // Reset to page 1 when filters change
   const handleAgentChange = (value: string) => {
@@ -1155,14 +1160,39 @@ export default function KnowledgeView({
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-medium text-cultivate-text-secondary uppercase tracking-wide mb-2">Used by agents</h3>
-                  <div className="bg-cultivate-bg-elevated rounded-lg p-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-cultivate-green-light/20 rounded flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs text-cultivate-green-light">✓</span>
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <h3 className="text-xs font-medium text-cultivate-text-secondary uppercase tracking-wide">Used by agents</h3>
+                    <span className="text-xs text-cultivate-text-tertiary">
+                      {viewPanelDoc.agents.length} {viewPanelDoc.agents.length === 1 ? "agent" : "agents"}
+                    </span>
+                  </div>
+                  <div className="bg-cultivate-bg-elevated rounded-lg p-3 space-y-2">
+                    {visibleAssignedAgents.map((agent) => (
+                      <div key={agent.id} className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${agent.isPrimary ? "bg-cultivate-green-light/20" : "bg-cultivate-bg-hover"}`}>
+                            <span className={`text-[10px] ${agent.isPrimary ? "text-cultivate-green-light" : "text-cultivate-text-secondary"}`}>
+                              {agent.isPrimary ? "P" : "A"}
+                            </span>
+                          </div>
+                          <span className="text-sm text-white truncate">{agent.name}</span>
+                        </div>
+                        {agent.isPrimary && (
+                          <span className="text-[10px] uppercase tracking-wide text-cultivate-green-light flex-shrink-0">Primary</span>
+                        )}
                       </div>
-                      <span className="text-sm text-white">{viewPanelDoc.agentName}</span>
-                    </div>
+                    ))}
+                    {viewPanelDoc.agents.length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllAssignedAgents((current) => !current)}
+                        className="text-xs text-cultivate-green-light hover:text-[#9dcf84] transition-colors"
+                      >
+                        {showAllAssignedAgents
+                          ? "Show fewer agents"
+                          : `Show ${viewPanelDoc.agents.length - 2} more ${viewPanelDoc.agents.length - 2 === 1 ? "agent" : "agents"}`}
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -1294,9 +1324,33 @@ export default function KnowledgeView({
 
             {/* Document Metadata */}
             <div className="px-5 py-4 border-b border-cultivate-border-subtle space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-cultivate-text-secondary">Primary Agent</span>
-                <span className="text-white">{viewPanelDoc.agentName}</span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-cultivate-text-secondary">Assigned agents</span>
+                  <span className="text-white">{viewPanelDoc.agents.length}</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {visibleAssignedAgents.map((agent) => (
+                    <span
+                      key={agent.id}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs ${agent.isPrimary ? "bg-cultivate-green-light/15 text-cultivate-green-light border border-cultivate-green-light/20" : "bg-cultivate-bg-hover text-cultivate-text-primary border border-cultivate-border-subtle"}`}
+                    >
+                      {agent.name}
+                      {agent.isPrimary ? <span className="text-[10px] uppercase tracking-wide">Primary</span> : null}
+                    </span>
+                  ))}
+                  {viewPanelDoc.agents.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllAssignedAgents((current) => !current)}
+                      className="inline-flex items-center rounded-full px-2.5 py-1 text-xs border border-cultivate-border-subtle text-cultivate-text-secondary hover:text-white hover:border-[#85b878] transition-colors"
+                    >
+                      {showAllAssignedAgents
+                        ? "Show less"
+                        : `+${viewPanelDoc.agents.length - 2} more`}
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-cultivate-text-secondary">Chunks</span>

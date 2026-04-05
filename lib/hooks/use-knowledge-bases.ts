@@ -2,6 +2,17 @@
 
 import useSWR from "swr";
 
+export class KnowledgeBaseUploadError extends Error {
+  code?: string;
+  document?: {
+    id: string;
+    title: string;
+    fileName: string;
+    agentId: string;
+    agentName: string;
+  };
+}
+
 const fetcher = (url: string) =>
   fetch(url, { cache: "no-store" }).then((res) => {
     if (!res.ok) throw new Error("Failed to fetch");
@@ -136,7 +147,10 @@ export async function uploadDocument(formData: FormData) {
   });
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err.error || "Upload failed");
+    const uploadError = new KnowledgeBaseUploadError(err.error || "Upload failed");
+    uploadError.code = err.code;
+    uploadError.document = err.document;
+    throw uploadError;
   }
   return res.json();
 }

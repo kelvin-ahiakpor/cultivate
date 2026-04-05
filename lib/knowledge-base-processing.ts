@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { processAndStoreDocument } from "@/lib/mastra-rag";
+import { deleteChunks, processAndStoreDocument } from "@/lib/mastra-rag";
 
 type SupportedFileType = "pdf" | "docx" | "txt";
 
@@ -26,6 +26,10 @@ export async function processKnowledgeBaseDocument({
   fileName,
 }: ProcessKnowledgeBaseDocumentInput): Promise<number> {
   try {
+    await deleteChunks(knowledgeBaseId, organizationId).catch((error) => {
+      console.error(`❌ Failed to clear old chunks for document ${knowledgeBaseId}:`, error);
+    });
+
     const chunkCount = await processAndStoreDocument(
       buffer,
       fileType,
