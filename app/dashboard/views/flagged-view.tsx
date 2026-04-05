@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Flag, Search, CheckCircle, ChevronDown, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft, Loader2, Copy } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { GlassCircleButton, SproutIcon } from "@/components/cultivate-ui";
 import { useFlaggedQueries, reviewFlaggedQuery, type FlaggedQueryItem as FlaggedQuery } from "@/lib/hooks/use-flagged-queries";
 import { DEMO_FLAGGED_CONVOS, DEMO_FLAGGED } from "@/lib/demo-data";
@@ -728,10 +729,11 @@ export default function FlaggedView({
       </div>{/* end scrollable */}
 
       {/* Verification Modal */}
-      {showVerifyModal && (
-        <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setShowVerifyModal(false)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <Dialog open={showVerifyModal} onOpenChange={(open) => { if (!open) setShowVerifyModal(false); }}>
+        <DialogContent
+          showCloseButton={false}
+          className="bg-[#1C1C1C] border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
+        >
             <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
               <div className="flex items-center gap-2 mb-4">
                 <CheckCircle className="w-5 h-5 text-cultivate-green-light" />
@@ -770,15 +772,15 @@ export default function FlaggedView({
                 </button>
               </div>
             </div>
-          </div>
-        </>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Correction Modal */}
-      {showEditCorrectionModal && (
-        <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setShowEditCorrectionModal(false)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <Dialog open={showEditCorrectionModal} onOpenChange={(open) => { if (!open) setShowEditCorrectionModal(false); }}>
+        <DialogContent
+          showCloseButton={false}
+          className="bg-[#1C1C1C] border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
+        >
             <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Pencil className="w-5 h-5 text-cultivate-teal" />
@@ -815,46 +817,41 @@ export default function FlaggedView({
       )}
 
       {/* Revoke Confirmation Modal */}
-      {showRevokeModal && (
-        <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setShowRevokeModal(false)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <AlertTriangle className="w-5 h-5 text-[#e8c8ab]" />
-                <h2 className="text-lg font-medium text-white">
-                  {revokeType === "verification" ? "Revoke Verification" : "Remove Correction"}
-                </h2>
-              </div>
-
-              <p className="text-sm text-cultivate-text-secondary mb-2">
-                {revokeType === "verification"
-                  ? "Are you sure you want to revoke your verification? This will move the query back to pending review."
-                  : "Are you sure you want to remove your correction? This will move the query back to pending review."
-                }
-              </p>
-              <p className="text-xs text-cultivate-text-tertiary">
-                This action can be undone by re-reviewing the query.
-              </p>
-
-              <div className="flex items-center justify-end gap-3 mt-6">
-                <button
-                  onClick={() => { setShowRevokeModal(false); setRevokingQueryId(null); }}
-                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmRevoke}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-[#e8c8ab] text-[#1C1C1C] rounded-lg hover:bg-[#e8c8ab]/80 transition-colors text-sm font-medium"
-                >
-                  {revokeType === "verification" ? "Revoke" : "Remove"}
-                </button>
-              </div>
-            </div>
+      <Dialog open={showRevokeModal} onOpenChange={(open) => { if (!open) { setShowRevokeModal(false); setRevokingQueryId(null); } }}>
+        <DialogContent showCloseButton={false} className="bg-[#1C1C1C] border border-cultivate-border-subtle p-6 rounded-xl shadow-2xl max-w-md w-full">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="w-5 h-5 text-[#e8c8ab]" />
+            <h2 className="text-lg font-medium text-white">
+              {revokeType === "verification" ? "Revoke Verification" : "Remove Correction"}
+            </h2>
           </div>
-        </>
-      )}
+
+          <p className="text-sm text-cultivate-text-secondary mb-2">
+            {revokeType === "verification"
+              ? "Are you sure you want to revoke your verification? This will move the query back to pending review."
+              : "Are you sure you want to remove your correction? This will move the query back to pending review."
+            }
+          </p>
+          <p className="text-xs text-cultivate-text-tertiary">
+            This action can be undone by re-reviewing the query.
+          </p>
+
+          <div className="flex items-center justify-end gap-3 mt-6">
+            <button
+              onClick={() => { setShowRevokeModal(false); setRevokingQueryId(null); }}
+              className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmRevoke}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#e8c8ab] text-[#1C1C1C] rounded-lg hover:bg-[#e8c8ab]/80 transition-colors text-sm font-medium"
+            >
+              {revokeType === "verification" ? "Revoke" : "Remove"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Chat Panel — Slide-out from right */}
       {chatPanelOpen && chatPanelQuery && (() => {
