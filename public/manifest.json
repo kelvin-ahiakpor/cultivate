@@ -2,7 +2,7 @@
   "name": "Cultivate",
   "short_name": "Cultivate",
   "description": "AI-powered agricultural advice from expert agronomists",
-  "start_url": "/chat",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#1E1E1E",
   "theme_color": "#5a7048",

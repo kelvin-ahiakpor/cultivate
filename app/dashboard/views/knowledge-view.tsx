@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Upload, Search, FileText, File, MoreHorizontal, Trash2, Download, Eye, Filter, X, ExternalLink, PanelLeft, Loader2, Pencil, WifiOff, Plus } from "lucide-react";
-import { GlassCircleButton, Dropdown, DocumentListSkeleton } from "@/components/cultivate-ui";
+import { GlassCircleButton, Dropdown } from "@/components/cultivate-ui";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useKnowledgeBases, uploadDocument, deleteDocument, renameDocument, assignDocumentToAgent, KnowledgeBaseUploadError, type KnowledgeDoc } from "@/lib/hooks/use-knowledge-bases";
@@ -91,7 +91,7 @@ export default function KnowledgeView({
     itemsPerPage,
     demoMode
   );
-  const { documents: onlineDocuments, mutate: mutateKnowledgeBases, isLoading } = apiData;
+  const { documents: onlineDocuments, mutate: mutateKnowledgeBases } = apiData;
 
   // Fetch real agents for filter dropdown and upload form — also disabled in demo
   const { agents: realAgents } = useAgents("", 1, 100, demoMode);
@@ -741,13 +741,8 @@ export default function KnowledgeView({
 
       {/* PART 2: Scrollable Table Rows / Card List */}
       <div className="flex-1 overflow-y-auto min-h-0 pb-6 thin-scrollbar scrollbar-outset">
-        {!demoMode && isOnline && isLoading && (
-          <div className="mt-3 mr-3">
-            <DocumentListSkeleton count={6} />
-          </div>
-        )}
         {/* Mobile: Card layout */}
-        <div className={`lg:hidden space-y-3 pl-1.5 pr-1.5 mr-3 ${!demoMode && isOnline && isLoading ? "hidden" : ""}`}>
+        <div className="lg:hidden space-y-3 pl-1.5 pr-1.5 mr-3">
           {paginatedDocs.map((doc) => (
             <div
               key={doc.id}
@@ -768,7 +763,7 @@ export default function KnowledgeView({
         </div>
 
         {/* Desktop: Table Rows */}
-        <div className={`hidden lg:block ${!demoMode && isOnline && isLoading ? "!hidden" : ""}`}>
+        <div className="hidden lg:block">
           {paginatedDocs.map((doc, index) => (
             <div
               key={doc.id}

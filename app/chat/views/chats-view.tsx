@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageCircle, Search, ChevronLeft, ChevronRight, Plus, PanelLeft, Loader2, WifiOff } from "lucide-react";
-import { GlassCircleButton } from "@/components/cultivate-ui";
+import { MessageCircle, Search, ChevronLeft, ChevronRight, Plus, PanelLeft, WifiOff } from "lucide-react";
+import { GlassCircleButton, FarmerChatListSkeleton } from "@/components/cultivate-ui";
 import ConversationView from "@/components/conversation-view";
 import { useConversations } from "@/lib/hooks/use-conversations";
 import { useOnlineStatus } from "@/lib/hooks/use-online-status";
@@ -247,9 +247,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
         <div className="h-full overflow-y-auto pb-6 thin-scrollbar scrollbar-outset">
           <div className="mr-3">
             {!demoMode && apiConversations.isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-5 h-5 text-cultivate-text-secondary animate-spin" />
-              </div>
+              <FarmerChatListSkeleton count={5} />
             ) : paginatedChats.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <MessageCircle className="w-8 h-8 text-cultivate-border-element mb-3" />

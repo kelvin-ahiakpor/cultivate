@@ -65,7 +65,7 @@ export function useAgents(search?: string, page: number = 1, limit: number = 10,
   params.append("limit", limit.toString());
 
   // If disabled (demo mode), pass null as key to prevent fetch
-  const { data, error, isLoading, mutate } = useSWR<AgentsResponse>(
+  const { data, error, isLoading, isValidating, mutate } = useSWR<AgentsResponse>(
     disabled ? null : `/api/agents?${params.toString()}`,
     fetcher,
     {
@@ -80,6 +80,7 @@ export function useAgents(search?: string, page: number = 1, limit: number = 10,
     page: data?.pagination?.page || 1,
     limit: data?.pagination?.limit || limit,
     isLoading,
+    isValidating,
     isError: error,
     mutate, // Expose mutate for manual cache updates
   };

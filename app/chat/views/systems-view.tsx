@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, ChevronLeft, Loader2, Plus, X } from "lucide-react";
+import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, ChevronLeft, Plus, X } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { GlassCircleButton, Dropdown } from "@/components/cultivate-ui";
+import { GlassCircleButton, Dropdown, SystemListSkeleton } from "@/components/cultivate-ui";
 import { useSystems, type FarmerSystemItem } from "@/lib/hooks/use-systems";
 import { DEMO_SYSTEMS } from "@/lib/demo-data";
 import { notify } from "@/lib/toast";
@@ -246,9 +246,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
       <div className="relative flex-1 min-h-0">
         <div className="h-full overflow-y-auto thin-scrollbar scrollbar-outset">
           {!demoMode && apiSystems.isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-5 h-5 text-cultivate-text-secondary animate-spin" />
-            </div>
+            <SystemListSkeleton count={3} />
           ) : filteredSystems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
               <Layers className="w-16 h-16 text-cultivate-border-element mb-4" />

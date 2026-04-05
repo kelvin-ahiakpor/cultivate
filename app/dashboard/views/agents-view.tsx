@@ -66,7 +66,7 @@ export default function AgentsView({
     ? mockAgents.filter(a => a.name.toLowerCase().includes(searchQuery.toLowerCase()))
     : isOnline ? apiData.agents : offlineAgents.filter(a => a.name.toLowerCase().includes(searchQuery.toLowerCase()));
   const total = demoMode ? mockAgents.length : isOnline ? apiData.total : offlineAgents.length;
-  const isLoading = demoMode ? false : isOnline ? apiData.isLoading : false;
+  const isLoading = demoMode ? false : isOnline ? (apiData.isLoading || (apiData.isValidating && apiData.agents.length === 0)) : false;
   const isError = demoMode ? false : isOnline ? apiData.isError : false;
   const mutate = demoMode ? (() => {}) : apiData.mutate;
 

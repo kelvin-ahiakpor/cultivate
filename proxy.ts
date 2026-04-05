@@ -20,6 +20,16 @@ export default auth((req) => {
   if (session?.user) {
     const { role } = session.user;
 
+    // Installed PWA or direct root visits should land authenticated users
+    // in their actual app shell instead of the marketing landing page.
+    if (pathname === "/" || pathname === "/landing") {
+      if (role === "AGRONOMIST" || role === "ADMIN") {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+      } else {
+        return NextResponse.redirect(new URL("/chat", req.url));
+      }
+    }
+
     // Agronomist routes
     if (pathname.startsWith("/dashboard")) {
       if (role !== "AGRONOMIST" && role !== "ADMIN") {
