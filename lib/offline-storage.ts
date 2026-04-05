@@ -25,7 +25,6 @@ export interface CachedConversation {
   id: string;
   title: string;
   agentName: string;
-  systemName?: string;
   lastMessage: string;
   messageCount: number;
   systemName?: string | null;
