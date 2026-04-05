@@ -1,11 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageCircle, Search, PanelLeft } from "lucide-react";
+import { MessageCircle, Search, PanelLeft, WifiOff } from "lucide-react";
 import { GlassCircleButton, ConversationListSkeleton } from "@/components/cultivate-ui";
 import ConversationView, { type ConversationMessage } from "@/components/conversation-view";
 import { useConversations, type ConversationItem } from "@/lib/hooks/use-conversations";
 import { DEMO_DASHBOARD_CHATS, DEMO_FARMER_CONVO_MESSAGES } from "@/lib/demo-data";
+import { useOnlineStatus } from "@/lib/hooks/use-online-status";
+import {
+  saveAgroCache,
+  getAgroCache,
+  getConversationMessages,
+  formatCacheAge,
+  type CachedConversation,
+} from "@/lib/offline-storage";
 
 const mockChats = DEMO_DASHBOARD_CHATS;
 
@@ -49,8 +57,11 @@ export default function ChatsView({
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [conversationMessages, setConversationMessages] = useState<ConversationMessage[]>([]);
+  const [offlineChats, setOfflineChats] = useState<CachedConversation[]>([]);
+  const [offlineCachedAt, setOfflineCachedAt] = useState<number | null>(null);
   const itemsPerPage = 30;
 
+  const isOnline = useOnlineStatus();
   const apiData = useConversations(searchQuery, currentPage, itemsPerPage, demoMode);
 
   useEffect(() => {
@@ -65,19 +76,89 @@ export default function ChatsView({
     return () => mediaQuery.removeEventListener("change", checkStandalone);
   }, []);
 
+  // Write-through: cache conversations when online data loads
+  useEffect(() => {
+    if (demoMode || !isOnline || !apiData.conversations.length) return;
+
+    const toCache: CachedConversation[] = apiData.conversations.map((c) => ({
+      id: c.id,
+      title: c.title,
+      farmerName: c.farmerName,
+      agentName: c.agentName,
+      lastMessage: c.lastMessage,
+      cachedAt: Date.now(),
+    }));
+
+    void saveAgroCache<CachedConversation[]>("agro_conversations", toCache);
+  }, [demoMode, isOnline, apiData.conversations]);
+
+  // Read-back: load from IndexedDB when offline
+  useEffect(() => {
+    if (demoMode || isOnline) return;
+
+    void (async () => {
+      const cached = await getAgroCache<CachedConversation[]>("agro_conversations");
+      if (cached) {
+        setOfflineChats(cached);
+        setOfflineCachedAt(cached[0]?.cachedAt ?? null);
+      }
+    })();
+  }, [demoMode, isOnline]);
+
+  const sourceChats: ConversationItem[] = demoMode
+    ? mockChats
+    : isOnline
+    ? apiData.conversations
+    : offlineChats.map((c) => ({
+        id: c.id,
+        title: c.title,
+        farmerName: c.farmerName,
+        agentName: c.agentName,
+        lastMessage: c.lastMessage,
+      }));
+
   const filteredChats = demoMode
-    ? mockChats.filter(chat =>
+    ? sourceChats.filter(chat =>
         chat.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         chat.farmerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         chat.agentName.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : apiData.conversations;
+    : isOnline
+    ? apiData.conversations
+    : offlineChats
+        .filter(c =>
+          c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.farmerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.agentName.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .map((c) => ({
+          id: c.id,
+          title: c.title,
+          farmerName: c.farmerName,
+          agentName: c.agentName,
+          lastMessage: c.lastMessage,
+        }));
 
-  const totalPages = demoMode ? Math.ceil(filteredChats.length / itemsPerPage) : apiData.totalPages;
+  const totalPages = demoMode
+    ? Math.ceil(filteredChats.length / itemsPerPage)
+    : isOnline
+    ? apiData.totalPages
+    : Math.ceil(filteredChats.length / itemsPerPage);
+
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedChats = demoMode ? filteredChats.slice(startIndex, endIndex) : filteredChats;
-  const totalCount = demoMode ? mockChats.length : apiData.total;
+
+  const paginatedChats = demoMode
+    ? filteredChats.slice(startIndex, endIndex)
+    : isOnline
+    ? filteredChats
+    : filteredChats.slice(startIndex, endIndex);
+
+  const totalCount = demoMode
+    ? mockChats.length
+    : isOnline
+    ? apiData.total
+    : offlineChats.length;
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -91,6 +172,16 @@ export default function ChatsView({
 
     if (demoMode) {
       setConversationMessages(getDemoMessages(chat.id));
+      setMessagesLoading(false);
+      return;
+    }
+
+    // Offline: load from IndexedDB
+    if (!navigator.onLine) {
+      setMessagesLoading(true);
+      setConversationMessages([]);
+      const cached = await getConversationMessages(chat.id);
+      setConversationMessages(cached);
       setMessagesLoading(false);
       return;
     }
@@ -185,15 +276,31 @@ export default function ChatsView({
             </div>
           )}
           <div className="text-center">
-            <h1 className="text-2xl font-serif text-cultivate-text-primary">Chats</h1>
+            <h1 className="text-2xl font-serif text-cultivate-text-primary flex items-center gap-2 justify-center">
+              Chats
+              {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+            </h1>
             <p className="text-sm text-cultivate-text-secondary mt-1">{totalCount} farmer conversations</p>
+            {!isOnline && offlineCachedAt && (
+              <p className="text-xs text-cultivate-text-tertiary mt-0.5">
+                ● Last updated {formatCacheAge(offlineCachedAt)}
+              </p>
+            )}
           </div>
         </div>
 
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-serif text-cultivate-text-primary">Chats</h1>
+            <h1 className="text-2xl font-serif text-cultivate-text-primary flex items-center gap-2">
+              Chats
+              {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+            </h1>
             <p className="text-sm text-cultivate-text-secondary mt-1">{totalCount} farmer conversations</p>
+            {!isOnline && offlineCachedAt && (
+              <p className="text-xs text-cultivate-text-tertiary mt-0.5">
+                ● Last updated {formatCacheAge(offlineCachedAt)}
+              </p>
+            )}
           </div>
         </div>
 
@@ -219,13 +326,13 @@ export default function ChatsView({
       </div>
 
       <div className="flex-1 overflow-y-auto min-h-0 pb-6 thin-scrollbar scrollbar-outset">
-        {!demoMode && apiData.isLoading && (
+        {!demoMode && isOnline && apiData.isLoading && (
           <div className="mr-3">
             <ConversationListSkeleton count={6} />
           </div>
         )}
 
-        {(!apiData.isLoading || demoMode) && (
+        {(!apiData.isLoading || demoMode || !isOnline) && (
           <div className="mr-3">
             {paginatedChats.map((chat, index) => (
               <div
@@ -256,11 +363,11 @@ export default function ChatsView({
           </div>
         )}
 
-        {(!apiData.isLoading || demoMode) && filteredChats.length === 0 && (
+        {(!apiData.isLoading || demoMode || !isOnline) && filteredChats.length === 0 && (
           <div className="p-8 text-center">
             <MessageCircle className="w-10 h-10 text-cultivate-text-tertiary mx-auto mb-3" />
             <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-tertiary`}>
-              {searchQuery ? "No conversations match your search." : "No conversations yet."}
+              {searchQuery ? "No conversations match your search." : (!isOnline ? "No cached conversations." : "No conversations yet.")}
             </p>
           </div>
         )}

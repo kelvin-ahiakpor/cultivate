@@ -8,7 +8,7 @@ import {
   Plus, Settings, HelpCircle, LogOut,
   PanelLeft, MoreHorizontal, Upload, Eye,
   CheckCircle, Pencil, ArrowRight, MessageCircle, X, Download, Loader2,
-  CircleEllipsis,
+  CircleEllipsis, WifiOff,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import AgentsView from "./views/agents-view";
@@ -202,6 +202,24 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
 
   // Activity feed — disabled in demo mode (zero API requests)
   const { activities, isLoading: activityLoading } = useActivity(7, 20, demoMode);
+  const [offlineActivities, setOfflineActivities] = useState<ActivityItem[]>([]);
+  const [offlineActivitiesCachedAt, setOfflineActivitiesCachedAt] = useState<number | null>(null);
+
+  // Write-through: cache activity when online data arrives
+  useEffect(() => {
+    if (demoMode || !isOnline || activities.length === 0) return;
+    saveAgroCache("activity", activities).catch(() => {});
+  }, [activities, isOnline, demoMode]);
+
+  // Read cached activity when offline
+  useEffect(() => {
+    if (demoMode || isOnline) return;
+    getAgroCache<ActivityItem[]>("activity").then(r => {
+      if (r) { setOfflineActivities(r.data); setOfflineActivitiesCachedAt(r.cachedAt); }
+    }).catch(() => {});
+  }, [isOnline, demoMode]);
+
+  const displayActivities = isOnline ? activities : offlineActivities;
 
   const handleCloseActivityPanel = () => {
     setActivityPanelOpen(false);
@@ -486,16 +504,22 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                     </GlassCircleButton>
                   )}
                   <div>
-                    <h1 className="text-3xl font-serif text-cultivate-text-primary mb-0.5">
-                      Welcome, {user.name?.split(" ")[0]}
-                    </h1>
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-3xl font-serif text-cultivate-text-primary mb-0.5">
+                        Welcome, {user.name?.split(" ")[0]}
+                      </h1>
+                      {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary flex-shrink-0" />}
+                    </div>
                     <p className="text-sm text-cultivate-text-secondary">Manage your AI agents and knowledge bases</p>
                   </div>
                 </div>
                 <div className="hidden lg:block mb-8">
-                  <h1 className="text-3xl font-serif text-cultivate-text-primary mb-1">
-                    Welcome, {user.name?.split(" ")[0]}
-                  </h1>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h1 className="text-3xl font-serif text-cultivate-text-primary">
+                      Welcome, {user.name?.split(" ")[0]}
+                    </h1>
+                    {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary flex-shrink-0" />}
+                  </div>
                   <p className="text-sm text-cultivate-text-secondary">
                     Manage your AI agents and knowledge bases
                   </p>
@@ -614,7 +638,10 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
               {/* Recent Activity Header */}
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm text-cultivate-text-secondary">Recent Activity</h2>
-                <span className="text-xs text-cultivate-text-tertiary">Last 7 days</span>
+                {!isOnline && offlineActivitiesCachedAt
+                  ? <span className="text-xs text-cultivate-text-tertiary flex items-center gap-1"><span className="inline-block w-1 h-1 rounded-full bg-cultivate-text-tertiary" />Last updated {formatCacheAge(offlineActivitiesCachedAt)}</span>
+                  : <span className="text-xs text-cultivate-text-tertiary">Last 7 days</span>
+                }
               </div>
               </div>
 
@@ -622,8 +649,8 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
               <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto pb-6">
               <div className="mr-3">
 
-                {/* Loading state — only in real mode */}
-                {!demoMode && activityLoading && (
+                {/* Loading state — only in real mode, only when online */}
+                {!demoMode && isOnline && activityLoading && (
                   <div className="flex items-center justify-center py-10">
                     <Loader2 className="w-5 h-5 text-cultivate-text-tertiary animate-spin" />
                   </div>
@@ -634,15 +661,17 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                   <ActivityRow key={i} item={item} isStandalone={isStandalone} />
                 ))}
 
-                {/* Real mode: dynamic activity items from API */}
-                {!demoMode && !activityLoading && activities.map((item: ActivityItem, i: number) => (
+                {/* Real mode: dynamic activity items (online = fresh, offline = cached) */}
+                {!demoMode && !activityLoading && displayActivities.map((item: ActivityItem, i: number) => (
                   <ActivityRow key={i} item={item} isStandalone={isStandalone} />
                 ))}
 
-                {/* Empty state — real mode, no activity yet */}
-                {!demoMode && !activityLoading && activities.length === 0 && (
+                {/* Empty state — real mode, no activity */}
+                {!demoMode && !activityLoading && displayActivities.length === 0 && (
                   <div className="py-8 text-center">
-                    <p className="text-sm text-cultivate-text-tertiary">No activity in the last 7 days.</p>
+                    <p className="text-sm text-cultivate-text-tertiary">
+                      {isOnline ? "No activity in the last 7 days." : "No cached activity."}
+                    </p>
                   </div>
                 )}
 
@@ -767,7 +796,10 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
             <div className="flex items-center justify-between px-5 py-4 border-b border-cultivate-border-subtle">
               <div>
                 <h2 className="text-sm font-medium text-white">Recent Activity</h2>
-                <p className="text-xs text-cultivate-text-secondary mt-0.5">Last 30 days</p>
+                {!isOnline && offlineActivitiesCachedAt
+                  ? <p className="text-xs text-cultivate-text-tertiary mt-0.5 flex items-center gap-1"><span className="inline-block w-1 h-1 rounded-full bg-cultivate-text-tertiary" />Last updated {formatCacheAge(offlineActivitiesCachedAt)}</p>
+                  : <p className="text-xs text-cultivate-text-secondary mt-0.5">Last 30 days</p>
+                }
               </div>
               <button
                 type="button"
@@ -795,12 +827,14 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                   <Loader2 className="w-5 h-5 text-cultivate-text-tertiary animate-spin" />
                 </div>
               )}
-              {!demoMode && !activityLoading && activities.map((item: ActivityItem, i: number) => (
+              {!demoMode && !activityLoading && displayActivities.map((item: ActivityItem, i: number) => (
                 <ActivityRow key={i} item={item} isStandalone={isStandalone} />
               ))}
-              {!demoMode && !activityLoading && activities.length === 0 && (
+              {!demoMode && !activityLoading && displayActivities.length === 0 && (
                 <div className="py-8 text-center">
-                  <p className="text-sm text-cultivate-text-tertiary">No activity in the last 30 days.</p>
+                  <p className="text-sm text-cultivate-text-tertiary">
+                    {isOnline ? "No activity in the last 30 days." : "No cached activity."}
+                  </p>
                 </div>
               )}
             </div>
