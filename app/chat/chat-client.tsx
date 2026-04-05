@@ -95,6 +95,8 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  // Demo mode: local mutable chat list so rename/delete actually update the UI
+  const [demoChatList, setDemoChatList] = useState(() => mockChats);
 
   // Chat state
   interface ChatMessage {
@@ -134,7 +136,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   const farmerFlags = useFarmerFlaggedQueries("", 1, 50, demoMode);
   // Unified list: demo → mockChats, online → API data, offline → IndexedDB cache
   const sidebarChats = demoMode
-    ? mockChats
+    ? demoChatList
     : isOnline
       ? apiConversations.conversations.map(c => ({ id: c.id, title: c.title, agentName: c.agentName, lastMessage: c.lastMessage, messageCount: c.messageCount, systemName: undefined as string | undefined }))
       : offlineChats.map(c => ({ id: c.id, title: c.title, agentName: c.agentName, lastMessage: c.lastMessage, messageCount: c.messageCount, systemName: undefined as string | undefined }));
@@ -560,7 +562,15 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   };
 
   const handleRenameSubmit = async () => {
-    if (demoMode || !renameTargetId || !renameValue.trim()) return;
+    if (!renameTargetId || !renameValue.trim()) return;
+    if (demoMode) {
+      setDemoChatList(prev => prev.map(c => c.id === renameTargetId ? { ...c, title: renameValue.trim() } : c));
+      if (currentConversationId === renameTargetId) setConversationTitle(renameValue.trim());
+      setShowRenameModal(false);
+      setRenameTargetId(null);
+      setRenameValue("");
+      return;
+    }
     setRenameLoading(true);
     try {
       const res = await fetch(`/api/conversations/${renameTargetId}`, {
@@ -569,12 +579,8 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
         body: JSON.stringify({ title: renameValue.trim() }),
       });
       if (!res.ok) throw new Error("Failed to rename");
-      // Refresh sidebar
       apiConversations.mutate();
-      // Update current conversation title if this is the active one
-      if (currentConversationId === renameTargetId) {
-        setConversationTitle(renameValue.trim());
-      }
+      if (currentConversationId === renameTargetId) setConversationTitle(renameValue.trim());
       setShowRenameModal(false);
       setRenameTargetId(null);
       setRenameValue("");
@@ -592,16 +598,27 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   };
 
   const handleDeleteConfirm = async () => {
-    if (demoMode || !deleteTargetId) return;
+    if (!deleteTargetId) return;
+    if (demoMode) {
+      setDemoChatList(prev => prev.filter(c => c.id !== deleteTargetId));
+      if (currentConversationId === deleteTargetId) {
+        setCurrentConversationId(null);
+        setConversationTitle(null);
+        setConversationSystem(null);
+        setMessages([]);
+        setActiveView("chat");
+      }
+      setShowDeleteModal(false);
+      setDeleteTargetId(null);
+      return;
+    }
     setDeleteLoading(true);
     try {
       const res = await fetch(`/api/conversations/${deleteTargetId}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete");
-      // Refresh sidebar
       apiConversations.mutate();
-      // If we deleted the currently open conversation, clear the view
       if (currentConversationId === deleteTargetId) {
         setCurrentConversationId(null);
         setConversationTitle(null);

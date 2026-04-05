@@ -12,6 +12,7 @@
  *   DEMO_FARMER_CHATS       — chats-view (farmer sidebar)
  *   DEMO_FARMER_CONVO_MESSAGES — messages shown when farmer opens a chat in demo
  *   DEMO_SYSTEMS            — systems-view (farmer)
+ *   DEMO_ACTIVITY           — activity feed (dashboard overview, agronomist)
  */
 
 export interface DemoChatMessage {
@@ -37,6 +38,7 @@ export const DEMO_AGENTS = [
   { id: "1", name: "General Farm Advisor", systemPrompt: "You are a knowledgeable agricultural advisor specializing in farming practices in Ghana...", responseStyle: "Friendly and educational", confidenceThreshold: 0.7, isActive: true, conversations: 24, knowledgeBases: 3, version: 1, agronomistId: "demo", organizationId: "demo", createdAt: new Date(Date.now() - 7 * 86400000).toISOString(), updatedAt: new Date(Date.now() - 2 * 86400000).toISOString(), flaggedQueries: 2 },
   { id: "2", name: "Maize Expert", systemPrompt: "You specialize in maize cultivation, covering planting schedules, pest management...", responseStyle: "Detailed and technical", confidenceThreshold: 0.8, isActive: true, conversations: 12, knowledgeBases: 2, version: 1, agronomistId: "demo", organizationId: "demo", createdAt: new Date(Date.now() - 14 * 86400000).toISOString(), updatedAt: new Date(Date.now() - 5 * 86400000).toISOString(), flaggedQueries: 1 },
   { id: "3", name: "Cocoa Specialist", systemPrompt: "You are an expert in cocoa farming in Ghana, covering nursery management, fermentation, drying...", responseStyle: null, confidenceThreshold: 0.7, isActive: true, conversations: 18, knowledgeBases: 4, version: 2, agronomistId: "demo", organizationId: "demo", createdAt: new Date(Date.now() - 30 * 86400000).toISOString(), updatedAt: new Date(Date.now() - 1 * 86400000).toISOString(), flaggedQueries: 0 },
+  { id: "4", name: "Pest Management", systemPrompt: "You are a pest and disease management specialist for West African crops...", responseStyle: "Precise and actionable", confidenceThreshold: 0.75, isActive: false, conversations: 31, knowledgeBases: 5, version: 3, agronomistId: "demo", organizationId: "demo", createdAt: new Date(Date.now() - 60 * 86400000).toISOString(), updatedAt: new Date(Date.now() - 10 * 86400000).toISOString(), flaggedQueries: 4 },
 ];
 
 // ─── Knowledge Base ───────────────────────────────────────────────────────────
@@ -297,6 +299,7 @@ export const DEMO_FARMER_CONVO_MESSAGES: Record<string, DemoChatMessage[]> = {
     { id: "m3", role: "USER", content: "Okay got it. Should I just add water directly or drain some and refill?", timestamp: "9:18 AM" },
     { id: "m4", role: "ASSISTANT", content: "The best approach is to partially drain (about 30-40%) and refill with fresh water. This way you avoid shocking the plants with a sudden change. Monitor the EC as you add water, and stop when you reach your target range.", timestamp: "9:19 AM", confidenceScore: 0.88 },
     { id: "m5", role: "USER", content: "Perfect. One more thing — my pH keeps drifting up to 7.2 even after I adjust it. What's causing that?", timestamp: "9:22 AM" },
+
     {
       id: "m6",
       role: "ASSISTANT",
@@ -360,12 +363,78 @@ export const DEMO_FARMER_CONVO_MESSAGES: Record<string, DemoChatMessage[]> = {
     { id: "m6", role: "ASSISTANT", content: "Yes! Other cooling strategies:\n\n1. **Misting/fogging** — evaporative cooling can drop temps by 3-5°C\n2. **Whitewash** — temporary lime wash on roof during hottest months\n3. **Improved cross-ventilation** — add side vents if you only have roof vents\n4. **Mulching** — keeps root zone cool even if air temp is high\n\nCombining 2-3 of these methods works best!", timestamp: "11:13 AM", confidenceScore: 0.87 },
   ],
 
+  // Chat 4: Maize planting — high confidence, no flags
+  "4": [
+    { id: "m1", role: "USER", content: "I want to plant maize next week. Is it the right time?", timestamp: "3:00 PM" },
+    { id: "m2", role: "ASSISTANT", content: "Good timing depends on your region. In southern Ghana the main season starts March-April with the first rains. Are you in the south, middle belt, or northern Ghana?", timestamp: "3:01 PM", confidenceScore: 0.91 },
+    { id: "m3", role: "USER", content: "I'm in Ashanti Region, near Kumasi.", timestamp: "3:03 PM" },
+    { id: "m4", role: "ASSISTANT", content: "Kumasi is in the forest-savanna transition zone — you have two rainy seasons. The main planting window is **March to mid-April** (for harvest around July). If you plant next week and the rains have started, you're well within that window. Make sure your land is prepared and you have certified seed — SEEDCO SC403 or AMSAMBA varieties do well in your area.", timestamp: "3:04 PM", confidenceScore: 0.89 },
+    { id: "m5", role: "USER", content: "What spacing should I use?", timestamp: "3:06 PM" },
+    { id: "m6", role: "ASSISTANT", content: "For maize in Ashanti, use **75cm between rows** and **25cm between plants** (planting 2 seeds per hole, thin to 1 after germination). This gives about 53,000 plants per hectare — the recommended plant population for hybrid varieties.", timestamp: "3:07 PM", confidenceScore: 0.94 },
+    { id: "m7", role: "USER", content: "Thank you! That's very helpful.", timestamp: "3:08 PM" },
+  ],
+
+  // Chat 5: Tomato disease — PENDING flag
+  "5": [
+    { id: "m1", role: "USER", content: "My tomato plants have dark spots on the leaves and some leaves are falling off. Started 3 days ago.", timestamp: "11:00 AM" },
+    { id: "m2", role: "ASSISTANT", content: "Dark spots with leaf drop on tomatoes could indicate early blight (Alternaria solani) or Septoria leaf spot. Both are fungal. Are the spots brown with yellow rings around them, or are they grey with dark borders?", timestamp: "11:01 AM", confidenceScore: 0.83 },
+    { id: "m3", role: "USER", content: "Brown with yellow rings. Starting from the bottom leaves.", timestamp: "11:03 AM" },
+    { id: "m4", role: "ASSISTANT", content: "That pattern — brown spots with yellow halos, starting from lower leaves — is classic **early blight**. It spreads upward in humid conditions. Remove and burn all affected leaves immediately. Then apply a copper-based fungicide (like Kocide) or mancozeb every 7-10 days.", timestamp: "11:04 AM", confidenceScore: 0.81 },
+    { id: "m5", role: "USER", content: "I sprayed mancozeb yesterday but it's still spreading. Should I use something stronger?", timestamp: "11:30 AM", isFlagged: true },
+    { id: "m6", role: "ASSISTANT", content: "If mancozeb isn't slowing the spread after one application, you may need a systemic fungicide. Azoxystrobin or propiconazole are effective against early blight. However, I'm not fully certain about the correct dosage for your situation without knowing your farm conditions.", timestamp: "11:31 AM", confidenceScore: 0.58, isFlagged: true, flaggedQuery: { id: "fq-demo-5", status: "PENDING", farmerReason: "[2026-03-14T11:35:00.000Z] Not sure about these fungicide names. Are they available in Ghana and what's the safe dosage?" } },
+  ],
+
+  // Chat 6: Cocoa seedlings — moderate confidence
+  "6": [
+    { id: "m1", role: "USER", content: "I have cocoa seedlings in polybags that are 3 months old. When do I transplant?", timestamp: "8:00 AM" },
+    { id: "m2", role: "ASSISTANT", content: "Cocoa seedlings are ready for transplanting when they are **4-6 months old** and about 30-45cm tall with a well-developed root system. At 3 months you're close — check the height and see if roots are starting to circle the polybag.", timestamp: "8:01 AM", confidenceScore: 0.87 },
+    { id: "m3", role: "USER", content: "They're about 25cm and the roots aren't showing at the bottom yet. Should I wait?", timestamp: "8:04 AM" },
+    { id: "m4", role: "ASSISTANT", content: "Yes, wait another 4-6 weeks. Use this time to prepare your field — dig holes 60cm × 60cm × 60cm, mix the topsoil with compost, and plant shade trees first if you haven't already. Cocoa needs 50% shade when young.", timestamp: "8:05 AM", confidenceScore: 0.90 },
+    { id: "m5", role: "USER", content: "What shade trees work well with cocoa?", timestamp: "8:07 AM" },
+    { id: "m6", role: "ASSISTANT", content: "In Ghana, good temporary shade trees for cocoa include **plantain and banana** (fast-growing, edible). For permanent shade: **Gliricidia sepium** (nitrogen-fixing), **Albizia** species, or **Terminalia** varieties. Farmers also intercrop with **oil palm** in some regions for dual income.", timestamp: "8:08 AM", confidenceScore: 0.88 },
+  ],
+
+  // Chat 7: Irrigation timing — CORRECTED flag
+  "7": [
+    { id: "m1", role: "USER", content: "I grow vegetables on a 0.5 acre plot. I'm watering every day but my pepper leaves are wilting in the afternoon.", timestamp: "2:30 PM" },
+    { id: "m2", role: "ASSISTANT", content: "Afternoon wilting in peppers, even with daily watering, usually means one of two things: **heat stress** (wilting recovers in the evening) or **overwatering** (roots suffocated, can't take up water). Does the wilting recover in the cool of evening?", timestamp: "2:31 PM", confidenceScore: 0.86 },
+    { id: "m3", role: "USER", content: "Yes it recovers by evening. So it's not a water problem?", timestamp: "2:34 PM" },
+    { id: "m4", role: "ASSISTANT", content: "Correct — if it recovers by evening, it's likely **heat stress**, not drought stress. Peppers naturally wilt midday when temps exceed 35°C as a self-protection mechanism. You can reduce this by watering in the **early morning** instead of midday, and applying mulch to keep root zones cool.", timestamp: "2:35 PM", confidenceScore: 0.92 },
+    { id: "m5", role: "USER", content: "I water at midday because that's when I'm free. Is that causing any damage?", timestamp: "2:37 PM", isFlagged: true },
+    { id: "m6", role: "ASSISTANT", content: "Midday watering in direct sun can cause leaf scorch and increases evaporation losses by up to 30%. Early morning is strongly recommended.", timestamp: "2:38 PM", confidenceScore: 0.61, isFlagged: true, flaggedQuery: { id: "fq-demo-7", status: "CORRECTED", farmerReason: "[2026-03-13T14:40:00.000Z] I've been watering at midday for two seasons with no leaf burn. Not sure this is accurate.", agronomistResponse: "The farmer raises a valid point. **Leaf scorch from midday watering is a myth** in most cases — it requires very specific conditions (water droplets acting as lenses) which are rare in practice. The main real concern is evaporation loss (~20-30% more water wasted). Continue morning watering for efficiency, but midday watering isn't causing active damage to the plants." } },
+  ],
+
+  // Chat 8: Armyworm — high confidence, no flags
+  "8": [
+    { id: "m1", role: "USER", content: "I found caterpillars eating my maize at night. Some cobs are completely destroyed. What should I do?", timestamp: "6:00 AM" },
+    { id: "m2", role: "ASSISTANT", content: "This sounds like **Fall Armyworm (Spodoptera frugiperda)** — the most damaging maize pest in Ghana. They feed at night and hide in the whorl during the day. Check the whorl (centre of the plant) for caterpillars with a distinctive inverted Y on the head.", timestamp: "6:01 AM", confidenceScore: 0.93 },
+    { id: "m3", role: "USER", content: "Yes! I found them in the whorl. Many plants are affected. How bad is this?", timestamp: "6:05 AM" },
+    { id: "m4", role: "ASSISTANT", content: "If >30% of plants are affected and your maize is in the whorl stage (before tasseling), you need to act fast. Options:\n\n1. **Emamectin benzoate** (e.g., Proclaim) — most effective, apply directly into the whorl\n2. **Chlorpyrifos** — broad-spectrum, effective but more toxic\n3. **Neem extract** — organic, apply at 5ml/L in the whorl every 5 days\n\nSpray at dusk when the worms are active. Act within 48 hours.", timestamp: "6:06 AM", confidenceScore: 0.91 },
+    { id: "m5", role: "USER", content: "I'll get Proclaim today. Should I spray the whole farm or just affected areas?", timestamp: "6:09 AM" },
+    { id: "m6", role: "ASSISTANT", content: "Spray the **entire farm** — armyworms spread fast and by the time you see damage in one area, eggs are already in nearby plants. Cover all whorls thoroughly. Check daily for 2 weeks and repeat application after 7 days if you still see larvae.", timestamp: "6:10 AM", confidenceScore: 0.90 },
+  ],
+
   // Default fallback for other chats
   "default": [
     { id: "m1", role: "USER", content: "Hello, I need some help with my farm.", timestamp: "10:02 AM" },
-    { id: "m2", role: "ASSISTANT", content: "Hello! I'd be happy to help. What would you like to know?", timestamp: "10:02 AM" },
+    { id: "m2", role: "ASSISTANT", content: "Hello! I'd be happy to help. What would you like to know?", timestamp: "10:02 AM", confidenceScore: 0.95 },
   ],
 };
+
+// ─── Dashboard Activity Feed ──────────────────────────────────────────────────
+
+export const DEMO_ACTIVITY = [
+  { type: "flagged_created" as const, description: "Kwame Asante flagged a response from General Farm Advisor", agentName: "General Farm Advisor", metadata: {}, timestamp: new Date(Date.now() - 2 * 3600000).toISOString() },
+  { type: "conversation_started" as const, description: "Ama Mensah started a new conversation", agentName: "Maize Expert", metadata: {}, timestamp: new Date(Date.now() - 3 * 3600000).toISOString() },
+  { type: "flagged_verified" as const, description: "You verified a response about aphid identification", agentName: "Pest Management", metadata: {}, timestamp: new Date(Date.now() - 5 * 3600000).toISOString() },
+  { type: "flagged_corrected" as const, description: "You corrected a response about okra planting timing", agentName: "General Farm Advisor", metadata: {}, timestamp: new Date(Date.now() - 8 * 3600000).toISOString() },
+  { type: "conversation_started" as const, description: "Yaw Boateng started a new conversation", agentName: "Cocoa Specialist", metadata: {}, timestamp: new Date(Date.now() - 12 * 3600000).toISOString() },
+  { type: "knowledge_uploaded" as const, description: "Maize Drought Tolerance guide uploaded and indexed", agentName: "Maize Expert", metadata: {}, timestamp: new Date(Date.now() - 1 * 86400000).toISOString() },
+  { type: "flagged_created" as const, description: "Abena Darkwa flagged a response about cocoa black pod disease", agentName: "General Farm Advisor", metadata: {}, timestamp: new Date(Date.now() - 1.5 * 86400000).toISOString() },
+  { type: "conversation_started" as const, description: "Efua Owusu started a new conversation", agentName: "General Farm Advisor", metadata: {}, timestamp: new Date(Date.now() - 2 * 86400000).toISOString() },
+  { type: "agent_created" as const, description: "Cocoa Specialist agent created", agentName: "Cocoa Specialist", metadata: {}, timestamp: new Date(Date.now() - 3 * 86400000).toISOString() },
+  { type: "knowledge_uploaded" as const, description: "Soil Health & Fertilizer Guide uploaded and indexed", agentName: "General Farm Advisor", metadata: {}, timestamp: new Date(Date.now() - 4 * 86400000).toISOString() },
+];
 
 // ─── Farmer Systems ───────────────────────────────────────────────────────────
 

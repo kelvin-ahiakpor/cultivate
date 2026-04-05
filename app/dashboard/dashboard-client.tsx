@@ -24,7 +24,7 @@ import { useAgents } from "@/lib/hooks/use-agents";
 import { useConversations } from "@/lib/hooks/use-conversations";
 import { useOnlineStatus } from "@/lib/hooks/use-online-status";
 import { saveAgroCache, getAgroCache, formatCacheAge } from "@/lib/offline-storage";
-import { DEMO_AGENTS, DEMO_DASHBOARD_CHATS } from "@/lib/demo-data";
+import { DEMO_AGENTS, DEMO_DASHBOARD_CHATS, DEMO_ACTIVITY } from "@/lib/demo-data";
 
 interface DashboardProps {
   user: {
@@ -528,7 +528,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                     </div>
                   </div>
                   <p className="text-3xl font-semibold text-white">
-                    {demoMode ? 5 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-cultivate-text-tertiary" /> : (displayStats?.activeAgents ?? "—")}
+                    {demoMode ? DEMO_AGENTS.filter(a => a.isActive).length : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-cultivate-text-tertiary" /> : (displayStats?.activeAgents ?? "—")}
                   </p>
                 </button>
 
@@ -540,7 +540,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                     </div>
                   </div>
                   <p className="text-3xl font-semibold text-white">
-                    {demoMode ? 18 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-cultivate-text-tertiary" /> : (displayStats?.knowledgeDocs ?? "—")}
+                    {demoMode ? 45 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-cultivate-text-tertiary" /> : (displayStats?.knowledgeDocs ?? "—")}
                   </p>
                 </button>
 
@@ -552,7 +552,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                     </div>
                   </div>
                   <p className="text-3xl font-semibold text-white">
-                    {demoMode ? 4 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-cultivate-text-tertiary" /> : (displayStats?.pendingFlags ?? "—")}
+                    {demoMode ? 6 : statsLoading ? <Loader2 className="w-5 h-5 animate-spin text-cultivate-text-tertiary" /> : (displayStats?.pendingFlags ?? "—")}
                   </p>
                 </button>
               </div>
@@ -629,88 +629,10 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                   </div>
                 )}
 
-                {/* Demo mode: hardcoded activity items that show what a mature account looks like */}
-                {demoMode && (
-                  <>
-                <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                    <div className="w-8 h-8 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <CheckCircle className="w-4 h-4 text-cultivate-green-light" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-primary`}>
-                        You <span className="text-cultivate-green-light">verified</span> a response about maize aphid identification
-                      </p>
-                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary mt-0.5`}>Pest Management &middot; 12 hours ago</p>
-                    </div>
-                  </div>
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                    <div className="w-8 h-8 bg-cultivate-teal/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Pencil className="w-4 h-4 text-cultivate-teal" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-primary`}>
-                        You <span className="text-cultivate-teal">corrected</span> a response about okra planting schedule
-                      </p>
-                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary mt-0.5`}>General Farm Advisor &middot; 2 days ago</p>
-                    </div>
-                  </div>
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                    <div className="w-8 h-8 bg-cultivate-beige/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Flag className="w-4 h-4 text-cultivate-beige" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-primary`}>
-                        New <span className="text-cultivate-beige">flagged query</span> from Kwame Asante about cassava disease
-                      </p>
-                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary mt-0.5`}>General Farm Advisor &middot; 2 hours ago &middot; 45% confidence</p>
-                    </div>
-                  </div>
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                    <div className="w-8 h-8 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Bot className="w-4 h-4 text-cultivate-green-light" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-primary`}>
-                        <span className="text-cultivate-green-light">Cocoa Specialist</span> agent was created
-                      </p>
-                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary mt-0.5`}>4 knowledge bases attached &middot; 1 day ago</p>
-                    </div>
-                  </div>
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                    <div className="w-8 h-8 bg-cultivate-teal/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <MessageCircle className="w-4 h-4 text-cultivate-teal" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-primary`}>
-                        Ama Mensah started a <span className="text-cultivate-teal">new conversation</span> about tomato fertilizer
-                      </p>
-                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary mt-0.5`}>General Farm Advisor &middot; 5 hours ago</p>
-                    </div>
-                  </div>
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                    <div className="w-8 h-8 bg-cultivate-beige/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Flag className="w-4 h-4 text-cultivate-beige" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-primary`}>
-                        New <span className="text-cultivate-beige">flagged query</span> from Abena Darkwa about cocoa pod disease
-                      </p>
-                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary mt-0.5`}>General Farm Advisor &middot; 6 hours ago &middot; 41% confidence</p>
-                    </div>
-                  </div>
-                  <div className={`flex items-start gap-3 pl-1.5 pr-1.5 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                    <div className="w-8 h-8 bg-cultivate-teal/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <BookOpen className="w-4 h-4 text-cultivate-teal" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-primary`}>
-                        <span className="text-cultivate-teal">Cocoa Farming Guide 2026.pdf</span> uploaded to knowledge base
-                      </p>
-                      <p className={`${isStandalone ? "text-sm" : "text-xs"} lg:text-xs text-cultivate-text-tertiary mt-0.5`}>Cocoa Specialist &middot; 3 days ago &middot; 42 chunks</p>
-                    </div>
-                  </div>
-                  </>
-                )}
+                {/* Demo mode: activity from DEMO_ACTIVITY using the same ActivityRow as real mode */}
+                {demoMode && DEMO_ACTIVITY.map((item, i) => (
+                  <ActivityRow key={i} item={item} isStandalone={isStandalone} />
+                ))}
 
                 {/* Real mode: dynamic activity items from API */}
                 {!demoMode && !activityLoading && activities.map((item: ActivityItem, i: number) => (
@@ -862,101 +784,10 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
               style={activityListMaxH ? { maxHeight: `${activityListMaxH}px` } : undefined}
               className="overflow-y-auto thin-scrollbar px-5 py-2 lg:max-h-none lg:flex-1"
             >
-              {/* Demo mode: hardcoded items showing a mature account's history */}
-              {demoMode && (
-                <>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                <div className="w-8 h-8 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <CheckCircle className="w-4 h-4 text-cultivate-green-light" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-cultivate-text-primary">You <span className="text-cultivate-green-light">verified</span> a response about maize aphid identification</p>
-                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">Pest Management &middot; 12 hours ago</p>
-                </div>
-              </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                <div className="w-8 h-8 bg-cultivate-teal/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Pencil className="w-4 h-4 text-cultivate-teal" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-cultivate-text-primary">You <span className="text-cultivate-teal">corrected</span> a response about okra planting schedule</p>
-                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">General Farm Advisor &middot; 2 days ago</p>
-                </div>
-              </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                <div className="w-8 h-8 bg-cultivate-beige/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Flag className="w-4 h-4 text-cultivate-beige" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-cultivate-text-primary">New <span className="text-cultivate-beige">flagged query</span> from Kwame Asante about cassava disease</p>
-                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">General Farm Advisor &middot; 2 hours ago &middot; 45% confidence</p>
-                </div>
-              </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                <div className="w-8 h-8 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Bot className="w-4 h-4 text-cultivate-green-light" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-cultivate-text-primary"><span className="text-cultivate-green-light">Cocoa Specialist</span> agent was created</p>
-                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">4 knowledge bases attached &middot; 1 day ago</p>
-                </div>
-              </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                <div className="w-8 h-8 bg-cultivate-teal/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <MessageCircle className="w-4 h-4 text-cultivate-teal" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-cultivate-text-primary">Ama Mensah started a <span className="text-cultivate-teal">new conversation</span> about tomato fertilizer</p>
-                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">General Farm Advisor &middot; 5 hours ago</p>
-                </div>
-              </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                <div className="w-8 h-8 bg-cultivate-beige/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Flag className="w-4 h-4 text-cultivate-beige" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-cultivate-text-primary">New <span className="text-cultivate-beige">flagged query</span> from Abena Darkwa about cocoa pod disease</p>
-                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">General Farm Advisor &middot; 6 hours ago &middot; 41% confidence</p>
-                </div>
-              </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                <div className="w-8 h-8 bg-cultivate-teal/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <BookOpen className="w-4 h-4 text-cultivate-teal" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-cultivate-text-primary"><span className="text-cultivate-teal">Cocoa Farming Guide 2026.pdf</span> uploaded to knowledge base</p>
-                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">Cocoa Specialist &middot; 3 days ago &middot; 42 chunks</p>
-                </div>
-              </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                <div className="w-8 h-8 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <CheckCircle className="w-4 h-4 text-cultivate-green-light" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-cultivate-text-primary">You <span className="text-cultivate-green-light">verified</span> a response about tomato blight treatment</p>
-                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">Pest Management &middot; 4 days ago</p>
-                </div>
-              </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                <div className="w-8 h-8 bg-cultivate-teal/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <MessageCircle className="w-4 h-4 text-cultivate-teal" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-cultivate-text-primary">Kofi Mensah started a <span className="text-cultivate-teal">new conversation</span> about armyworm outbreak</p>
-                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">Pest Management &middot; 5 days ago</p>
-                </div>
-              </div>
-              <div className={`flex items-start gap-3 py-1.5 lg:py-2.5 border-b border-cultivate-border-element ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element`}>
-                <div className="w-8 h-8 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Bot className="w-4 h-4 text-cultivate-green-light" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-cultivate-text-primary"><span className="text-cultivate-green-light">Maize Expert</span> agent was updated with new system prompt</p>
-                  <p className="text-xs text-cultivate-text-tertiary mt-0.5">6 days ago</p>
-                </div>
-              </div>
-                </>
-              )}
+              {/* Demo mode: activity from DEMO_ACTIVITY using the same ActivityRow as real mode */}
+              {demoMode && DEMO_ACTIVITY.map((item, i) => (
+                <ActivityRow key={i} item={item} isStandalone={isStandalone} />
+              ))}
 
               {/* Real mode: same activities array fetched for the overview — no second API call */}
               {!demoMode && activityLoading && (
