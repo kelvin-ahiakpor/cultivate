@@ -405,7 +405,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
               <div className="flex items-center">
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowInstallModal(true); }}
-                  className={`${isStandalone ? 'h-10 w-10 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] flex items-center justify-center' : 'p-1.5 border border-cultivate-border-element hover:border-[#5a7048] rounded-md'} transition-colors text-cultivate-text-secondary hover:text-cultivate-text-primary`}
+                  className={`${isStandalone ? 'h-10 w-10 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] flex items-center justify-center' : 'p-1.5 border border-cultivate-border-element hover:border-cultivate-button-primary rounded-md'} transition-colors text-cultivate-text-secondary hover:text-cultivate-text-primary`}
                   title="Install app"
                 >
                   <Download className="w-4 h-4" />
@@ -512,7 +512,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                 </p>
               )}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <button onClick={() => setActiveNav("agents")} className="bg-cultivate-bg-elevated rounded-xl p-5 text-left hover:border-[#85b878] border border-transparent transition-colors">
+                <button onClick={() => setActiveNav("agents")} className="bg-cultivate-bg-elevated rounded-xl p-5 text-left hover:border-cultivate-green-light border border-transparent transition-colors">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm text-cultivate-text-secondary">Active Agents</span>
                     <div className="w-9 h-9 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center">
@@ -524,7 +524,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                   </p>
                 </button>
 
-                <button onClick={() => setActiveNav("knowledge")} className="bg-cultivate-bg-elevated rounded-xl p-5 text-left hover:border-[#608e96] border border-transparent transition-colors">
+                <button onClick={() => setActiveNav("knowledge")} className="bg-cultivate-bg-elevated rounded-xl p-5 text-left hover:border-cultivate-teal border border-transparent transition-colors">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm text-cultivate-text-secondary">Knowledge Docs</span>
                     <div className="w-9 h-9 bg-cultivate-teal/20 rounded-lg flex items-center justify-center">
@@ -536,7 +536,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                   </p>
                 </button>
 
-                <button onClick={() => setActiveNav("flagged")} className="bg-cultivate-bg-elevated rounded-xl p-5 text-left hover:border-[#e8c8ab] border border-transparent transition-colors">
+                <button onClick={() => setActiveNav("flagged")} className="bg-cultivate-bg-elevated rounded-xl p-5 text-left hover:border-cultivate-beige border border-transparent transition-colors">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm text-cultivate-text-secondary">Pending Flags</span>
                     <div className="w-9 h-9 bg-cultivate-beige/20 rounded-lg flex items-center justify-center">
@@ -553,7 +553,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
               <div className="mb-8">
                 <h2 className="text-sm text-cultivate-text-secondary mb-3">Quick Actions</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <button onClick={() => setActiveNav("agents")} className="group p-4 bg-cultivate-bg-elevated rounded-xl border border-cultivate-border-element hover:border-[#85b878] transition-colors text-left">
+                  <button onClick={() => setActiveNav("agents")} className="group p-4 bg-cultivate-bg-elevated rounded-xl border border-cultivate-border-element hover:border-cultivate-green-light transition-colors text-left">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 bg-cultivate-green-light/20 rounded-lg flex items-center justify-center group-hover:bg-cultivate-green-light/30 transition-colors">
                         <Plus className="w-5 h-5 text-cultivate-green-light" />
@@ -565,7 +565,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                     </div>
                   </button>
 
-                  <button onClick={() => setActiveNav("knowledge")} className="group p-4 bg-cultivate-bg-elevated rounded-xl border border-cultivate-border-element hover:border-[#608e96] transition-colors text-left">
+                  <button onClick={() => setActiveNav("knowledge")} className="group p-4 bg-cultivate-bg-elevated rounded-xl border border-cultivate-border-element hover:border-cultivate-teal transition-colors text-left">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 bg-cultivate-teal/20 rounded-lg flex items-center justify-center group-hover:bg-cultivate-teal/30 transition-colors">
                         <Upload className="w-5 h-5 text-cultivate-teal" />
@@ -577,7 +577,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                     </div>
                   </button>
 
-                  <button onClick={() => setActiveNav("flagged")} className="group p-4 bg-cultivate-bg-elevated rounded-xl border border-cultivate-border-element hover:border-[#e8c8ab] transition-colors text-left">
+                  <button onClick={() => setActiveNav("flagged")} className="group p-4 bg-cultivate-bg-elevated rounded-xl border border-cultivate-border-element hover:border-cultivate-beige transition-colors text-left">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 bg-cultivate-beige/20 rounded-lg flex items-center justify-center group-hover:bg-cultivate-beige/30 transition-colors">
                         <Eye className="w-5 h-5 text-cultivate-beige" />
@@ -589,7 +589,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                     </div>
                   </button>
 
-                  <button onClick={() => setActiveNav("analytics")} className="group p-4 bg-cultivate-bg-elevated rounded-xl border border-cultivate-border-element hover:border-[#536d3d] transition-colors text-left">
+                  <button onClick={() => setActiveNav("analytics")} className="group p-4 bg-cultivate-bg-elevated rounded-xl border border-cultivate-border-element hover:border-cultivate-green-dark transition-colors text-left">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 bg-cultivate-green-dark/20 rounded-lg flex items-center justify-center group-hover:bg-cultivate-green-dark/30 transition-colors">
                         <BarChart3 className="w-5 h-5 text-cultivate-green-dark" />
@@ -962,7 +962,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
               <button
                 type="button"
                 onClick={handleCloseActivityPanel}
-                className="w-full px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
+                className="w-full px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-cultivate-text-primary transition-colors"
               >
                 Close
               </button>
@@ -978,7 +978,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
           <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowInstallModal(false)} />
           <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-80 shadow-xl">
             <div className="mb-4">
-              <div className="w-10 h-10 bg-[#5a7048] rounded-full flex items-center justify-center mb-3">
+              <div className="w-10 h-10 bg-cultivate-button-primary rounded-full flex items-center justify-center mb-3">
                 <Download className="w-5 h-5 text-white" />
               </div>
               <h2 className="text-white font-semibold text-base mb-1.5">Install Cultivate</h2>
@@ -998,7 +998,7 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
               </button>
               <button
                 onClick={handleInstall}
-                className="px-4 py-2 bg-[#5a7048] hover:bg-[#4a5d38] text-white text-sm font-medium rounded-lg transition-colors"
+                className="px-4 py-2 bg-cultivate-button-primary hover:bg-cultivate-button-primary-hover text-white text-sm font-medium rounded-lg transition-colors"
               >
                 Install
               </button>

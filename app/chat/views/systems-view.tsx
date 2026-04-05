@@ -194,7 +194,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-[#5a7048] text-white text-sm rounded-lg hover:bg-[#4a5d38] transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 bg-cultivate-button-primary text-white text-sm rounded-lg hover:bg-cultivate-button-primary-hover transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add System
@@ -210,7 +210,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search systems..."
-            className="w-full pl-9 pr-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
+            className="w-full pl-9 pr-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-button-primary"
           />
         </div>
         {/* Row 2: filter pills left, sort by right */}
@@ -222,7 +222,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
                 onClick={() => setSelectedStatus(s)}
                 className={`px-3 py-1.5 rounded-lg text-sm standalone:text-base lg:text-sm transition-colors ${
                   selectedStatus === s
-                    ? "bg-[#3B3B3B] text-cultivate-text-primary"
+                    ? "bg-cultivate-border-element text-cultivate-text-primary"
                     : "text-cultivate-text-secondary hover:text-cultivate-text-primary hover:bg-cultivate-bg-elevated"
                 }`}
               >
@@ -251,7 +251,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
             </div>
           ) : filteredSystems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
-              <Layers className="w-16 h-16 text-[#3B3B3B] mb-4" />
+              <Layers className="w-16 h-16 text-cultivate-border-element mb-4" />
               <p className="text-cultivate-text-secondary text-sm">No systems found</p>
               <p className="text-cultivate-text-tertiary text-xs mt-1">Contact Farmitecture to purchase farming systems</p>
             </div>
@@ -264,12 +264,12 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
               {filteredSystems.map((system) => (
                 <div
                   key={system.id}
-                  className="bg-[#1C1C1C] border border-cultivate-border-subtle rounded-xl p-5 hover:border-cultivate-border-element transition-colors"
+                  className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-5 hover:border-cultivate-border-element transition-colors"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-start gap-3 flex-1">
                       <div className="w-12 h-12 bg-cultivate-bg-elevated rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Package className="w-6 h-6 text-[#5a7048]" />
+                        <Package className="w-6 h-6 text-cultivate-button-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-base font-medium text-white mb-1">{system.name}</h3>
@@ -337,13 +337,13 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
                   <div className="mt-4 pt-4 border-t border-cultivate-border-subtle flex items-center justify-between">
                     <a
                       href="#"
-                      className="text-sm text-[#5a7048] hover:text-cultivate-green-light transition-colors flex items-center gap-1"
+                      className="text-sm text-cultivate-button-primary hover:text-cultivate-green-light transition-colors flex items-center gap-1"
                     >
                       View manual
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                     {system.status === "PENDING_SETUP" && (
-                      <button className="px-3 py-1.5 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm">
+                      <button className="px-3 py-1.5 bg-cultivate-button-primary text-white rounded-lg hover:bg-cultivate-button-primary-hover transition-colors text-sm">
                         Request Setup
                       </button>
                     )}
@@ -354,7 +354,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
           )}
         </div>
 
-        <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 h-8 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent lg:hidden" />
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 h-8 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent lg:hidden" />
       </div>
 
       {/* Add System Modal */}
@@ -381,7 +381,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
                   value={form.name}
                   onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="e.g. Hydroponic NFT System - Medium"
-                  className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm placeholder-[#6B6B6B] border border-cultivate-border-element rounded-lg focus:outline-none focus:border-[#85b878]"
+                  className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm placeholder-cultivate-text-tertiary border border-cultivate-border-element rounded-lg focus:outline-none focus:border-cultivate-green-light"
                 />
               </div>
 
@@ -417,7 +417,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
                   placeholder="Brief description of the system..."
                   rows={2}
                   style={{ minHeight: "60px" }}
-                  className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm placeholder-[#6B6B6B] border border-cultivate-border-element rounded-lg focus:outline-none focus:border-[#85b878] resize-none overflow-hidden"
+                  className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm placeholder-cultivate-text-tertiary border border-cultivate-border-element rounded-lg focus:outline-none focus:border-cultivate-green-light resize-none overflow-hidden"
                 />
               </div>
 
@@ -428,7 +428,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
                   type="date"
                   value={form.purchaseDate}
                   onChange={(e) => setForm(f => ({ ...f, purchaseDate: e.target.value }))}
-                  className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-[#85b878] [color-scheme:dark]"
+                  className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-cultivate-green-light [color-scheme:dark]"
                 />
               </div>
 
@@ -440,7 +440,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
                     type="date"
                     value={form.installationDate}
                     onChange={(e) => setForm(f => ({ ...f, installationDate: e.target.value }))}
-                    className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-[#85b878] [color-scheme:dark]"
+                    className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-cultivate-green-light [color-scheme:dark]"
                   />
                 </div>
                 <div>
@@ -449,7 +449,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
                     type="date"
                     value={form.warrantyUntil}
                     onChange={(e) => setForm(f => ({ ...f, warrantyUntil: e.target.value }))}
-                    className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-[#85b878] [color-scheme:dark]"
+                    className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-cultivate-green-light [color-scheme:dark]"
                   />
                 </div>
               </div>
@@ -458,14 +458,14 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
             <div className="flex items-center gap-2 justify-end mt-4">
               <button
                 onClick={() => { setShowAddModal(false); resetForm(); }}
-                className="px-3 py-1.5 text-xs text-cultivate-text-primary hover:bg-[#3B3B3B] rounded-lg transition-colors"
+                className="px-3 py-1.5 text-xs text-cultivate-text-primary hover:bg-cultivate-border-element rounded-lg transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddSystem}
                 disabled={isSubmitting}
-                className="px-4 py-1.5 bg-[#5a7048] text-white text-xs rounded-lg hover:bg-[#4a5d38] transition-colors disabled:opacity-40 flex items-center gap-2"
+                className="px-4 py-1.5 bg-cultivate-button-primary text-white text-xs rounded-lg hover:bg-cultivate-button-primary-hover transition-colors disabled:opacity-40 flex items-center gap-2"
               >
                 {isSubmitting && <Loader2 className="w-3 h-3 animate-spin" />}
                 Add System

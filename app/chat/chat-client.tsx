@@ -630,7 +630,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       {!sidebarOpen && activeView !== "chats" && activeView !== "systems" && !currentConversationId && !isStreaming && messages.length === 0 && (
         <button
           onClick={() => setSidebarOpen(true)}
-          className="fixed top-16 left-3 z-50 lg:hidden w-9 h-9 flex items-center justify-center bg-cultivate-bg-elevated hover:bg-[#3B3B3B] rounded-lg transition-colors"
+          className="fixed top-16 left-3 z-50 lg:hidden w-9 h-9 flex items-center justify-center bg-cultivate-bg-elevated hover:bg-cultivate-border-element rounded-lg transition-colors"
           aria-label="Open menu"
         >
           <PanelLeft className="w-4 h-4 text-cultivate-text-primary rotate-180" />
@@ -720,7 +720,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                 <div className="flex items-center gap-2 min-w-0">
                   <span className={`${isStandalone ? "text-lg" : "text-sm"} lg:text-sm`}>Flagged Queries</span>
                   {unseenFlaggedUpdates > 0 && (
-                    <span className="inline-flex min-w-5 h-5 px-1.5 items-center justify-center rounded-full bg-cultivate-beige text-[#1C1C1C] text-[10px] font-medium">
+                    <span className="inline-flex min-w-5 h-5 px-1.5 items-center justify-center rounded-full bg-cultivate-beige text-cultivate-bg-sidebar text-[10px] font-medium">
                       {unseenFlaggedUpdates}
                     </span>
                   )}
@@ -859,7 +859,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
               <div className="flex items-center">
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowInstallModal(true); }}
-                  className={`${isStandalone ? 'h-10 w-10 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] flex items-center justify-center' : 'p-1.5 border border-cultivate-border-element hover:border-[#5a7048] rounded-md'} transition-colors text-cultivate-text-secondary hover:text-cultivate-text-primary`}
+                  className={`${isStandalone ? 'h-10 w-10 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] flex items-center justify-center' : 'p-1.5 border border-cultivate-border-element hover:border-cultivate-button-primary rounded-md'} transition-colors text-cultivate-text-secondary hover:text-cultivate-text-primary`}
                   title="Install app"
                 >
                   <Download className="w-4 h-4" />
@@ -998,25 +998,25 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                       {/* Action Buttons */}
                       <div className="flex justify-center gap-2 flex-wrap">
                       <Tooltip content="Best practices for your crops">
-                        <button onClick={() => setInputValue("What are the best practices for my crops?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-[#141413] transition-colors flex items-center gap-2">
+                        <button onClick={() => setInputValue("What are the best practices for my crops?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-cultivate-bg-hover transition-colors flex items-center gap-2">
                           <Leaf className="w-4 h-4 text-cultivate-text-primary" />
                           <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-primary">Crops</span>
                         </button>
                       </Tooltip>
                       <Tooltip content="Identify and manage pests">
-                        <button onClick={() => setInputValue("How do I identify and manage pests on my farm?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-[#141413] transition-colors flex items-center gap-2">
+                        <button onClick={() => setInputValue("How do I identify and manage pests on my farm?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-cultivate-bg-hover transition-colors flex items-center gap-2">
                           <Bug className="w-4 h-4 text-cultivate-text-primary" />
                           <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-primary">Pests</span>
                         </button>
                       </Tooltip>
                       <Tooltip content="Plan based on weather">
-                        <button onClick={() => setInputValue("How should I plan my farming around the weather?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-[#141413] transition-colors flex items-center gap-2">
+                        <button onClick={() => setInputValue("How should I plan my farming around the weather?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-cultivate-bg-hover transition-colors flex items-center gap-2">
                           <CloudRain className="w-4 h-4 text-cultivate-text-primary" />
                           <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-primary">Weather</span>
                         </button>
                       </Tooltip>
                       <Tooltip content="When to plant and harvest">
-                        <button onClick={() => setInputValue("When should I plant and harvest my crops?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-[#141413] transition-colors flex items-center gap-2">
+                        <button onClick={() => setInputValue("When should I plant and harvest my crops?")} className="px-3 py-[7px] border-[0.5px] border-cultivate-border-element bg-cultivate-bg-main rounded-lg hover:bg-cultivate-bg-hover hover:border-cultivate-bg-hover transition-colors flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-cultivate-text-primary" />
                           <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-primary">Planting</span>
                         </button>
@@ -1027,7 +1027,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
 
                   <div className={`sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-cultivate-bg-main pb-2"}`}>
                     {isStandalone && (
-                      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent backdrop-blur-[0.5px]" />
+                      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
                     )}
                     <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-auto w-full max-w-3xl px-6 mb-2"}`}>
                       <div className="relative bg-cultivate-bg-elevated rounded-2xl shadow-sm p-4">
@@ -1037,11 +1037,11 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                           value={inputValue}
                           onChange={e => setInputValue(e.target.value)}
                           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                          className="w-full px-2 py-2 focus:outline-none resize-none text-white placeholder-[#C2C0B6] bg-transparent text-sm standalone:text-base lg:text-sm"
+                          className="w-full px-2 py-2 focus:outline-none resize-none text-white placeholder-cultivate-text-primary bg-transparent text-sm standalone:text-base lg:text-sm"
                         />
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center gap-2">
-                            <button className="p-1.5 hover:bg-[#3B3B3B] rounded transition-colors">
+                            <button className="p-1.5 hover:bg-cultivate-border-element rounded transition-colors">
                               <Plus className="w-5 h-5 text-cultivate-text-primary" />
                             </button>
 
@@ -1056,7 +1056,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                               {voiceState === "idle" && (
                                 <button
                                   onClick={handleVoiceClick}
-                                  className="p-1.5 hover:bg-[#3B3B3B] rounded transition-colors"
+                                  className="p-1.5 hover:bg-cultivate-border-element rounded transition-colors"
                                   title="Voice input"
                                 >
                                   <AudioLines className="w-5 h-5 text-cultivate-text-primary" />
@@ -1065,7 +1065,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                               {voiceState === "connecting" && (
                                 <button
                                   onClick={handleVoiceClick}
-                                  className="px-2.5 py-1.5 bg-cultivate-bg-elevated hover:bg-[#3B3B3B] rounded transition-colors flex items-center gap-1.5 text-xs text-white"
+                                  className="px-2.5 py-1.5 bg-cultivate-bg-elevated hover:bg-cultivate-border-element rounded transition-colors flex items-center gap-1.5 text-xs text-white"
                                 >
                                   <span>Cancel</span>
                                   <AnimatedDots type="pulse" />
@@ -1074,7 +1074,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                               {voiceState === "listening" && (
                                 <button
                                   onClick={handleVoiceClick}
-                                  className="px-2.5 py-1.5 bg-cultivate-bg-elevated hover:bg-[#3B3B3B] rounded transition-colors flex items-center gap-1.5 text-xs text-white"
+                                  className="px-2.5 py-1.5 bg-cultivate-bg-elevated hover:bg-cultivate-border-element rounded transition-colors flex items-center gap-1.5 text-xs text-white"
                                 >
                                   <span>Stop</span>
                                   <AnimatedDots type="wave" />
@@ -1083,7 +1083,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                               {voiceState === "error" && (
                                 <button
                                   onClick={handleVoiceClick}
-                                  className="px-2.5 py-1.5 bg-[#c0392b] hover:bg-[#a93226] rounded transition-colors flex items-center gap-1.5 text-xs text-white"
+                                  className="px-2.5 py-1.5 bg-cultivate-error hover:bg-cultivate-error-dark rounded transition-colors flex items-center gap-1.5 text-xs text-white"
                                 >
                                   <AlertTriangle className="w-3.5 h-3.5" />
                                   <span>Error</span>
@@ -1108,7 +1108,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                                       <button
                                         key={agent.id}
                                         onClick={() => { setSelectedAgent(agent.name); setSelectedAgentId(agent.id); setShowAgentMenu(false); setCurrentConversationId(null); setConversationTitle(null); setMessages([]); }}
-                                        className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors ${selectedAgent === agent.name ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
+                                        className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-cultivate-border-element transition-colors ${selectedAgent === agent.name ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
                                       >
                                         {agent.name}
                                       </button>
@@ -1137,7 +1137,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                                       <button
                                         key={lang.code}
                                         onClick={() => { setSelectedLanguage(lang.code); setShowLanguageMenu(false); }}
-                                        className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-[#3B3B3B] transition-colors flex items-center gap-2 ${selectedLanguage === lang.code ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
+                                        className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-cultivate-border-element transition-colors flex items-center gap-2 ${selectedLanguage === lang.code ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
                                       >
                                         <span>{lang.flag}</span>
                                         <span>{lang.name}</span>
@@ -1151,7 +1151,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                             <button
                               onClick={() => { handleSend(); setSendIcon(s => s === "cabbage" ? "plane" : s === "plane" ? "sprout" : "cabbage"); }}
                               disabled={isStreaming || !inputValue.trim()}
-                              className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-[#536d3d] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               {sendIcon === "cabbage" && <CabbageIcon />}
                               {sendIcon === "plane" && <PaperPlaneIcon />}
@@ -1211,7 +1211,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       <Dialog open={showInstallModal} onOpenChange={(open) => { if (!open) setShowInstallModal(false); }}>
         <DialogContent showCloseButton={false} className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-80 shadow-xl">
             <div className="mb-4">
-              <div className="w-10 h-10 bg-[#5a7048] rounded-full flex items-center justify-center mb-3">
+              <div className="w-10 h-10 bg-cultivate-button-primary rounded-full flex items-center justify-center mb-3">
                 <Download className="w-5 h-5 text-white" />
               </div>
               <h2 className="text-white font-semibold text-base mb-1.5">Install Cultivate</h2>
@@ -1231,7 +1231,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
               </button>
               <button
                 onClick={handleInstall}
-                className="px-4 py-2 bg-[#5a7048] hover:bg-[#4a5d38] text-white text-sm font-medium rounded-lg transition-colors"
+                className="px-4 py-2 bg-cultivate-button-primary hover:bg-cultivate-button-primary-hover text-white text-sm font-medium rounded-lg transition-colors"
               >
                 Install
               </button>
@@ -1250,7 +1250,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                 onChange={(e) => setRenameValue(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !renameLoading) handleRenameSubmit(); }}
                 placeholder="Enter new title..."
-                className="w-full px-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+                className="w-full px-3 py-2 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light"
                 autoFocus
               />
             </div>
@@ -1265,7 +1265,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
               <button
                 onClick={handleRenameSubmit}
                 disabled={renameLoading || !renameValue.trim()}
-                className="px-4 py-2 bg-[#5a7048] hover:bg-[#4a5d38] text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                className="px-4 py-2 bg-cultivate-button-primary hover:bg-cultivate-button-primary-hover text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
               >
                 {renameLoading ? "Renaming..." : "Rename"}
               </button>

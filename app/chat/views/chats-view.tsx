@@ -227,7 +227,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
             placeholder="Search your chats..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+            className="w-full pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light"
           />
         </div>
 
@@ -252,7 +252,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
               </div>
             ) : paginatedChats.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <MessageCircle className="w-8 h-8 text-[#3B3B3B] mb-3" />
+                <MessageCircle className="w-8 h-8 text-cultivate-border-element mb-3" />
                 <p className="text-sm text-cultivate-text-tertiary">No conversations yet</p>
               </div>
             ) : (
@@ -288,7 +288,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-cultivate-border-element hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Prev
               </button>
@@ -298,7 +298,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-cultivate-border-element hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Next
               </button>
@@ -307,7 +307,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
         </div>
 
         {isStandalone && (
-          <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 h-8 bg-gradient-to-t from-[#1E1E1E]/70 via-[#1E1E1E]/40 to-transparent" />
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-20 h-8 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent" />
         )}
       </div>
     </div>

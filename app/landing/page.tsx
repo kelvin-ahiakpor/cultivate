@@ -42,7 +42,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-2 lg:gap-3">
               <Link
                 href="/signup"
-                className="hidden lg:flex bg-[#85b878] hover:bg-cultivate-green-dark text-white px-8 py-3 rounded-full transition-all duration-300 font-medium shadow-md hover:shadow-lg items-center gap-2"
+                className="hidden lg:flex bg-cultivate-green-light hover:bg-cultivate-green-dark text-white px-8 py-3 rounded-full transition-all duration-300 font-medium shadow-md hover:shadow-lg items-center gap-2"
               >
                 Sign Up
                 <ArrowRight className="w-4 h-4" />
@@ -85,7 +85,7 @@ export default function LandingPage() {
                 <Link
                   href="/signup"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 bg-[#85b878] text-white py-3 rounded-xl font-medium min-h-[44px]"
+                  className="flex items-center justify-center gap-2 bg-cultivate-green-light text-white py-3 rounded-xl font-medium min-h-[44px]"
                 >
                   Sign Up <ArrowRight className="w-4 h-4" />
                 </Link>
@@ -106,11 +106,11 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto w-full">
             <div className="max-w-3xl">
               <h1 className="text-4xl sm:text-5xl lg:text-8xl font-bold leading-[1.1] font-serif mb-6 lg:mb-8">
-                <span className="text-[#4a3728]">Expert farming</span>
+                <span className="text-cultivate-brown-dark">Expert farming</span>
                 <br />
-                <span className="text-[#4a3728]">advice,</span>
+                <span className="text-cultivate-brown-dark">advice,</span>
                 <br />
-                <span className="relative inline-block text-[#85b878]">
+                <span className="relative inline-block text-cultivate-green-light">
                   anytime
                   <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 400 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M5 15C50 8 150 5 200 8C250 11 350 10 395 12" stroke="#85b878" strokeWidth="6" strokeLinecap="round" opacity="0.4"/>
@@ -156,7 +156,7 @@ export default function LandingPage() {
                 </div>
                 <div className="space-y-3 lg:space-y-4">
                   <div className="flex items-center gap-3">
-                    <span className="text-4xl lg:text-5xl font-bold text-[#85b878]/20">01</span>
+                    <span className="text-4xl lg:text-5xl font-bold text-cultivate-green-light/20">01</span>
                     <h3 className="text-xl lg:text-2xl font-bold text-gray-900">Agronomist Trains</h3>
                   </div>
                   <p className="text-gray-600 text-base lg:text-lg leading-relaxed">
@@ -173,14 +173,14 @@ export default function LandingPage() {
 
             {/* Step 2 */}
             <div className="group relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#85b878]/5 to-transparent rounded-3xl transform group-hover:scale-105 transition-transform duration-300"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-cultivate-green-light/5 to-transparent rounded-3xl transform group-hover:scale-105 transition-transform duration-300"></div>
               <div className="relative bg-white rounded-3xl p-6 lg:p-10 shadow-sm hover:shadow-xl transition-all duration-300 h-full">
-                <div className="w-14 h-14 lg:w-16 lg:h-16 bg-[#85b878] rounded-2xl flex items-center justify-center mb-5 lg:mb-6">
+                <div className="w-14 h-14 lg:w-16 lg:h-16 bg-cultivate-green-light rounded-2xl flex items-center justify-center mb-5 lg:mb-6">
                   <MessageSquare className="w-7 h-7 lg:w-8 lg:h-8 text-white" />
                 </div>
                 <div className="space-y-3 lg:space-y-4">
                   <div className="flex items-center gap-3">
-                    <span className="text-4xl lg:text-5xl font-bold text-[#608e96]/20">02</span>
+                    <span className="text-4xl lg:text-5xl font-bold text-cultivate-teal/20">02</span>
                     <h3 className="text-xl lg:text-2xl font-bold text-gray-900">Farmer Asks</h3>
                   </div>
                   <p className="text-gray-600 text-base lg:text-lg leading-relaxed">
@@ -197,14 +197,14 @@ export default function LandingPage() {
 
             {/* Step 3 */}
             <div className="group relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#608e96]/5 to-transparent rounded-3xl transform group-hover:scale-105 transition-transform duration-300"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-cultivate-teal/5 to-transparent rounded-3xl transform group-hover:scale-105 transition-transform duration-300"></div>
               <div className="relative bg-white rounded-3xl p-6 lg:p-10 shadow-sm hover:shadow-xl transition-all duration-300 h-full">
-                <div className="w-14 h-14 lg:w-16 lg:h-16 bg-[#608e96] rounded-2xl flex items-center justify-center mb-5 lg:mb-6">
+                <div className="w-14 h-14 lg:w-16 lg:h-16 bg-cultivate-teal rounded-2xl flex items-center justify-center mb-5 lg:mb-6">
                   <Sparkles className="w-7 h-7 lg:w-8 lg:h-8 text-white" />
                 </div>
                 <div className="space-y-3 lg:space-y-4">
                   <div className="flex items-center gap-3">
-                    <span className="text-4xl lg:text-5xl font-bold text-[#e8c8ab]/50">03</span>
+                    <span className="text-4xl lg:text-5xl font-bold text-cultivate-beige/50">03</span>
                     <h3 className="text-xl lg:text-2xl font-bold text-gray-900">Farmer Gets Expert Advice</h3>
                   </div>
                   <p className="text-gray-600 text-base lg:text-lg leading-relaxed">
@@ -225,8 +225,8 @@ export default function LandingPage() {
       {/* Why It Matters Section */}
       <section id="why-cultivate" className="py-16 lg:py-32 px-4 lg:px-12 bg-cultivate-green-dark text-white relative overflow-hidden">
         {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#85b878] rounded-full blur-3xl opacity-20"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#608e96] rounded-full blur-3xl opacity-20"></div>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-cultivate-green-light rounded-full blur-3xl opacity-20"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-cultivate-teal rounded-full blur-3xl opacity-20"></div>
 
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
@@ -251,7 +251,7 @@ export default function LandingPage() {
             <div className="space-y-4 lg:space-y-6">
               <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-6 lg:p-8 border border-white/20">
                 <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 lg:w-12 lg:h-12 bg-[#85b878] rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-11 h-11 lg:w-12 lg:h-12 bg-cultivate-green-light rounded-xl flex items-center justify-center flex-shrink-0">
                     <Clock className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
                   </div>
                   <div>
@@ -264,7 +264,7 @@ export default function LandingPage() {
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-6 lg:p-8 border border-white/20">
                 <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 lg:w-12 lg:h-12 bg-[#608e96] rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-11 h-11 lg:w-12 lg:h-12 bg-cultivate-teal rounded-xl flex items-center justify-center flex-shrink-0">
                     <Sprout className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
                   </div>
                   <div>
@@ -277,7 +277,7 @@ export default function LandingPage() {
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-6 lg:p-8 border border-white/20">
                 <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 lg:w-12 lg:h-12 bg-[#e8c8ab] rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-11 h-11 lg:w-12 lg:h-12 bg-cultivate-beige rounded-xl flex items-center justify-center flex-shrink-0">
                     <Users className="w-5 h-5 lg:w-6 lg:h-6 text-cultivate-green-dark" />
                   </div>
                   <div>
@@ -317,8 +317,8 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="bg-white rounded-3xl p-6 lg:p-10 shadow-sm border border-gray-100">
-              <div className="w-14 h-14 lg:w-16 lg:h-16 bg-[#85b878]/10 rounded-2xl flex items-center justify-center mb-5 lg:mb-6">
-                <Users className="w-7 h-7 lg:w-8 lg:h-8 text-[#85b878]" />
+              <div className="w-14 h-14 lg:w-16 lg:h-16 bg-cultivate-green-light/10 rounded-2xl flex items-center justify-center mb-5 lg:mb-6">
+                <Users className="w-7 h-7 lg:w-8 lg:h-8 text-cultivate-green-light" />
               </div>
               <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-3 lg:mb-4">Human Escalation</h3>
               <p className="text-gray-600 text-base lg:text-lg leading-relaxed">
@@ -327,8 +327,8 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="bg-white rounded-3xl p-6 lg:p-10 shadow-sm border border-gray-100">
-              <div className="w-14 h-14 lg:w-16 lg:h-16 bg-[#608e96]/10 rounded-2xl flex items-center justify-center mb-5 lg:mb-6">
-                <CheckCircle className="w-7 h-7 lg:w-8 lg:h-8 text-[#608e96]" />
+              <div className="w-14 h-14 lg:w-16 lg:h-16 bg-cultivate-teal/10 rounded-2xl flex items-center justify-center mb-5 lg:mb-6">
+                <CheckCircle className="w-7 h-7 lg:w-8 lg:h-8 text-cultivate-teal" />
               </div>
               <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-3 lg:mb-4">Source Citations</h3>
               <p className="text-gray-600 text-base lg:text-lg leading-relaxed">
@@ -371,7 +371,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2 lg:pt-4">
             <Link
               href="/signup"
-              className="group bg-[#85b878] text-white px-8 lg:px-10 py-4 lg:py-5 rounded-full hover:bg-cultivate-green-dark transition-all duration-300 font-bold text-lg lg:text-xl shadow-xl hover:shadow-2xl flex items-center justify-center gap-2 min-h-[52px]"
+              className="group bg-cultivate-green-light text-white px-8 lg:px-10 py-4 lg:py-5 rounded-full hover:bg-cultivate-green-dark transition-all duration-300 font-bold text-lg lg:text-xl shadow-xl hover:shadow-2xl flex items-center justify-center gap-2 min-h-[52px]"
             >
               Start Your Free Trial
               <ArrowRight className="w-5 h-5 lg:w-6 lg:h-6 group-hover:translate-x-1 transition-transform" />
@@ -395,7 +395,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
             <div className="col-span-2 md:col-span-1 space-y-4">
               <div className="flex items-center gap-2">
-                <Sprout className="w-6 h-6 text-[#85b878]" />
+                <Sprout className="w-6 h-6 text-cultivate-green-light" />
                 <span className="text-xl font-bold">Cultivate</span>
               </div>
               <p className="text-gray-400 text-sm lg:text-base">

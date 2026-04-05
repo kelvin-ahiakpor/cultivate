@@ -111,7 +111,7 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
                 onChange={e => setName(e.target.value)}
                 placeholder="e.g. Maize Expert"
                 disabled={submitting}
-                className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] disabled:opacity-40"
+                className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light disabled:opacity-40"
               />
             </div>
 
@@ -134,7 +134,7 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
                 onChange={e => setPrompt(e.target.value)}
                 placeholder="Describe the agent's role, expertise, and how it should respond…"
                 disabled={submitting}
-                className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none disabled:opacity-40"
+                className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light resize-none disabled:opacity-40"
               />
             </div>
 
@@ -147,7 +147,7 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
                 onChange={e => setStyle(e.target.value)}
                 placeholder="e.g. Friendly, concise, uses local examples"
                 disabled={submitting}
-                className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] disabled:opacity-40"
+                className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light disabled:opacity-40"
               />
             </div>
 
@@ -161,7 +161,7 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
                   value={threshold}
                   onChange={e => setThreshold(parseFloat(e.target.value))}
                   disabled={submitting}
-                  className="flex-1 accent-[#5a7048]"
+                  className="flex-1 accent-cultivate-button-primary"
                   style={{ background: `linear-gradient(to right, #5a7048 0%, #5a7048 ${threshold * 100}%, #3B3B3B ${threshold * 100}%, #3B3B3B 100%)` }}
                 />
                 <span className="text-sm text-white w-10 text-right">{threshold.toFixed(2)}</span>
@@ -179,7 +179,7 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
                   onClick={() => {
                     if (agentId) onManageKnowledgeBases?.(agentId);
                   }}
-                  className="text-xs text-cultivate-green-light hover:text-[#9dcf84] transition-colors"
+                  className="text-xs text-cultivate-green-light hover:text-cultivate-green-pale transition-colors"
                 >
                   Manage knowledge bases →
                 </button>
@@ -212,7 +212,7 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
               <button
                 onClick={handleSave}
                 disabled={submitting || !name.trim() || !prompt.trim()}
-                className="px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm disabled:opacity-40 flex items-center gap-2"
+                className="px-4 py-2 bg-cultivate-button-primary text-white rounded-lg hover:bg-cultivate-button-primary-hover transition-colors text-sm disabled:opacity-40 flex items-center gap-2"
               >
                 {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                 {submitting ? "Saving…" : "Save Changes"}
@@ -225,9 +225,9 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
       <Dialog open={showPromptModal} onOpenChange={setShowPromptModal}>
         <DialogContent
           showCloseButton={false}
-          className="bg-[#1C1C1C] border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
+          className="bg-cultivate-bg-sidebar border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
         >
-          <div className="w-full max-w-3xl bg-[#1C1C1C] border border-cultivate-border-element rounded-2xl shadow-2xl max-h-[85vh] flex flex-col">
+          <div className="w-full max-w-3xl bg-cultivate-bg-sidebar border border-cultivate-border-element rounded-2xl shadow-2xl max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-cultivate-border-element">
               <div>
                 <h2 className="text-base font-medium text-white">System Prompt</h2>
@@ -247,7 +247,7 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
                 onChange={e => setPrompt(e.target.value)}
                 placeholder="Describe the agent's role, expertise, and how it should respond…"
                 disabled={submitting}
-                className="w-full min-h-[420px] max-h-[calc(85vh-10rem)] px-4 py-3 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl text-sm leading-6 text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none disabled:opacity-40"
+                className="w-full min-h-[420px] max-h-[calc(85vh-10rem)] px-4 py-3 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl text-sm leading-6 text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light resize-none disabled:opacity-40"
               />
             </div>
             <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-cultivate-border-element">

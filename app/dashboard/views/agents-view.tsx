@@ -210,7 +210,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
             {isOnline && (
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="w-11 h-11 bg-[#5a7048] hover:bg-[#4a5d38] rounded-full flex items-center justify-center transition-colors"
+                className="w-11 h-11 bg-cultivate-button-primary hover:bg-cultivate-button-primary-hover rounded-full flex items-center justify-center transition-colors"
                 aria-label="Create Agent"
               >
                 <Plus className="w-5 h-5 text-white" />
@@ -230,7 +230,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
           {isOnline && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-cultivate-button-primary text-white rounded-lg hover:bg-cultivate-button-primary-hover transition-colors text-sm"
             >
               <Plus className="w-4 h-4" />
               Create Agent
@@ -246,7 +246,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
             placeholder="Search agents..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+            className="w-full pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light"
           />
         </div>
       </div>
@@ -275,17 +275,17 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
             {/* Mobile: Simplified card — tap to edit */}
             <div
               onClick={() => onEditAgent?.(agent.id)}
-              className="lg:hidden bg-cultivate-bg-elevated rounded-xl p-4 border border-cultivate-border-element hover:border-[#85b878]/30 transition-colors cursor-pointer"
+              className="lg:hidden bg-cultivate-bg-elevated rounded-xl p-4 border border-cultivate-border-element hover:border-cultivate-green-light/30 transition-colors cursor-pointer"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${agent.isActive ? 'bg-cultivate-green-light/20' : 'bg-[#3B3B3B]'}`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${agent.isActive ? 'bg-cultivate-green-light/20' : 'bg-cultivate-border-element'}`}>
                     <Bot className={`w-5 h-5 ${agent.isActive ? 'text-cultivate-green-light' : 'text-cultivate-text-tertiary'}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-sm font-medium text-white truncate">{agent.name}</h3>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${agent.isActive ? 'bg-cultivate-green-light/20 text-cultivate-green-light' : 'bg-[#3B3B3B] text-cultivate-text-tertiary'}`}>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${agent.isActive ? 'bg-cultivate-green-light/20 text-cultivate-green-light' : 'bg-cultivate-border-element text-cultivate-text-tertiary'}`}>
                         {agent.isActive ? "Active" : "Inactive"}
                       </span>
                     </div>
@@ -296,7 +296,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); setViewAgentModal(agent); }}
-                  className="w-8 h-8 bg-[#3B3B3B] hover:bg-[#4B4B4B] rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
+                  className="w-8 h-8 bg-cultivate-border-element hover:bg-[#4B4B4B] rounded-lg flex items-center justify-center transition-colors flex-shrink-0"
                   aria-label="View details"
                 >
                   <Eye className="w-4 h-4 text-cultivate-green-light" />
@@ -307,17 +307,17 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
             {/* Desktop: Original card with all stats — click to edit */}
             <div
               onClick={() => onEditAgent?.(agent.id)}
-              className="hidden lg:block bg-cultivate-bg-elevated rounded-xl p-5 border border-cultivate-border-element hover:border-[#85b878]/30 transition-colors cursor-pointer"
+              className="hidden lg:block bg-cultivate-bg-elevated rounded-xl p-5 border border-cultivate-border-element hover:border-cultivate-green-light/30 transition-colors cursor-pointer"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${agent.isActive ? 'bg-cultivate-green-light/20' : 'bg-[#3B3B3B]'}`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${agent.isActive ? 'bg-cultivate-green-light/20' : 'bg-cultivate-border-element'}`}>
                     <Bot className={`w-5 h-5 ${agent.isActive ? 'text-cultivate-green-light' : 'text-cultivate-text-tertiary'}`} />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-medium text-white">{agent.name}</h3>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${agent.isActive ? 'bg-cultivate-green-light/20 text-cultivate-green-light' : 'bg-[#3B3B3B] text-cultivate-text-tertiary'}`}>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${agent.isActive ? 'bg-cultivate-green-light/20 text-cultivate-green-light' : 'bg-cultivate-border-element text-cultivate-text-tertiary'}`}>
                         {agent.isActive ? "Active" : "Inactive"}
                       </span>
                     </div>
@@ -338,7 +338,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                     <DropdownMenuTrigger asChild>
                       <button
                         disabled={!isOnline}
-                        className="p-1.5 hover:bg-[#3B3B3B] rounded-lg transition-colors disabled:opacity-30"
+                        className="p-1.5 hover:bg-cultivate-border-element rounded-lg transition-colors disabled:opacity-30"
                       >
                         <MoreHorizontal className="w-4 h-4 text-cultivate-text-primary" />
                       </button>
@@ -391,7 +391,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
           <button
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-cultivate-border-element hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Prev
           </button>
@@ -401,7 +401,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-[#3B3B3B] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 text-sm text-cultivate-text-secondary bg-cultivate-bg-elevated border border-cultivate-border-element rounded-md hover:bg-cultivate-border-element hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Next
           </button>
@@ -419,16 +419,16 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
           <div className="lg:hidden fixed inset-0 flex items-center justify-center p-4 z-50 pointer-events-none">
             <div
               onClick={(e) => e.stopPropagation()}
-              className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl pointer-events-auto"
+              className="bg-cultivate-bg-sidebar rounded-xl border border-cultivate-border-subtle w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl pointer-events-auto"
             >
               {/* Panel Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-cultivate-border-subtle">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${viewAgentModal.isActive ? 'bg-cultivate-green-light/20' : 'bg-[#3B3B3B]'}`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${viewAgentModal.isActive ? 'bg-cultivate-green-light/20' : 'bg-cultivate-border-element'}`}>
                     <Bot className={`w-4 h-4 ${viewAgentModal.isActive ? 'text-cultivate-green-light' : 'text-cultivate-text-tertiary'}`} />
                   </div>
                   <h2 className="text-sm font-medium text-white truncate">{viewAgentModal.name}</h2>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${viewAgentModal.isActive ? 'bg-cultivate-green-light/20 text-cultivate-green-light' : 'bg-[#3B3B3B] text-cultivate-text-tertiary'}`}>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${viewAgentModal.isActive ? 'bg-cultivate-green-light/20 text-cultivate-green-light' : 'bg-cultivate-border-element text-cultivate-text-tertiary'}`}>
                     {viewAgentModal.isActive ? "Active" : "Inactive"}
                   </span>
                 </div>
@@ -478,7 +478,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                       handleEditAgent(viewAgentModal);
                       setViewAgentModal(null);
                     }}
-                    className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#85b878] transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-cultivate-green-light transition-colors flex items-center justify-center gap-2"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                     Edit
@@ -509,11 +509,11 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
           </div>
 
           {/* Desktop: Side panel */}
-          <div className="hidden lg:flex fixed top-0 right-0 h-full w-[600px] bg-[#1C1C1C] border-l border-cultivate-border-subtle z-50 flex-col shadow-2xl">
+          <div className="hidden lg:flex fixed top-0 right-0 h-full w-[600px] bg-cultivate-bg-sidebar border-l border-cultivate-border-subtle z-50 flex-col shadow-2xl">
             {/* Panel Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-cultivate-border-subtle">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${viewAgentModal.isActive ? 'bg-cultivate-green-light/20' : 'bg-[#3B3B3B]'}`}>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${viewAgentModal.isActive ? 'bg-cultivate-green-light/20' : 'bg-cultivate-border-element'}`}>
                   <Bot className={`w-5 h-5 ${viewAgentModal.isActive ? 'text-cultivate-green-light' : 'text-cultivate-text-tertiary'}`} />
                 </div>
                 <div>
@@ -589,7 +589,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                   handleEditAgent(viewAgentModal);
                   setViewAgentModal(null);
                 }}
-                className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#85b878] transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-cultivate-green-light transition-colors flex items-center justify-center gap-2"
               >
                 <Pencil className="w-3.5 h-3.5" />
                 Edit
@@ -597,7 +597,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
               <button
                 type="button"
                 onClick={() => setViewAgentModal(null)}
-                className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
+                className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-cultivate-text-primary transition-colors"
               >
                 Close
               </button>
@@ -610,9 +610,9 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
       <Dialog open={showCreateModal} onOpenChange={(open) => { if (!open && !submitting) setShowCreateModal(false); }}>
         <DialogContent
           showCloseButton={false}
-          className="bg-[#1C1C1C] border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
+          className="bg-cultivate-bg-sidebar border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
         >
-            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-lg p-6">
+            <div className="bg-cultivate-bg-sidebar rounded-xl border border-cultivate-border-subtle w-full max-w-lg p-6">
               <h2 className="text-lg font-medium text-white mb-4">Create New Agent</h2>
 
               <div className="space-y-4">
@@ -623,7 +623,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                     value={createName}
                     onChange={(e) => setCreateName(e.target.value)}
                     placeholder="e.g. Maize Expert"
-                    className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+                    className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light"
                     disabled={submitting}
                   />
                 </div>
@@ -635,7 +635,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                     value={createPrompt}
                     onChange={(e) => setCreatePrompt(e.target.value)}
                     placeholder="Describe the agent's role, expertise, and how it should respond..."
-                    className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none"
+                    className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light resize-none"
                     disabled={submitting}
                   />
                 </div>
@@ -647,7 +647,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                     value={createStyle}
                     onChange={(e) => setCreateStyle(e.target.value)}
                     placeholder="e.g. Friendly, concise, uses local examples"
-                    className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878]"
+                    className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light"
                     disabled={submitting}
                   />
                 </div>
@@ -662,7 +662,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                       step="0.05"
                       value={createThreshold}
                       onChange={(e) => setCreateThreshold(parseFloat(e.target.value))}
-                      className="flex-1 accent-[#5a7048] hover:brightness-110 transition-all"
+                      className="flex-1 accent-cultivate-button-primary hover:brightness-110 transition-all"
                       style={{
                         background: `linear-gradient(to right, #5a7048 0%, #5a7048 ${createThreshold * 100}%, #3B3B3B ${createThreshold * 100}%, #3B3B3B 100%)`
                       }}
@@ -685,7 +685,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                 <button
                   onClick={handleCreateSubmit}
                   disabled={submitting || !createName.trim() || !createPrompt.trim()}
-                  className="px-4 py-2 bg-[#5a7048] text-white rounded-lg hover:bg-[#4a5d38] transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 py-2 bg-cultivate-button-primary text-white rounded-lg hover:bg-cultivate-button-primary-hover transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {submitting ? "Creating..." : "Create Agent"}
@@ -699,10 +699,10 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
       <Dialog open={!!deactivateModalAgent} onOpenChange={(open) => { if (!open) setDeactivateModalAgent(null); }}>
         <DialogContent
           showCloseButton={false}
-          className="bg-[#1C1C1C] border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
+          className="bg-cultivate-bg-sidebar border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
         >
           {deactivateModalAgent && (
-            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
+            <div className="bg-cultivate-bg-sidebar rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Power className="w-5 h-5 text-orange-400" />
@@ -747,10 +747,10 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
       <Dialog open={!!deleteModalAgent} onOpenChange={(open) => { if (!open) setDeleteModalAgent(null); }}>
         <DialogContent
           showCloseButton={false}
-          className="bg-[#1C1C1C] border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
+          className="bg-cultivate-bg-sidebar border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
         >
           {deleteModalAgent && (
-            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-lg p-6">
+            <div className="bg-cultivate-bg-sidebar rounded-xl border border-cultivate-border-subtle w-full max-w-lg p-6">
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
                   <AlertTriangle className="w-5 h-5 text-red-400" />
@@ -782,7 +782,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                     value={deleteReason}
                     onChange={(e) => setDeleteReason(e.target.value)}
                     placeholder="Why are you deleting this agent?"
-                    className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-red-400 resize-none"
+                    className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-red-400 resize-none"
                   />
                 </div>
 
@@ -795,7 +795,7 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                     value={deleteNameConfirm}
                     onChange={(e) => setDeleteNameConfirm(e.target.value)}
                     placeholder="Enter agent name exactly"
-                    className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-red-400"
+                    className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-red-400"
                   />
                 </div>
               </div>

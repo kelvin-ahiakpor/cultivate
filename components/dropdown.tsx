@@ -60,7 +60,7 @@ export default function Dropdown({
           // Remove shadcn's default focus ring in favour of the border change
           "focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0",
           isPill
-            ? "w-auto px-3 py-1.5 rounded-lg hover:border-[#5a7048]"
+            ? "w-auto px-3 py-1.5 rounded-lg hover:border-cultivate-button-primary"
             : "w-full px-2.5 py-2 bg-cultivate-bg-main rounded-lg focus:border-cultivate-green-light",
           className
         )}

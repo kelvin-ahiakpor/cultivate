@@ -35,7 +35,7 @@ interface ConversationPanelMessage {
 function getStatusColor(status: Filter | FarmerFlaggedQueryItem["status"]) {
   switch (status) {
     case "PENDING":
-      return "bg-[#e8c8ab]/20 text-[#e8c8ab]";
+      return "bg-cultivate-beige/20 text-cultivate-beige";
     case "VERIFIED":
       return "bg-cultivate-green-light/20 text-cultivate-green-light";
     case "CORRECTED":
@@ -244,7 +244,7 @@ export default function FlaggedQueriesView({
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getStatusColor(query.status)}`}>
                         {query.status.charAt(0) + query.status.slice(1).toLowerCase()}
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#3B3B3B] text-cultivate-text-secondary">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-cultivate-border-element text-cultivate-text-secondary">
                         {(query.confidenceScore * 100).toFixed(0)}% confidence
                       </span>
                     </div>
@@ -282,7 +282,7 @@ export default function FlaggedQueriesView({
                             const el = flagReasonsRefs.current.get(query.id);
                             el?.scrollIntoView({ behavior: "smooth", block: "start" });
                           }}
-                          className="mt-2 text-xs text-[#e8c8ab] hover:text-[#e8c8ab]/80 transition-colors flex items-center gap-1"
+                          className="mt-2 text-xs text-cultivate-beige hover:text-cultivate-beige/80 transition-colors flex items-center gap-1"
                         >
                           Click to see why you flagged this →
                         </button>
@@ -302,9 +302,9 @@ export default function FlaggedQueriesView({
                       <div
                         className={`rounded-lg p-3 ${
                           query.status === "VERIFIED"
-                            ? "bg-cultivate-green-light/5 border border-[#85b878]/20"
+                            ? "bg-cultivate-green-light/5 border border-cultivate-green-light/20"
                             : query.status === "CORRECTED"
-                              ? "bg-cultivate-teal/5 border border-[#608e96]/20"
+                              ? "bg-cultivate-teal/5 border border-cultivate-teal/20"
                               : "bg-cultivate-bg-main"
                         }`}
                       >
@@ -346,15 +346,15 @@ export default function FlaggedQueriesView({
 
                       return (
                         <div ref={(el) => { if (el) flagReasonsRefs.current.set(query.id, el); }}>
-                          <p className="text-xs text-[#e8c8ab] mb-1.5">Why You Flagged This</p>
-                          <div className="bg-[#e8c8ab]/5 border border-[#e8c8ab]/10 rounded-lg p-3 space-y-2">
+                          <p className="text-xs text-cultivate-beige mb-1.5">Why You Flagged This</p>
+                          <div className="bg-cultivate-beige/5 border border-cultivate-beige/10 rounded-lg p-3 space-y-2">
                             {allFlagMessages.map((msg, idx) => {
                               const ordinals = ["1st", "2nd", "3rd"];
                               const ordinal = ordinals[idx] || `${idx + 1}th`;
 
                               return (
                                 <div key={`${query.id}-${idx}`} className="flex items-start gap-2 text-xs">
-                                  <span className="text-[#e8c8ab]/70 flex-shrink-0">{ordinal} · {msg.date} ·</span>
+                                  <span className="text-cultivate-beige/70 flex-shrink-0">{ordinal} · {msg.date} ·</span>
                                   <span className="text-cultivate-text-primary">{msg.text}</span>
                                 </div>
                               );
@@ -369,7 +369,7 @@ export default function FlaggedQueriesView({
                         <div className="flex items-center gap-1.5 mb-1.5">
                           <p className="text-xs text-cultivate-green-light">Expert Review</p>
                         </div>
-                        <div className="bg-cultivate-green-light/5 border border-[#85b878]/20 rounded-lg p-3">
+                        <div className="bg-cultivate-green-light/5 border border-cultivate-green-light/20 rounded-lg p-3">
                           <p className="text-sm text-cultivate-text-primary">
                             {query.verificationNotes || "An agronomist reviewed this response and marked it accurate."}
                           </p>
@@ -382,7 +382,7 @@ export default function FlaggedQueriesView({
                         <div className="flex items-center gap-1.5 mb-1.5">
                           <p className="text-xs text-cultivate-teal">Expert Correction</p>
                         </div>
-                        <div className="bg-cultivate-teal/5 border border-[#608e96]/20 rounded-lg p-3">
+                        <div className="bg-cultivate-teal/5 border border-cultivate-teal/20 rounded-lg p-3">
                           <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary">
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                               {query.agronomistResponse}
@@ -395,7 +395,7 @@ export default function FlaggedQueriesView({
                     <div className="flex items-center justify-between gap-3 pt-1">
                       <div className="flex items-center gap-2 text-xs text-cultivate-text-tertiary">
                         {query.status === "PENDING" ? (
-                          <AlertTriangle className="w-3.5 h-3.5 text-[#e8c8ab]" />
+                          <AlertTriangle className="w-3.5 h-3.5 text-cultivate-beige" />
                         ) : (
                           <CheckCircle className={`w-3.5 h-3.5 ${query.status === "CORRECTED" ? "text-cultivate-teal" : "text-cultivate-green-light"}`} />
                         )}
@@ -403,7 +403,7 @@ export default function FlaggedQueriesView({
                       </div>
                       <button
                         onClick={() => handleOpenChatPanel(query)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-cultivate-text-secondary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-cultivate-text-secondary hover:text-white border border-cultivate-border-element rounded-lg hover:border-cultivate-text-primary transition-colors"
                       >
                         <ExternalLink className="w-3 h-3" />
                         View Chat
@@ -451,18 +451,18 @@ export default function FlaggedQueriesView({
           <>
             <div className="fixed inset-0 bg-black/40 z-40" onClick={handleCloseChatPanel} />
             <div
-              className={`fixed top-0 right-0 h-full bg-[#1C1C1C] border-l border-cultivate-border-subtle z-50 flex flex-col shadow-2xl transition-transform duration-300 ${
+              className={`fixed top-0 right-0 h-full bg-cultivate-bg-sidebar border-l border-cultivate-border-subtle z-50 flex flex-col shadow-2xl transition-transform duration-300 ${
                 isClosing ? "translate-x-full" : "translate-x-0"
               }`}
               style={{ width: isDesktop ? `${panelWidth}px` : "100vw" }}
             >
               <div
-                className="hidden lg:block absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 bg-[#1C1C1C] rounded-full p-1.5 cursor-col-resize z-10 border border-cultivate-border-subtle hover:border-white shadow-lg group"
+                className="hidden lg:block absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 bg-cultivate-bg-sidebar rounded-full p-1.5 cursor-col-resize z-10 border border-cultivate-border-subtle hover:border-white shadow-lg group"
                 onMouseDown={handleResizeStart}
                 onDoubleClick={() => setPanelWidth(DEFAULT_PANEL_WIDTH)}
                 title="Drag to resize, double-click to reset"
               >
-                <GripVertical className="w-3.5 h-3.5 text-[#e8c8ab] group-hover:text-white transition-colors" />
+                <GripVertical className="w-3.5 h-3.5 text-cultivate-beige group-hover:text-white transition-colors" />
               </div>
 
               <div className="flex items-center justify-between px-5 pt-16 pb-3 lg:py-4 border-b border-cultivate-border-subtle">
@@ -495,9 +495,9 @@ export default function FlaggedQueriesView({
                 </button>
               </div>
 
-              <div className="px-5 py-2 bg-[#e8c8ab]/5 border-b border-[#e8c8ab]/10 flex items-center gap-2">
-                <Flag className="w-3.5 h-3.5 text-[#e8c8ab]" />
-                <span className="text-xs text-[#e8c8ab]">
+              <div className="px-5 py-2 bg-cultivate-beige/5 border-b border-cultivate-beige/10 flex items-center gap-2">
+                <Flag className="w-3.5 h-3.5 text-cultivate-beige" />
+                <span className="text-xs text-cultivate-beige">
                   Flagged message highlighted below · {(chatPanelQuery.confidenceScore * 100).toFixed(0)}% confidence
                 </span>
               </div>
@@ -511,7 +511,7 @@ export default function FlaggedQueriesView({
                   >
                     <div className={`max-w-[85%] ${msg.isFlagged ? "relative" : ""}`}>
                       {msg.isFlagged && (
-                        <div className="absolute -left-1 -top-2 -right-2 -bottom-2 rounded-2xl border-2 border-[#e8c8ab]/30 pointer-events-none" />
+                        <div className="absolute -left-1 -top-2 -right-2 -bottom-2 rounded-2xl border-2 border-cultivate-beige/30 pointer-events-none" />
                       )}
 
                       <div className={`flex gap-2.5 ${msg.role === "USER" ? "flex-row-reverse" : "flex-row"}`}>
@@ -529,7 +529,7 @@ export default function FlaggedQueriesView({
                           msg.role === "USER"
                             ? "bg-cultivate-bg-elevated text-cultivate-text-primary"
                             : msg.isFlagged
-                              ? "bg-[#e8c8ab]/5 border border-[#e8c8ab]/20 text-cultivate-text-primary"
+                              ? "bg-cultivate-beige/5 border border-cultivate-beige/20 text-cultivate-text-primary"
                               : "bg-cultivate-bg-main text-cultivate-text-primary"
                         }`}>
                           {msg.role === "ASSISTANT" ? (
@@ -544,13 +544,13 @@ export default function FlaggedQueriesView({
                             {msg.confidenceScore !== undefined && (
                               <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                                 msg.confidenceScore < 0.7
-                                  ? "bg-[#e8c8ab]/20 text-[#e8c8ab]"
+                                  ? "bg-cultivate-beige/20 text-cultivate-beige"
                                   : "bg-cultivate-green-light/20 text-cultivate-green-light"
                               }`}>
                                 {(msg.confidenceScore * 100).toFixed(0)}%
                               </span>
                             )}
-                            {msg.isFlagged && <Flag className="w-3 h-3 text-[#e8c8ab]" />}
+                            {msg.isFlagged && <Flag className="w-3 h-3 text-cultivate-beige" />}
                           </div>
                         </div>
                       </div>
@@ -564,7 +564,7 @@ export default function FlaggedQueriesView({
                       <CheckCircle className="w-3.5 h-3.5 text-cultivate-teal" />
                       <span className="text-xs text-cultivate-teal font-medium">Expert Correction</span>
                     </div>
-                    <div className="bg-cultivate-teal/5 border border-[#608e96]/20 rounded-xl px-3.5 py-2.5">
+                    <div className="bg-cultivate-teal/5 border border-cultivate-teal/20 rounded-xl px-3.5 py-2.5">
                       <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary prose-p:my-1">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{chatPanelQuery.agronomistResponse}</ReactMarkdown>
                       </div>
@@ -578,7 +578,7 @@ export default function FlaggedQueriesView({
                       <CheckCircle className="w-3.5 h-3.5 text-cultivate-green-light" />
                       <span className="text-xs text-cultivate-green-light font-medium">Expert Review</span>
                     </div>
-                    <div className="bg-cultivate-green-light/5 border border-[#85b878]/20 rounded-xl px-3.5 py-2.5">
+                    <div className="bg-cultivate-green-light/5 border border-cultivate-green-light/20 rounded-xl px-3.5 py-2.5">
                       <p className="text-sm text-cultivate-text-primary leading-relaxed">
                         {chatPanelQuery.verificationNotes || "An agronomist reviewed this response and marked it accurate."}
                       </p>
@@ -595,7 +595,7 @@ export default function FlaggedQueriesView({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleCloseChatPanel}
-                    className="px-3 py-1.5 text-xs text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
+                    className="px-3 py-1.5 text-xs text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-cultivate-text-primary transition-colors"
                   >
                     Close
                   </button>
@@ -604,7 +604,7 @@ export default function FlaggedQueriesView({
                       handleCloseChatPanel();
                       onOpenConversation(chatPanelQuery);
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-cultivate-text-secondary hover:text-white border border-cultivate-border-element rounded-lg hover:border-[#C2C0B6] transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-cultivate-text-secondary hover:text-white border border-cultivate-border-element rounded-lg hover:border-cultivate-text-primary transition-colors"
                   >
                     <ExternalLink className="w-3 h-3" />
                     Open Chat

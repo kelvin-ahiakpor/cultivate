@@ -177,7 +177,7 @@ export default function SettingsView({
                 <button
                   onClick={handleDetectLocation}
                   disabled={isDetecting}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-cultivate-bg-elevated text-cultivate-text-primary text-sm rounded-lg hover:bg-[#141413] transition-colors disabled:opacity-40"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-cultivate-bg-elevated text-cultivate-text-primary text-sm rounded-lg hover:bg-cultivate-bg-hover transition-colors disabled:opacity-40"
                 >
                   {isDetecting ? (
                     <>
@@ -202,7 +202,7 @@ export default function SettingsView({
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     placeholder="Enter your farming location"
-                    className="w-full px-3 py-2.5 bg-cultivate-bg-main border border-cultivate-border-element rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
+                    className="w-full px-3 py-2.5 bg-cultivate-bg-main border border-cultivate-border-element rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-button-primary"
                   />
                 </div>
 
@@ -216,7 +216,7 @@ export default function SettingsView({
                     value={gpsCoordinates}
                     onChange={(e) => setGpsCoordinates(e.target.value)}
                     placeholder="5.6037,-0.1870"
-                    className="w-full px-3 py-2.5 bg-cultivate-bg-main border border-cultivate-border-element rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#5a7048]"
+                    className="w-full px-3 py-2.5 bg-cultivate-bg-main border border-cultivate-border-element rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-button-primary"
                   />
                 </div>
 
@@ -233,7 +233,7 @@ export default function SettingsView({
                   <button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#5a7048] text-white text-sm rounded-lg hover:bg-[#4a5d38] transition-colors disabled:opacity-40"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-cultivate-button-primary text-white text-sm rounded-lg hover:bg-cultivate-button-primary-hover transition-colors disabled:opacity-40"
                   >
                     {isSaving ? (
                       <>
