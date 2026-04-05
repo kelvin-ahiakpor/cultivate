@@ -48,6 +48,7 @@ export default function KnowledgeView({
   const [isStandalone, setIsStandalone] = useState(false);
   const inlineTitleRef = useRef<HTMLDivElement | null>(null);
   const renameDraftRef = useRef("");
+  const uploadFileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Chunk preview state
   const [chunks, setChunks] = useState<Array<{ chunkIndex: number; content: string; tokenCount: number; id: string }>>([]);
@@ -484,6 +485,20 @@ export default function KnowledgeView({
     setShowUploadModal(false);
     setDuplicateDoc(null);
     setAssigningDuplicate(false);
+    if (uploadFileInputRef.current) {
+      uploadFileInputRef.current.value = "";
+    }
+  };
+
+  const handleSelectUploadFile = (file: File | null) => {
+    setUploadFile(file);
+    if (file && !uploadTitle) {
+      const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+      setUploadTitle(nameWithoutExt);
+    }
+    if (uploadFileInputRef.current) {
+      uploadFileInputRef.current.value = "";
+    }
   };
 
   const handleAssignDuplicateDocument = async () => {
@@ -1016,6 +1031,8 @@ export default function KnowledgeView({
 
                   {/* Drop Zone - Compact version */}
                   <div
+                    role="button"
+                    tabIndex={0}
                     onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                     onDragLeave={() => setDragOver(false)}
                     onDrop={(e) => {
@@ -1023,46 +1040,44 @@ export default function KnowledgeView({
                       setDragOver(false);
                       const file = e.dataTransfer.files[0];
                       if (file) {
-                        setUploadFile(file);
-                        // Auto-fill title from filename (remove extension)
-                        if (!uploadTitle) {
-                          const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
-                          setUploadTitle(nameWithoutExt);
-                        }
+                        handleSelectUploadFile(file);
+                      }
+                    }}
+                    onClick={() => uploadFileInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        uploadFileInputRef.current?.click();
                       }
                     }}
                     className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
                       dragOver ? 'border-cultivate-green-light bg-cultivate-green-light/5' : 'border-cultivate-border-element'
                     }`}
                   >
+                    <input
+                      ref={uploadFileInputRef}
+                      type="file"
+                      accept=".pdf,.docx,.txt"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        handleSelectUploadFile(file);
+                      }}
+                    />
                     {uploadFile ? (
                       <>
                         <Upload className="w-6 h-6 text-cultivate-green-light mx-auto mb-2" />
                         <p className="text-sm text-cultivate-green-light mb-1">{uploadFile.name}</p>
-                        <p className="text-xs text-cultivate-text-tertiary">Ready to upload</p>
+                        <p className="text-xs text-cultivate-text-tertiary">Click anywhere here to replace this file</p>
                       </>
                     ) : (
                       <>
                         <Upload className="w-6 h-6 text-cultivate-text-tertiary mx-auto mb-2" />
                         <p className="text-sm text-cultivate-text-primary mb-1">Drag and drop your file here</p>
                         <p className="text-xs text-cultivate-text-tertiary mb-2">or</p>
-                        <label className="inline-block px-3 py-1.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-xs text-cultivate-text-primary hover:border-cultivate-green-light transition-colors cursor-pointer">
+                        <span className="inline-block px-3 py-1.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-xs text-cultivate-text-primary hover:border-cultivate-green-light transition-colors cursor-pointer">
                           Browse Files
-                          <input
-                            type="file"
-                            accept=".pdf,.docx,.txt"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0] || null;
-                              setUploadFile(file);
-                              // Auto-fill title from filename (remove extension)
-                              if (file && !uploadTitle) {
-                                const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
-                                setUploadTitle(nameWithoutExt);
-                              }
-                            }}
-                          />
-                        </label>
+                        </span>
                         <p className="text-xs text-cultivate-text-tertiary mt-2">PDF, DOCX, TXT (max 25MB)</p>
                       </>
                     )}
