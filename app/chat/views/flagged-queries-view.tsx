@@ -90,11 +90,14 @@ export default function FlaggedQueriesView({
     return () => window.removeEventListener("resize", checkDesktop);
   }, []);
 
+  const onViewedUpdatesRef = useRef(onViewedUpdates);
+  onViewedUpdatesRef.current = onViewedUpdates;
   useEffect(() => {
     if (typeof window === "undefined") return;
     localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString());
-    onViewedUpdates?.();
-  }, [onViewedUpdates]);
+    onViewedUpdatesRef.current?.();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();

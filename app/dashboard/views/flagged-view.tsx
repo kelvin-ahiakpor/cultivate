@@ -818,40 +818,39 @@ export default function FlaggedView({
           showCloseButton={false}
           className="bg-[#1C1C1C] border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
         >
-            <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Pencil className="w-5 h-5 text-cultivate-teal" />
-                <h2 className="text-lg font-medium text-white">Edit Correction</h2>
-              </div>
+          <div className="bg-[#1C1C1C] rounded-xl border border-cultivate-border-subtle w-full max-w-md p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Pencil className="w-5 h-5 text-cultivate-teal" />
+              <h2 className="text-lg font-medium text-white">Edit Correction</h2>
+            </div>
 
-              <div>
-                <label className="block text-sm text-cultivate-text-secondary mb-1.5">Your correction</label>
-                <textarea
-                  rows={5}
-                  value={editCorrectionText}
-                  onChange={(e) => setEditCorrectionText(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none"
-                />
-              </div>
+            <div>
+              <label className="block text-sm text-cultivate-text-secondary mb-1.5">Your correction</label>
+              <textarea
+                rows={5}
+                value={editCorrectionText}
+                onChange={(e) => setEditCorrectionText(e.target.value)}
+                className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-[#6B6B6B] focus:outline-none focus:border-[#85b878] resize-none"
+              />
+            </div>
 
-              <div className="flex items-center justify-end gap-3 mt-6">
-                <button
-                  onClick={() => { setShowEditCorrectionModal(false); setEditingCorrectionId(null); }}
-                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveEditedCorrection}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-cultivate-teal text-white rounded-lg hover:bg-cultivate-teal/80 transition-colors text-sm"
-                >
-                  Save Changes
-                </button>
-              </div>
+            <div className="flex items-center justify-end gap-3 mt-6">
+              <button
+                onClick={() => { setShowEditCorrectionModal(false); setEditingCorrectionId(null); }}
+                className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEditedCorrection}
+                className="flex items-center gap-1.5 px-4 py-2 bg-cultivate-teal text-white rounded-lg hover:bg-cultivate-teal/80 transition-colors text-sm"
+              >
+                Save Changes
+              </button>
             </div>
           </div>
-        </>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Revoke Confirmation Modal */}
       <Dialog open={showRevokeModal} onOpenChange={(open) => { if (!open) { setShowRevokeModal(false); setRevokingQueryId(null); } }}>
