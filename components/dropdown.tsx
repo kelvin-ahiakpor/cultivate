@@ -83,8 +83,7 @@ export default function Dropdown({
             value={opt.value}
             className={cn(
               // Reset shadcn defaults and apply Cultivate dark theme
-              // pl-3 pr-3 explicitly override shadcn's default pl-2 pr-8 (pr-8 reserves checkmark space, making padding asymmetric)
-              "mx-1.5 pl-3 pr-3 py-2 rounded-lg text-sm text-cultivate-text-primary cursor-pointer",
+              "mx-1.5 px-3 py-2 rounded-lg text-sm text-cultivate-text-primary cursor-pointer",
               "focus:bg-cultivate-bg-hover focus:text-cultivate-text-primary",
               "data-[state=checked]:text-cultivate-text-primary"
             )}
