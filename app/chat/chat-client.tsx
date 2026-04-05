@@ -1595,6 +1595,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                   onNewChat={() => { setMessages([]); setCurrentConversationId(null); setConversationTitle(null); setConversationSystem(null); setConversationSystemId(null); setPendingConversationSystemId(null); setStreamingContent(""); }}
                   messages={messages}
                   messagesLoading={messagesLoading}
+                  showComposer={!messagesLoading}
                   isStreaming={isStreaming}
                   streamingContent={streamingContent}
                   isStandalone={isStandalone}
