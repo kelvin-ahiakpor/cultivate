@@ -343,7 +343,6 @@ npm run lint         # ESLint check
 ```bash
 npx prisma generate            # Regenerate Prisma client
 npx prisma migrate dev         # Create & apply migration
-npx prisma db push             # Push schema changes (no migration)
 npx prisma studio              # Open Prisma Studio GUI
 npm run db:seed                # Seed test data
 ```
