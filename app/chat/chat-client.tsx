@@ -139,6 +139,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   const messagesEndRef = useRef<HTMLDivElement>(null); // kept for welcome-screen scroll if needed
   const imageInputRef = useRef<HTMLInputElement>(null);
   const globalDragCounterRef = useRef(0);
+  const conversationLoadRequestRef = useRef(0);
 
   // Online/offline status — drives IndexedDB fallback + disables input when offline
   const isOnline = useOnlineStatus();
@@ -797,9 +798,11 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
 
   // Load an existing conversation into the main chat view (used by sidebar click + ChatsView selection)
   const loadExistingConversation = async (chatId: string, chatTitle: string, systemName?: string | null) => {
+    const requestId = ++conversationLoadRequestRef.current;
     setCurrentConversationId(chatId);
     setConversationTitle(chatTitle || null);
     setConversationSystem(systemName || null);
+    setConversationSystemId(null);
     setIsStreaming(false);
     setStreamingContent("");
     setSelectedChatId(chatId);
@@ -809,10 +812,12 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
 
     // Set loading state FIRST (before clearing messages) to prevent flash
     setMessagesLoading(true);
+    setMessages([]);
 
     if (demoMode) {
       // Demo: load mock messages for this specific chat (or default)
       const chatMessages = DEMO_FARMER_CONVO_MESSAGES[chatId] || DEMO_FARMER_CONVO_MESSAGES["default"];
+      if (requestId !== conversationLoadRequestRef.current) return;
       setMessages(chatMessages.map(m => ({
         id: m.id,
         role: m.role as "USER" | "ASSISTANT",
@@ -826,6 +831,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
     } else if (!isOnline) {
       // Offline: serve from IndexedDB cache
       const cached = await getConversationMessages(chatId).catch(() => null);
+      if (requestId !== conversationLoadRequestRef.current) return;
       if (cached) {
         setMessages(cached);
       }
@@ -834,24 +840,35 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       try {
         const res = await fetch(`/api/conversations/${chatId}/messages`);
         const data = await res.json();
+        if (requestId !== conversationLoadRequestRef.current) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mapped = data.messages ? data.messages.map((m: any) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          attachments: m.attachments,
+          confidenceScore: m.confidenceScore,
+          isFlagged: m.isFlagged,
+          flaggedQuery: m.flaggedQuery
+        })) : [];
         if (data.messages) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const mapped = data.messages.map((m: any) => ({
-            id: m.id,
-            role: m.role,
-            content: m.content,
-            attachments: m.attachments,
-            confidenceScore: m.confidenceScore,
-            isFlagged: m.isFlagged,
-            flaggedQuery: m.flaggedQuery
-          }));
           setMessages(mapped);
+        } else {
+          setMessages([]);
+        }
+        if (data.conversation?.farmerSystem?.id || data.conversation?.farmerSystem?.name) {
+          setConversationSystemId(data.conversation.farmerSystem.id || null);
+          setConversationSystem(data.conversation.farmerSystem.name || null);
+        }
+        if (data.messages) {
           // Write-through: cache for offline access
           saveConversationMessages(chatId, mapped).catch(() => {/* non-critical */});
         }
       } catch (e) {
+        if (requestId !== conversationLoadRequestRef.current) return;
         console.error("Failed to load conversation messages:", e);
       } finally {
+        if (requestId !== conversationLoadRequestRef.current) return;
         setMessagesLoading(false);
       }
     }
