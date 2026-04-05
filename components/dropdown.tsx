@@ -82,10 +82,13 @@ export default function Dropdown({
             key={opt.value}
             value={opt.value}
             className={cn(
-              // Reset shadcn defaults and apply Cultivate dark theme
+              // Reset shadcn defaults and apply Cultivate dark theme.
+              // [&>span:first-child]:hidden hides the built-in absolute checkmark indicator
+              // which otherwise reserves pr-8 (32px) on the right, making rows look right-shifted.
               "mx-1.5 px-3 py-2 rounded-lg text-sm text-cultivate-text-primary cursor-pointer",
               "focus:bg-cultivate-bg-hover focus:text-cultivate-text-primary",
-              "data-[state=checked]:text-cultivate-text-primary"
+              "data-[state=checked]:text-cultivate-text-primary",
+              "[&>span:first-child]:hidden"
             )}
           >
             {opt.label}
