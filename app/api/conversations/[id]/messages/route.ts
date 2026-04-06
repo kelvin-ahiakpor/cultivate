@@ -35,6 +35,7 @@ import { scoreConfidence, shouldFlag } from "@/lib/confidence";
 import { calculateCost } from "@/lib/cost";
 import { retrieveContext } from "@/lib/mastra-rag"; // NOW USES MASTRA RAG
 import { downloadChatImage, getMessageAttachmentUrl, uploadChatImage } from "@/lib/supabase-storage";
+import { sendPushNotification } from "@/lib/push";
 
 const MAX_IMAGE_ATTACHMENTS = 3;
 const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -454,6 +455,16 @@ export async function POST(
                 agronomistId: conversation.agent.agronomistId,
               },
             });
+
+            // Notify the assigned agronomist
+            if (conversation.agent.agronomistId) {
+              void sendPushNotification(conversation.agent.agronomistId, {
+                title: "New flagged query",
+                body: `${conversation.agent.name} flagged a response that needs your review.`,
+                url: "/dashboard?view=flagged",
+                tag: "flagged-query",
+              });
+            }
           }
 
           // 11. Update conversation timestamp

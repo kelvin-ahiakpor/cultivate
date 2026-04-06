@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, hasRole, apiError, apiSuccess } from "@/lib/api-utils";
+import { sendPushNotification } from "@/lib/push";
 
 // PATCH /api/flagged-queries/:id/review — Verify or correct a flagged query
 export async function PATCH(
@@ -54,10 +55,32 @@ export async function PATCH(
         reviewedAt: new Date(),
       },
       include: {
-        message: { select: { id: true, content: true } },
+        message: {
+          select: {
+            id: true,
+            content: true,
+            conversation: { select: { userId: true, id: true } },
+          },
+        },
         agent: { select: { id: true, name: true } },
       },
     });
+
+    // Notify the farmer whose query was reviewed
+    const farmerId = flaggedQuery.message?.conversation?.userId;
+    const conversationId = flaggedQuery.message?.conversation?.id;
+    if (farmerId) {
+      const notifBody =
+        status === "CORRECTED"
+          ? `An agronomist has provided a corrected answer to your question.`
+          : `An agronomist has verified the response to your question.`;
+      void sendPushNotification(farmerId, {
+        title: "Your question was reviewed",
+        body: notifBody,
+        url: conversationId ? `/chat?chat=${conversationId}` : "/chat",
+        tag: "query-reviewed",
+      });
+    }
 
     return apiSuccess(flaggedQuery);
   } catch (err) {
