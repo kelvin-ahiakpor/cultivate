@@ -18,6 +18,7 @@ import FlaggedView from "./views/flagged-view";
 import ChatsView from "./views/chats-view";
 import SettingsView from "./views/settings-view";
 import { GlassCircleButton } from "@/components/cultivate-ui";
+import PWAInstallModal from "@/components/pwa-install-modal";
 import { useDashboardStats, type DashboardStats } from "@/lib/hooks/use-dashboard-stats";
 import { useActivity, relativeTime, type ActivityItem } from "@/lib/hooks/use-activity";
 import { useAgents } from "@/lib/hooks/use-agents";
@@ -73,8 +74,6 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   // Keep SSR and first client render aligned, then sync sidebar state after mount.
   useEffect(() => {
@@ -93,16 +92,6 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
     };
   }, []);
 
-  // Capture the browser's PWA install prompt for the Install button
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-
   useEffect(() => {
     const mediaQuery = window.matchMedia("(display-mode: standalone)");
     const checkStandalone = () => {
@@ -114,15 +103,6 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
     mediaQuery.addEventListener("change", checkStandalone);
     return () => mediaQuery.removeEventListener("change", checkStandalone);
   }, []);
-
-  const handleInstall = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      setDeferredPrompt(null);
-    }
-    setShowInstallModal(false);
-  };
 
   const handleSignOut = async () => {
     try {
@@ -424,11 +404,11 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                 </div>
               )}
             </div>
-            {sidebarOpen && (
+            {sidebarOpen && !isStandalone && (
               <div className="flex items-center">
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowInstallModal(true); }}
-                  className={`${isStandalone ? 'h-10 w-10 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] flex items-center justify-center' : 'p-1.5 border border-cultivate-border-element hover:border-cultivate-button-primary rounded-md'} transition-colors text-cultivate-text-secondary hover:text-cultivate-text-primary`}
+                  className="p-1.5 border border-cultivate-border-element hover:border-cultivate-button-primary rounded-md transition-colors text-cultivate-text-secondary hover:text-cultivate-text-primary"
                   title="Install app"
                 >
                   <Download className="w-4 h-4" />
@@ -854,40 +834,8 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
         </>
       )}
 
-      {/* PWA Install Modal — outside sidebar to avoid transform containing block issues with fixed positioning */}
-      {showInstallModal && (
-        <>
-          <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowInstallModal(false)} />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-80 shadow-xl">
-            <div className="mb-4">
-              <div className="w-10 h-10 bg-cultivate-button-primary rounded-full flex items-center justify-center mb-3">
-                <Download className="w-5 h-5 text-white" />
-              </div>
-              <h2 className="text-white font-semibold text-base mb-1.5">Install Cultivate</h2>
-              <p className="text-cultivate-text-secondary text-sm leading-relaxed">
-                Add Cultivate to your home screen for quick access and offline support.
-              </p>
-              <p className="text-cultivate-text-tertiary text-xs mt-2 leading-relaxed">
-                On iOS: tap the Share button in Safari, then &ldquo;Add to Home Screen&rdquo;.
-              </p>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setShowInstallModal(false)}
-                className="px-4 py-2 text-sm text-cultivate-text-secondary hover:text-white transition-colors rounded-lg"
-              >
-                Not now
-              </button>
-              <button
-                onClick={handleInstall}
-                className="px-4 py-2 bg-cultivate-button-primary hover:bg-cultivate-button-primary-hover text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                Install
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      {/* PWA Install Modal */}
+      <PWAInstallModal open={showInstallModal} onClose={() => setShowInstallModal(false)} />
     </div>
   );
 }
