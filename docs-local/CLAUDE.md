@@ -80,7 +80,8 @@ All phases complete. See `BACKEND-PROGRESS.md` for full implementation details.
 - 🔄 **Weather tool** — Test with "Should I plant maize today?" after location is set in settings
 - 📝 **Ghana KB** — Upload Ghana agricultural doc, test RAG with regional queries
 - 📝 **Location capture UI** — Schema has `location` + `gpsCoordinates` on User; needs UI
-- ✅ **PWA offline — agronomist side** — Agents, Knowledge Bases, Flagged Queries all served from IndexedDB when offline. Dashboard stats show last-known numbers with "last updated Xm ago" label. Write/edit/upload actions hidden/disabled offline.
+- ✅ **PWA offline — agronomist side** — Agents, Knowledge Bases, Flagged Queries, Chats, activity feed, and dashboard stats all served from IndexedDB when offline. WifiOff icon in every view header. "● Last updated Xm ago" label on stats and activity. Write/edit/upload actions hidden/disabled offline.
+- ✅ **PWA install modal** — Platform-aware install flow (`components/pwa-install-modal.tsx` + `lib/hooks/use-pwa-install.ts`). iOS shows Safari share steps, Android triggers native prompt or manual steps, desktop shows address-bar install. Download button hidden when app is already installed (standalone mode).
 
 ### Recent Audit Summary (April 2026)
 - **Security:** public signup hardened to farmer-only + allowed-org signup, `/api/systems` cross-org guard added, `/api/translate` protected, KB storage moved to private access path, KB migration completed, upload validation tightened, basic route rate limits added.
@@ -295,6 +296,12 @@ When a view has a detail panel, extract it into `components/` rather than duplic
 - **Offline flow:** `useOnlineStatus()` → `isOnline = false` → component reads from IndexedDB → shows stale data with WifiOff indicator. On reconnect → SWR revalidates → IndexedDB updated.
 - **No offline writes** — sending messages, flagging, and any mutation require a real connection. Input is locked (`readOnly`, WifiOff indicator replaces send button) when offline.
 - **`navigator.onLine` vs `useOnlineStatus`** — use the hook for reactive UI; use `navigator.onLine` directly for one-time checks inside effects/async functions (e.g. mount effects where you don't want to re-run on status change).
+
+### PWA Install Patterns (April 2026)
+- **`usePWAInstall()`** (`lib/hooks/use-pwa-install.ts`) — detects `"ios"` | `"android"` | `"desktop"` | `"other"`, captures `beforeinstallprompt`, tracks `isInstalled` via `display-mode: standalone` media query.
+- **`<PWAInstallModal>`** (`components/pwa-install-modal.tsx`) — renders platform-specific step-by-step instructions. iOS = share button steps; Android/desktop = native prompt if available, manual steps if not.
+- **Download button:** only shown when `sidebarOpen && !isStandalone`. Hide when already installed — no need to show install prompt to someone who already installed.
+- **`canNativeInstall`** — `true` only when `beforeinstallprompt` has fired (Android/Chrome/Edge). iOS never fires this event; iOS path always shows manual steps.
 
 ### Anthropic API Credits
 - Zero balance → stream opens then closes silently (dots appear then vanish)
