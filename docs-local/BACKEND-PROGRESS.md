@@ -1432,13 +1432,16 @@ Full offline capability for both farmer and agronomist sides. Two storage mechan
 
 ### Agronomist Side
 
-**Files:** `lib/offline-storage.ts` (v2 — added `agro_cache` store), `app/dashboard/dashboard-client.tsx`, `app/dashboard/views/agents-view.tsx`, `app/dashboard/views/knowledge-view.tsx`, `app/dashboard/views/flagged-view.tsx`
+**Files:** `lib/offline-storage.ts` (v2 — added `agro_cache` store), `app/dashboard/dashboard-client.tsx`, `app/dashboard/views/agents-view.tsx`, `app/dashboard/views/knowledge-view.tsx`, `app/dashboard/views/flagged-view.tsx`, `app/dashboard/views/chats-view.tsx`
 
 **What works offline:**
 - Agents list — read-only
 - Knowledge Bases list — read-only
 - Flagged Queries list — read-only (with client-side search/filter)
-- Dashboard stats — last-known numbers with "Last updated Xm ago" label
+- Dashboard stats — last-known numbers with "● Last updated Xm ago" label
+- Activity feed — last-known list with "● Last updated Xm ago" label
+- Chats list — cached farmer conversations; opening a chat loads messages from IndexedDB
+- WifiOff icon shown in every view header and in the "Welcome, X" dashboard header
 
 **What's blocked offline:**
 - Create/edit/delete agent — button hidden
@@ -1452,6 +1455,7 @@ DB: cultivate-offline  (version 2)
 Store: conversations    → farmer convos + messages (keyPath: "id")
 Store: agro_cache       → agronomist data blobs (keyPath: "key")
   keys: "agents" | "knowledge_bases" | "flagged_queries" | "dashboard_stats"
+        "activity" | "agro_conversations"
   shape: { key, data, cachedAt }
 ```
 
@@ -1461,6 +1465,30 @@ Store: agro_cache       → agronomist data blobs (keyPath: "key")
 - `navigator.onLine` used for one-time checks inside mount effects; `useOnlineStatus()` used for reactive UI.
 - All `saveAgroCache` / `saveConversationList` calls are fire-and-forget (`.catch(() => {})`) — non-critical, never blocks UI.
 - DB version upgrade is additive: v1 creates `conversations`, v2 creates `agro_cache`. Existing users' v1 data is preserved.
+
+### PWA Install Modal (April 2026)
+
+Platform-aware install flow shared across farmer and agronomist UIs.
+
+**Files:** `lib/hooks/use-pwa-install.ts`, `components/pwa-install-modal.tsx`
+
+**`usePWAInstall` hook:**
+- Detects platform at mount: `"ios"` | `"android"` | `"desktop"` | `"other"`
+- Captures `beforeinstallprompt` event (Android/desktop Chrome) → `canNativeInstall: true`
+- Tracks installed state via `display-mode: standalone` media query + `appinstalled` event
+- Exposes `{ platform, isInstalled, canNativeInstall, triggerInstall() }`
+
+**`PWAInstallModal` component:**
+- iOS: 3-step Safari share flow with inline share icon SVG
+- Android + native prompt: "Install" button triggers browser prompt + 3-step confirm
+- Android + no prompt: manual "⋮ menu → Add to Home screen" steps
+- Desktop + native prompt: "Install" button + 3-step confirm
+- Desktop + no prompt: address bar install icon instructions
+- Other: generic "Add to Home Screen" hint
+
+**Download button behavior:**
+- Hidden automatically when `isStandalone === true` (app already installed)
+- Shown in sidebar only when sidebar is expanded (`sidebarOpen && !isStandalone`)
 
 ### Next: Push Notifications (planned)
 Farmers get notified when agronomist responds to a flagged query. Requires Web Push API + backend push endpoint.

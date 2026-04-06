@@ -8,7 +8,7 @@ import {
   Plus, Settings, HelpCircle, LogOut,
   PanelLeft, MoreHorizontal, Upload, Eye,
   CheckCircle, Pencil, ArrowRight, MessageCircle, X, Download, Loader2,
-  CircleEllipsis,
+  CircleEllipsis, WifiOff,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import AgentsView from "./views/agents-view";
@@ -18,6 +18,7 @@ import FlaggedView from "./views/flagged-view";
 import ChatsView from "./views/chats-view";
 import SettingsView from "./views/settings-view";
 import { GlassCircleButton } from "@/components/cultivate-ui";
+import PWAInstallModal from "@/components/pwa-install-modal";
 import { useDashboardStats, type DashboardStats } from "@/lib/hooks/use-dashboard-stats";
 import { useActivity, relativeTime, type ActivityItem } from "@/lib/hooks/use-activity";
 import { useAgents } from "@/lib/hooks/use-agents";
@@ -73,8 +74,6 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   // Keep SSR and first client render aligned, then sync sidebar state after mount.
   useEffect(() => {
@@ -93,16 +92,6 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
     };
   }, []);
 
-  // Capture the browser's PWA install prompt for the Install button
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
-
   useEffect(() => {
     const mediaQuery = window.matchMedia("(display-mode: standalone)");
     const checkStandalone = () => {
@@ -114,15 +103,6 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
     mediaQuery.addEventListener("change", checkStandalone);
     return () => mediaQuery.removeEventListener("change", checkStandalone);
   }, []);
-
-  const handleInstall = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      setDeferredPrompt(null);
-    }
-    setShowInstallModal(false);
-  };
 
   const handleSignOut = async () => {
     try {
@@ -202,6 +182,24 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
 
   // Activity feed — disabled in demo mode (zero API requests)
   const { activities, isLoading: activityLoading } = useActivity(7, 20, demoMode);
+  const [offlineActivities, setOfflineActivities] = useState<ActivityItem[]>([]);
+  const [offlineActivitiesCachedAt, setOfflineActivitiesCachedAt] = useState<number | null>(null);
+
+  // Write-through: cache activity when online data arrives
+  useEffect(() => {
+    if (demoMode || !isOnline || activities.length === 0) return;
+    saveAgroCache("activity", activities).catch(() => {});
+  }, [activities, isOnline, demoMode]);
+
+  // Read cached activity when offline
+  useEffect(() => {
+    if (demoMode || isOnline) return;
+    getAgroCache<ActivityItem[]>("activity").then(r => {
+      if (r) { setOfflineActivities(r.data); setOfflineActivitiesCachedAt(r.cachedAt); }
+    }).catch(() => {});
+  }, [isOnline, demoMode]);
+
+  const displayActivities = isOnline ? activities : offlineActivities;
 
   const handleCloseActivityPanel = () => {
     setActivityPanelOpen(false);
@@ -406,11 +404,11 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                 </div>
               )}
             </div>
-            {sidebarOpen && (
+            {sidebarOpen && !isStandalone && (
               <div className="flex items-center">
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowInstallModal(true); }}
-                  className={`${isStandalone ? 'h-10 w-10 rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:bg-white/[0.1] flex items-center justify-center' : 'p-1.5 border border-cultivate-border-element hover:border-cultivate-button-primary rounded-md'} transition-colors text-cultivate-text-secondary hover:text-cultivate-text-primary`}
+                  className="p-1.5 border border-cultivate-border-element hover:border-cultivate-button-primary rounded-md transition-colors text-cultivate-text-secondary hover:text-cultivate-text-primary"
                   title="Install app"
                 >
                   <Download className="w-4 h-4" />
@@ -486,16 +484,22 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                     </GlassCircleButton>
                   )}
                   <div>
-                    <h1 className="text-3xl font-serif text-cultivate-text-primary mb-0.5">
-                      Welcome, {user.name?.split(" ")[0]}
-                    </h1>
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-3xl font-serif text-cultivate-text-primary mb-0.5">
+                        Welcome, {user.name?.split(" ")[0]}
+                      </h1>
+                      {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary flex-shrink-0" />}
+                    </div>
                     <p className="text-sm text-cultivate-text-secondary">Manage your AI agents and knowledge bases</p>
                   </div>
                 </div>
                 <div className="hidden lg:block mb-8">
-                  <h1 className="text-3xl font-serif text-cultivate-text-primary mb-1">
-                    Welcome, {user.name?.split(" ")[0]}
-                  </h1>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h1 className="text-3xl font-serif text-cultivate-text-primary">
+                      Welcome, {user.name?.split(" ")[0]}
+                    </h1>
+                    {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary flex-shrink-0" />}
+                  </div>
                   <p className="text-sm text-cultivate-text-secondary">
                     Manage your AI agents and knowledge bases
                   </p>
@@ -614,7 +618,10 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
               {/* Recent Activity Header */}
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm text-cultivate-text-secondary">Recent Activity</h2>
-                <span className="text-xs text-cultivate-text-tertiary">Last 7 days</span>
+                {!isOnline && offlineActivitiesCachedAt
+                  ? <span className="text-xs text-cultivate-text-tertiary flex items-center gap-1"><span className="inline-block w-1 h-1 rounded-full bg-cultivate-text-tertiary" />Last updated {formatCacheAge(offlineActivitiesCachedAt)}</span>
+                  : <span className="text-xs text-cultivate-text-tertiary">Last 7 days</span>
+                }
               </div>
               </div>
 
@@ -622,8 +629,8 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
               <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto pb-6">
               <div className="mr-3">
 
-                {/* Loading state — only in real mode */}
-                {!demoMode && activityLoading && (
+                {/* Loading state — only in real mode, only when online */}
+                {!demoMode && isOnline && activityLoading && (
                   <div className="flex items-center justify-center py-10">
                     <Loader2 className="w-5 h-5 text-cultivate-text-tertiary animate-spin" />
                   </div>
@@ -634,15 +641,17 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                   <ActivityRow key={i} item={item} isStandalone={isStandalone} />
                 ))}
 
-                {/* Real mode: dynamic activity items from API */}
-                {!demoMode && !activityLoading && activities.map((item: ActivityItem, i: number) => (
+                {/* Real mode: dynamic activity items (online = fresh, offline = cached) */}
+                {!demoMode && !activityLoading && displayActivities.map((item: ActivityItem, i: number) => (
                   <ActivityRow key={i} item={item} isStandalone={isStandalone} />
                 ))}
 
-                {/* Empty state — real mode, no activity yet */}
-                {!demoMode && !activityLoading && activities.length === 0 && (
+                {/* Empty state — real mode, no activity */}
+                {!demoMode && !activityLoading && displayActivities.length === 0 && (
                   <div className="py-8 text-center">
-                    <p className="text-sm text-cultivate-text-tertiary">No activity in the last 7 days.</p>
+                    <p className="text-sm text-cultivate-text-tertiary">
+                      {isOnline ? "No activity in the last 7 days." : "No cached activity."}
+                    </p>
                   </div>
                 )}
 
@@ -767,7 +776,10 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
             <div className="flex items-center justify-between px-5 py-4 border-b border-cultivate-border-subtle">
               <div>
                 <h2 className="text-sm font-medium text-white">Recent Activity</h2>
-                <p className="text-xs text-cultivate-text-secondary mt-0.5">Last 30 days</p>
+                {!isOnline && offlineActivitiesCachedAt
+                  ? <p className="text-xs text-cultivate-text-tertiary mt-0.5 flex items-center gap-1"><span className="inline-block w-1 h-1 rounded-full bg-cultivate-text-tertiary" />Last updated {formatCacheAge(offlineActivitiesCachedAt)}</p>
+                  : <p className="text-xs text-cultivate-text-secondary mt-0.5">Last 30 days</p>
+                }
               </div>
               <button
                 type="button"
@@ -795,12 +807,14 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                   <Loader2 className="w-5 h-5 text-cultivate-text-tertiary animate-spin" />
                 </div>
               )}
-              {!demoMode && !activityLoading && activities.map((item: ActivityItem, i: number) => (
+              {!demoMode && !activityLoading && displayActivities.map((item: ActivityItem, i: number) => (
                 <ActivityRow key={i} item={item} isStandalone={isStandalone} />
               ))}
-              {!demoMode && !activityLoading && activities.length === 0 && (
+              {!demoMode && !activityLoading && displayActivities.length === 0 && (
                 <div className="py-8 text-center">
-                  <p className="text-sm text-cultivate-text-tertiary">No activity in the last 30 days.</p>
+                  <p className="text-sm text-cultivate-text-tertiary">
+                    {isOnline ? "No activity in the last 30 days." : "No cached activity."}
+                  </p>
                 </div>
               )}
             </div>
@@ -820,40 +834,8 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
         </>
       )}
 
-      {/* PWA Install Modal — outside sidebar to avoid transform containing block issues with fixed positioning */}
-      {showInstallModal && (
-        <>
-          <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowInstallModal(false)} />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-80 shadow-xl">
-            <div className="mb-4">
-              <div className="w-10 h-10 bg-cultivate-button-primary rounded-full flex items-center justify-center mb-3">
-                <Download className="w-5 h-5 text-white" />
-              </div>
-              <h2 className="text-white font-semibold text-base mb-1.5">Install Cultivate</h2>
-              <p className="text-cultivate-text-secondary text-sm leading-relaxed">
-                Add Cultivate to your home screen for quick access and offline support.
-              </p>
-              <p className="text-cultivate-text-tertiary text-xs mt-2 leading-relaxed">
-                On iOS: tap the Share button in Safari, then &ldquo;Add to Home Screen&rdquo;.
-              </p>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setShowInstallModal(false)}
-                className="px-4 py-2 text-sm text-cultivate-text-secondary hover:text-white transition-colors rounded-lg"
-              >
-                Not now
-              </button>
-              <button
-                onClick={handleInstall}
-                className="px-4 py-2 bg-cultivate-button-primary hover:bg-cultivate-button-primary-hover text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                Install
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      {/* PWA Install Modal */}
+      <PWAInstallModal open={showInstallModal} onClose={() => setShowInstallModal(false)} />
     </div>
   );
 }
