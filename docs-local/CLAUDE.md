@@ -82,6 +82,7 @@ All phases complete. See `BACKEND-PROGRESS.md` for full implementation details.
 - 📝 **Location capture UI** — Schema has `location` + `gpsCoordinates` on User; needs UI
 - ✅ **PWA offline — agronomist side** — Agents, Knowledge Bases, Flagged Queries, Chats, activity feed, and dashboard stats all served from IndexedDB when offline. WifiOff icon in every view header. "● Last updated Xm ago" label on stats and activity. Write/edit/upload actions hidden/disabled offline.
 - ✅ **PWA install modal** — Platform-aware install flow (`components/pwa-install-modal.tsx` + `lib/hooks/use-pwa-install.ts`). iOS shows Safari share steps, Android triggers native prompt or manual steps, desktop shows address-bar install. Download button hidden when app is already installed (standalone mode).
+- ✅ **Push notifications** — Web Push via `web-push` + VAPID. Agronomist notified on flag creation; farmer notified on query review. Opt-in toggle in Settings for both roles. `usePushNotifications` hook + `sendPushNotification(userId, payload)` server utility. See `BACKEND-PROGRESS.md § Push Notifications`.
 
 ### Recent Audit Summary (April 2026)
 - **Security:** public signup hardened to farmer-only + allowed-org signup, `/api/systems` cross-org guard added, `/api/translate` protected, KB storage moved to private access path, KB migration completed, upload validation tightened, basic route rate limits added.

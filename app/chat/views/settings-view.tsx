@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Settings, MapPin, ChevronLeft, Loader2, Check, AlertCircle } from "lucide-react";
+import { Settings, MapPin, ChevronLeft, Loader2, Check, AlertCircle, Bell } from "lucide-react";
 import { GlassCircleButton } from "@/components/cultivate-ui";
 import { InlineEditableText } from "@/components/inline-editable-text";
 import { notify } from "@/lib/toast";
+import { usePushNotifications } from "@/lib/hooks/use-push-notifications";
 
 interface SettingsViewProps {
   user: {
@@ -184,6 +185,8 @@ export default function SettingsView({
     }
   };
 
+  const { permission, isSubscribed, isLoading: pushLoading, subscribe, unsubscribe } = usePushNotifications();
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-shrink-0">
@@ -340,6 +343,47 @@ export default function SettingsView({
                 </div>
               </div>
             </div>
+
+            {/* Notifications */}
+            {"Notification" in window && (
+              <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-6">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="p-2 bg-cultivate-bg-hover rounded-lg">
+                    <Bell className="w-4 h-4 text-cultivate-teal" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-lg font-medium text-cultivate-text-primary mb-1">Notifications</h2>
+                    <p className="text-sm text-cultivate-text-secondary">
+                      Get notified when your question gets a response from an agronomist.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    {permission === "denied" ? (
+                      <p className="text-xs text-cultivate-text-tertiary">Notifications blocked in browser settings.</p>
+                    ) : isSubscribed ? (
+                      <p className="text-xs text-cultivate-green-light flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Notifications enabled
+                      </p>
+                    ) : (
+                      <p className="text-xs text-cultivate-text-tertiary">Push notifications are off.</p>
+                    )}
+                  </div>
+                  {permission !== "denied" && (
+                    <button
+                      onClick={isSubscribed ? unsubscribe : subscribe}
+                      disabled={pushLoading}
+                      className="px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-cultivate-bg-hover border border-cultivate-border-element text-cultivate-text-primary hover:border-cultivate-green-light"
+                    >
+                      {pushLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : isSubscribed ? "Turn off" : "Turn on"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

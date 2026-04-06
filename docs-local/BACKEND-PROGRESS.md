@@ -1490,8 +1490,25 @@ Platform-aware install flow shared across farmer and agronomist UIs.
 - Hidden automatically when `isStandalone === true` (app already installed)
 - Shown in sidebar only when sidebar is expanded (`sidebarOpen && !isStandalone`)
 
-### Next: Push Notifications (planned)
-Farmers get notified when agronomist responds to a flagged query. Requires Web Push API + backend push endpoint.
+### Push Notifications (April 2026)
+
+Web Push API for two events: agronomist notified when a query is flagged, farmer notified when their query is reviewed.
+
+**Files:**
+- `lib/push.ts` — `sendPushNotification(userId, payload)` — sends to all user subscriptions, auto-prunes 410/404 (stale) endpoints
+- `lib/hooks/use-push-notifications.ts` — client hook: requests permission, subscribes with VAPID key, manages subscribe/unsubscribe state
+- `app/api/push/subscribe/route.ts` — `POST` saves subscription, `DELETE` removes it
+- `app/sw.ts` — `push` event listener (calls `showNotification`), `notificationclick` listener (focuses/opens window, navigates to deep-link URL)
+- `app/chat/views/settings-view.tsx` — Notifications card: "Turn on/off" toggle, blocked state message
+- `app/dashboard/views/settings-view.tsx` — same
+
+**Trigger points:**
+- `app/api/conversations/[id]/messages/route.ts` step 10 — after `flaggedQuery.create()`, fires `sendPushNotification(agronomistId, { title: "New flagged query", url: "/dashboard?view=flagged" })`
+- `app/api/flagged-queries/[id]/review/route.ts` — after `flaggedQuery.update()`, fires `sendPushNotification(farmerId, { title: "Your question was reviewed", url: "/chat?chat=<conversationId>" })`
+
+**DB:** `push_subscriptions` table created via raw SQL (migration history was out of sync). Columns: `id`, `user_id`, `endpoint` (UNIQUE), `p256dh`, `auth`, `created_at`.
+
+**VAPID keys:** stored in `.env` as `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`. Generate new keys with `npx web-push generate-vapid-keys`.
 
 ---
 
