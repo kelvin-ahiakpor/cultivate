@@ -59,7 +59,7 @@ export async function PATCH(
           select: {
             id: true,
             content: true,
-            conversation: { select: { userId: true, id: true } },
+            conversation: { select: { farmerId: true, id: true } },
           },
         },
         agent: { select: { id: true, name: true } },
@@ -67,7 +67,7 @@ export async function PATCH(
     });
 
     // Notify the farmer whose query was reviewed
-    const farmerId = flaggedQuery.message?.conversation?.userId;
+    const farmerId = flaggedQuery.message?.conversation?.farmerId;
     const conversationId = flaggedQuery.message?.conversation?.id;
     if (farmerId) {
       const notifBody =
