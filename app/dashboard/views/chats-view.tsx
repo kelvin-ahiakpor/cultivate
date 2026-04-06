@@ -12,12 +12,21 @@ import {
   getAgroCache,
   getConversationMessages,
   formatCacheAge,
-  type CachedConversation,
 } from "@/lib/offline-storage";
 
 const mockChats = DEMO_DASHBOARD_CHATS;
 
 type OpenedChat = ConversationItem;
+type CachedDashboardConversation = {
+  id: string;
+  title: string;
+  farmerName: string;
+  agentName: string;
+  systemName?: string;
+  lastMessage: string;
+  messageCount: number;
+  cachedAt: number;
+};
 
 const getDemoMessages = (chatId: string): ConversationMessage[] => {
   const rawMessages =
@@ -57,7 +66,7 @@ export default function ChatsView({
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [conversationMessages, setConversationMessages] = useState<ConversationMessage[]>([]);
-  const [offlineChats, setOfflineChats] = useState<CachedConversation[]>([]);
+  const [offlineChats, setOfflineChats] = useState<CachedDashboardConversation[]>([]);
   const [offlineCachedAt, setOfflineCachedAt] = useState<number | null>(null);
   const itemsPerPage = 30;
 
@@ -80,16 +89,18 @@ export default function ChatsView({
   useEffect(() => {
     if (demoMode || !isOnline || !apiData.conversations.length) return;
 
-    const toCache: CachedConversation[] = apiData.conversations.map((c) => ({
+    const toCache: CachedDashboardConversation[] = apiData.conversations.map((c) => ({
       id: c.id,
       title: c.title,
       farmerName: c.farmerName,
       agentName: c.agentName,
+      systemName: c.systemName,
       lastMessage: c.lastMessage,
+      messageCount: c.messageCount,
       cachedAt: Date.now(),
     }));
 
-    void saveAgroCache<CachedConversation[]>("agro_conversations", toCache);
+    void saveAgroCache<CachedDashboardConversation[]>("agro_conversations", toCache);
   }, [demoMode, isOnline, apiData.conversations]);
 
   // Read-back: load from IndexedDB when offline
@@ -97,10 +108,10 @@ export default function ChatsView({
     if (demoMode || isOnline) return;
 
     void (async () => {
-      const cached = await getAgroCache<CachedConversation[]>("agro_conversations");
+      const cached = await getAgroCache<CachedDashboardConversation[]>("agro_conversations");
       if (cached) {
-        setOfflineChats(cached);
-        setOfflineCachedAt(cached[0]?.cachedAt ?? null);
+        setOfflineChats(cached.data);
+        setOfflineCachedAt(cached.cachedAt);
       }
     })();
   }, [demoMode, isOnline]);
@@ -114,7 +125,9 @@ export default function ChatsView({
         title: c.title,
         farmerName: c.farmerName,
         agentName: c.agentName,
+        systemName: c.systemName,
         lastMessage: c.lastMessage,
+        messageCount: c.messageCount,
       }));
 
   const filteredChats = demoMode
@@ -136,7 +149,9 @@ export default function ChatsView({
           title: c.title,
           farmerName: c.farmerName,
           agentName: c.agentName,
+          systemName: c.systemName,
           lastMessage: c.lastMessage,
+          messageCount: c.messageCount,
         }));
 
   const totalPages = demoMode
@@ -181,7 +196,7 @@ export default function ChatsView({
       setMessagesLoading(true);
       setConversationMessages([]);
       const cached = await getConversationMessages(chat.id);
-      setConversationMessages(cached);
+      setConversationMessages(cached ?? []);
       setMessagesLoading(false);
       return;
     }
