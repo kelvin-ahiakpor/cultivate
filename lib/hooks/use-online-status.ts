@@ -8,35 +8,35 @@
  *   (no full page reload — serwist's reloadOnOnline is disabled)
  */
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { mutate } from "swr";
+import { notify } from "@/lib/toast";
 
 export function useOnlineStatus(): boolean {
-  // Start as `true` to match the server render, then sync the real value
-  // after mount. Using navigator.onLine as the initial value causes a
-  // hydration mismatch when the client is offline (server always renders "online").
-  const [isOnline, setIsOnline] = useState(true);
+  const isOnline = useSyncExternalStore(
+    (onStoreChange) => {
+      window.addEventListener("online", onStoreChange);
+      window.addEventListener("offline", onStoreChange);
+
+      return () => {
+        window.removeEventListener("online", onStoreChange);
+        window.removeEventListener("offline", onStoreChange);
+      };
+    },
+    () => navigator.onLine,
+    () => true
+  );
+  const previousOnlineRef = useRef(isOnline);
 
   useEffect(() => {
-    // Sync with actual browser state immediately after mount
-    setIsOnline(navigator.onLine);
-
-    function handleOnline() {
-      setIsOnline(true);
+    if (!previousOnlineRef.current && isOnline) {
+      notify.success("Back online. Syncing latest updates.");
       // Revalidate all active SWR keys so sidebar + data refresh automatically
-      mutate(() => true);
-    }
-    function handleOffline() {
-      setIsOnline(false);
+      void mutate(() => true);
     }
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
+    previousOnlineRef.current = isOnline;
+  }, [isOnline]);
 
   return isOnline;
 }
