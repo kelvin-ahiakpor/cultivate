@@ -220,8 +220,8 @@ export default function SettingsView({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-shrink-0">
-        <div className="lg:hidden relative flex items-center justify-center pt-8 pb-4 px-4 mb-6">
-          <div className="absolute left-4">
+        <div className="lg:hidden relative flex items-center justify-center pt-8 pb-4 mb-6">
+          <div className="absolute left-0">
             {setSidebarOpen && (
               <GlassCircleButton onClick={() => setSidebarOpen(true)} aria-label="Open menu">
                 <PanelLeft className="w-5 h-5 text-white rotate-180" />
@@ -249,8 +249,8 @@ export default function SettingsView({
       </div>
 
       <div className="relative flex-1 min-h-0">
-        <div className="h-full overflow-y-auto thin-scrollbar scrollbar-outset px-4 lg:px-0">
-          <div className="max-w-2xl mx-auto pb-8">
+        <div className="h-full overflow-y-auto thin-scrollbar scrollbar-outset">
+          <div className="w-full pb-8 lg:max-w-2xl lg:mx-auto">
             <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-6 mb-6">
               <div className="flex items-start gap-3 mb-4">
                 <div className="p-2 bg-cultivate-bg-hover rounded-lg">
