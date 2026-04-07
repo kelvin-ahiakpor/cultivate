@@ -1077,7 +1077,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                 <div className="flex items-center gap-2 min-w-0">
                   <span className={`${isStandalone ? "text-lg" : "text-sm"} lg:text-sm`}>Flagged Queries</span>
                   {unseenFlaggedUpdates > 0 && (
-                    <span className="inline-flex min-w-5 h-5 px-1.5 items-center justify-center rounded-full bg-cultivate-beige text-cultivate-bg-sidebar text-[10px] font-medium">
+                    <span className="inline-flex min-w-5 h-5 px-1.5 items-center justify-center rounded-full bg-cultivate-golden-yellow text-cultivate-bg-sidebar text-[10px] font-medium">
                       {unseenFlaggedUpdates}
                     </span>
                   )}

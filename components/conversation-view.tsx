@@ -200,12 +200,12 @@ export default function ConversationView({
   const isFarmerLayout = layoutMode === "farmer-chat";
   const isComposerExpanded = isFarmerLayout && isStandalone && (isComposerFocused || Boolean(inputProps?.value?.trim()));
   const conversationMaxWidth = isStandalone ? "max-w-5xl" : "max-w-3xl";
-  const messagePadding = isStandalone ? "px-4 standalone:px-3 sm:px-6 lg:px-8" : "px-8 lg:px-8";
+  const messagePadding = isStandalone ? "px-2 sm:px-6 lg:px-8" : "px-8 lg:px-8";
   const standaloneComposerShell = isFarmerLayout
     ? (isComposerExpanded
-        ? "relative z-10 mx-auto mb-3 w-full max-w-[56rem] px-2 transition-all duration-200 ease-out"
-        : "relative z-10 mx-auto mb-3 w-full max-w-[54rem] px-3 transition-all duration-200 ease-out")
-    : "relative z-10 mx-auto mb-3 w-full max-w-3xl px-4";
+        ? "relative z-10 mx-auto mb-3 w-full max-w-[56rem] px-1.5 transition-all duration-200 ease-out"
+        : "relative z-10 mx-auto mb-3 w-full max-w-[54rem] px-2 transition-all duration-200 ease-out")
+    : "relative z-10 mx-auto mb-3 w-full max-w-3xl px-3";
   const webComposerShell = "mx-3.5 mb-1 lg:mx-auto lg:max-w-3xl";
   // composerCardClass: farmer-standalone only gets the larger/animated variant
   const composerCardClass = (isFarmerLayout && isStandalone)

@@ -22,6 +22,7 @@
   --cultivate-green-alt: #01605E;
   --cultivate-teal: #608e96;
   --cultivate-beige: #e8c8ab;
+  --cultivate-golden-yellow: #d4a93a;
   --cultivate-cream: #F9F3EF;
 
   /* UI Text Colors - Dark Theme */
@@ -103,6 +104,7 @@
   --color-cultivate-green-alt: var(--cultivate-green-alt);
   --color-cultivate-teal: var(--cultivate-teal);
   --color-cultivate-beige: var(--cultivate-beige);
+  --color-cultivate-golden-yellow: var(--cultivate-golden-yellow);
   --color-cultivate-cream: var(--cultivate-cream);
 
   /* UI color utilities */
