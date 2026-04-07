@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 
 const BASE = {
   duration: 3000,
-  position: "top-right" as const,
   style: {
     background: "#2B2B2B",
     color: "#C2C0B6",

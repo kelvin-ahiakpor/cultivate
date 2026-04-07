@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Rubik, Playfair_Display } from "next/font/google";
-import { Toaster } from "react-hot-toast";
+import AppToaster from "@/components/app-toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
@@ -54,7 +54,7 @@ export default function RootLayout({
         <TooltipProvider>
           {children}
         </TooltipProvider>
-        <Toaster />
+        <AppToaster />
       </body>
     </html>
   );
