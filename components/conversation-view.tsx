@@ -141,6 +141,9 @@ interface ConversationViewProps {
   layoutMode?: "default" | "farmer-chat";
   /** Passed from useOnlineStatus(). Disables input + shows offline indicator when false. */
   isOnline?: boolean;
+  onShareConversation?: () => void;
+  onRenameConversation?: () => void;
+  onDeleteConversation?: () => void;
   onAddToSystem?: () => void;
   onRemoveFromSystem?: () => void;
   onFlaggedQueryChange?: (
@@ -172,6 +175,9 @@ export default function ConversationView({
   highlightFlaggedMessages = false,
   layoutMode = "default",
   isOnline = true,
+  onShareConversation,
+  onRenameConversation,
+  onDeleteConversation,
   onAddToSystem,
   onRemoveFromSystem,
   onFlaggedQueryChange,
@@ -615,10 +621,10 @@ export default function ConversationView({
             </>
           )}
           {/* Title + chevron — independent hover zones */}
-          <div className={`flex min-w-0 items-stretch rounded-lg overflow-hidden cursor-pointer relative ${
+          <div className={`flex min-w-0 items-stretch rounded-lg overflow-visible cursor-pointer relative ${
             headerMenuOpen ? "bg-cultivate-bg-hover" : "hover:bg-cultivate-bg-hover"
           }`}>
-            <span className="text-sm text-cultivate-text-primary truncate min-w-0 flex-1 py-1 pl-2 pr-1 hover:bg-cultivate-bg-hover-dark transition-colors">
+            <span className="text-sm text-cultivate-text-primary truncate min-w-0 flex-1 py-1 pl-2 pr-1 rounded-l-lg hover:bg-cultivate-bg-hover-dark transition-colors">
               {title || "Untitled conversation"}
             </span>
             <button
@@ -627,7 +633,7 @@ export default function ConversationView({
                 console.log("Chevron clicked! Current state:", headerMenuOpen, "Setting to:", !headerMenuOpen);
                 setHeaderMenuOpen(!headerMenuOpen);
               }}
-              className={`${headerMenuOpen ? "bg-cultivate-bg-hover-dark" : "hover:bg-cultivate-bg-hover-dark"} transition-all px-1.5 self-stretch flex items-center`}
+              className={`${headerMenuOpen ? "bg-cultivate-bg-hover-dark" : "hover:bg-cultivate-bg-hover-dark"} rounded-r-lg transition-all px-1.5 self-stretch flex items-center`}
             >
               <ChevronDown className="w-3.5 h-3.5 text-cultivate-text-secondary hover:text-white transition-colors" strokeWidth={1.5} />
             </button>
@@ -637,13 +643,13 @@ export default function ConversationView({
                 <div className="absolute left-0 top-full mt-1 bg-cultivate-bg-elevated rounded-xl shadow-xl border border-cultivate-border-element py-1.5 z-[101] min-w-[220px] whitespace-nowrap">
                   <div className="px-1.5">
                     <button
-                      onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
+                      onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); onShareConversation?.(); }}
                       className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
                     >
                       <Share className="w-4 h-4" />Share
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
+                      onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); onRenameConversation?.(); }}
                       className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
                     >
                       <Pencil className="w-4 h-4" />Rename
@@ -667,8 +673,8 @@ export default function ConversationView({
                   <div className="border-t border-cultivate-border-element/70 my-1 mx-1.5" />
                   <div className="px-1.5">
                     <button
-                      onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover rounded-lg flex items-center gap-2.5 transition-colors"
+                      onClick={(e) => { e.stopPropagation(); setHeaderMenuOpen(false); onDeleteConversation?.(); }}
+                      className="w-full px-3 py-2 text-left text-sm text-cultivate-error hover:bg-cultivate-bg-hover hover:text-cultivate-error rounded-lg flex items-center gap-2.5 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />Delete
                     </button>

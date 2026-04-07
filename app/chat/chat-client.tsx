@@ -976,6 +976,28 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
     }
   };
 
+  const handleHeaderShare = async () => {
+    if (!currentConversationId) return;
+
+    const shareUrl = `${window.location.origin}/chat?conversationId=${currentConversationId}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: conversationTitle || "Cultivate conversation",
+          url: shareUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        notify.success("Conversation link copied");
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      notify.error("Failed to share conversation");
+      console.error(error);
+    }
+  };
+
   const handleFlaggedQueryChange = (
     messageId: string,
     flaggedQuery: NonNullable<ChatMessage["flaggedQuery"]>
@@ -1708,6 +1730,9 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                   isStandalone={isStandalone}
                   layoutMode="farmer-chat"
                   isOnline={isOnline}
+                  onShareConversation={() => { void handleHeaderShare(); }}
+                  onRenameConversation={currentConversationId ? () => handleRenameClick(currentConversationId) : undefined}
+                  onDeleteConversation={currentConversationId ? () => handleDeleteClick(currentConversationId) : undefined}
                   onAddToSystem={() => openAddToSystemModal(currentConversationId)}
                   onRemoveFromSystem={conversationSystemId ? () => { void removeConversationFromSystem(currentConversationId!); } : undefined}
                   onFlaggedQueryChange={handleFlaggedQueryChange}
