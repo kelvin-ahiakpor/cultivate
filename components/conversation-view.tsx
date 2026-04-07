@@ -389,7 +389,9 @@ export default function ConversationView({
 
   // Handle copy with checkmark animation
   const handleCopy = (messageId: string, content: string) => {
-    navigator.clipboard.writeText(content);
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(content);
+    }
     setCopiedMessages(prev => new Set(prev).add(messageId));
     // Reset checkmark after 2 seconds
     setTimeout(() => {
@@ -403,7 +405,9 @@ export default function ConversationView({
 
   // Handle copy for flag messages with checkmark animation
   const handleFlagCopy = (index: number, content: string) => {
-    navigator.clipboard.writeText(content);
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(content);
+    }
     setCopiedFlagMessages(prev => new Set(prev).add(index));
     // Reset checkmark after 2 seconds
     setTimeout(() => {
