@@ -1325,7 +1325,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
         {/* Conversation view: full-width (header spans edge-to-edge like Claude)
             Chat list view: padded with max-w-5xl container */}
         {activeView === "chats" && (
-          <div className="flex-1 min-h-0 overflow-hidden w-full mx-auto max-w-5xl px-4 sm:px-8 py-8">
+          <div className={`flex-1 min-h-0 overflow-hidden w-full mx-auto max-w-5xl py-8 ${chatsViewOpen ? "px-0" : "px-4 sm:px-8"}`}>
             <ChatsView
               onChatOpened={handleChatOpened}
               onConversationOpen={setChatsViewOpen}
