@@ -124,6 +124,11 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       verificationNotes?: string | null;
     };
   }
+
+  const normalizeConversationTitle = (title: string | null | undefined) => {
+    const cleaned = (title || "").replace(/^#+\s*/, "").trim();
+    return cleaned || "Conversation";
+  };
   const [inputValue, setInputValue] = useState("");
   const [pendingImages, setPendingImages] = useState<PendingImageAttachment[]>([]);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
@@ -877,7 +882,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   };
 
   const handleOpenFlaggedConversation = (query: FarmerFlaggedQueryItem) => {
-    loadExistingConversation(query.conversationId, query.conversationTitle || "Conversation");
+    loadExistingConversation(query.conversationId, normalizeConversationTitle(query.conversationTitle));
   };
 
   const unseenFlaggedUpdates = farmerFlags.queries.filter((query) => {
