@@ -111,7 +111,7 @@ export default function FlaggedQueriesView({
   const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
   const flaggedMessageRef = useRef<HTMLDivElement>(null);
-  const apiData = useFarmerFlaggedQueries(filter === "all" ? "" : filter, 1, 20, demoMode);
+  const apiData = useFarmerFlaggedQueries("", 1, 50, demoMode);
   const { data: conversationData } = useSWR(
     !demoMode && chatPanelQuery?.conversationId
       ? `/api/conversations/${chatPanelQuery.conversationId}/messages`
@@ -189,6 +189,12 @@ export default function FlaggedQueriesView({
   const reviewUpdates = useMemo(
     () => apiData.queries.filter((query) => query.reviewedAtIso),
     [apiData.queries]
+  );
+  const filteredQueries = useMemo(
+    () => filter === "all"
+      ? apiData.queries
+      : apiData.queries.filter((query) => query.status === filter),
+    [apiData.queries, filter]
   );
 
   const flaggedCountLabel = `${apiData.total} ${apiData.total === 1 ? "question flagged" : "questions flagged"}`;
@@ -273,7 +279,7 @@ export default function FlaggedQueriesView({
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-6 h-6 text-cultivate-text-tertiary animate-spin" />
           </div>
-        ) : apiData.queries.length === 0 ? (
+        ) : filteredQueries.length === 0 ? (
           <div className="p-8 text-center">
             <Flag className="w-10 h-10 text-cultivate-text-tertiary mx-auto mb-3" />
             <p className={`${isStandalone ? "text-base" : "text-sm"} lg:text-sm text-cultivate-text-tertiary`}>
@@ -282,7 +288,7 @@ export default function FlaggedQueriesView({
           </div>
         ) : (
           <div className="mr-1 space-y-3">
-            {apiData.queries.map((query) => (
+            {filteredQueries.map((query) => (
               <div
                 key={query.id}
                 className="bg-cultivate-bg-elevated rounded-xl border border-cultivate-border-element overflow-hidden"
@@ -294,7 +300,7 @@ export default function FlaggedQueriesView({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5">
                       <span className="text-sm font-medium text-white truncate">
-                        {query.conversationTitle || "Conversation"}
+                        {sanitizeConversationTitle(query.conversationTitle)}
                       </span>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getStatusColor(query.status)}`}>
                         {query.status.charAt(0) + query.status.slice(1).toLowerCase()}

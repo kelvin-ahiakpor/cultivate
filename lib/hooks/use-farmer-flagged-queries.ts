@@ -69,13 +69,18 @@ function formatDate(iso: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
+function normalizeConversationTitle(title: string | null | undefined): string {
+  const cleaned = (title || "Conversation").replace(/^#+\s*/, "").trim();
+  return cleaned || "Conversation";
+}
+
 function normalize(item: RawFlaggedQuery): FarmerFlaggedQueryItem {
   return {
     id: item.id,
     farmerMessage: item.message.conversation.messages[0]?.content || "Message not available",
     agentResponse: item.message.content,
     agentName: item.agent.name,
-    conversationTitle: item.message.conversation.title || "Conversation",
+    conversationTitle: normalizeConversationTitle(item.message.conversation.title),
     confidenceScore: item.message.confidenceScore ?? 0,
     status: item.status,
     createdAt: formatDate(item.createdAt),
