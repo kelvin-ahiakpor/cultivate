@@ -666,7 +666,7 @@ export default function KnowledgeView({
               <button
                 onClick={handleOpenUploadModal}
                 className="w-11 h-11 bg-cultivate-button-primary hover:bg-cultivate-button-primary-hover rounded-full flex items-center justify-center transition-colors"
-                aria-label="Upload Document"
+                aria-label="Upload document"
               >
                 <Upload className="w-5 h-5 text-white" />
               </button>
@@ -694,28 +694,28 @@ export default function KnowledgeView({
         </div>
 
         {/* Filter and Search */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center">
           {/* Agent Filter — demo: hardcoded names, real: from API */}
-          <div className="relative">
+          <div className="relative w-full lg:w-auto">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary pointer-events-none" />
             <Dropdown
               variant="field"
               value={agentFilter}
               onChange={handleAgentChange}
               options={agentFilterOptions}
-              className="min-w-[200px] pl-10 bg-cultivate-bg-elevated"
+              className="w-full min-w-0 pl-10 bg-cultivate-bg-elevated lg:min-w-[200px]"
             />
           </div>
 
           {/* Search */}
-          <div className="relative flex-1 max-w-[78.5%]">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary" />
             <input
               type="text"
               placeholder="Search docs..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light"
+              className="w-full pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light"
             />
           </div>
         </div>
@@ -743,7 +743,7 @@ export default function KnowledgeView({
       {/* PART 2: Scrollable Table Rows / Card List */}
       <div className="flex-1 overflow-y-auto min-h-0 pb-6 thin-scrollbar scrollbar-outset">
         {/* Mobile: Card layout */}
-        <div className="lg:hidden space-y-3 pl-1.5 pr-1.5 mr-3">
+        <div className="lg:hidden space-y-3 px-1.5">
           {paginatedDocs.map((doc) => (
             <div
               key={doc.id}

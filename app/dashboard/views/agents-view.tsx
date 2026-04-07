@@ -209,13 +209,9 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
           </div>
           <div className="absolute right-0">
             {isOnline && (
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="w-11 h-11 bg-cultivate-button-primary hover:bg-cultivate-button-primary-hover rounded-full flex items-center justify-center transition-colors"
-                aria-label="Create Agent"
-              >
+              <GlassCircleButton onClick={() => setShowCreateModal(true)} aria-label="Create agent">
                 <Plus className="w-5 h-5 text-white" />
-              </button>
+              </GlassCircleButton>
             )}
           </div>
         </div>
@@ -240,14 +236,14 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
         </div>
 
         {/* Search */}
-        <div className="relative mb-6 w-[98.5%]">
+        <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary" />
           <input
             type="text"
             placeholder="Search agents..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light"
+            className="w-full pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light"
           />
         </div>
       </div>
@@ -257,18 +253,18 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
         {isLoading ? (
           <AgentListSkeleton count={4} />
         ) : isError ? (
-          <div className="bg-cultivate-bg-elevated rounded-xl p-8 text-center lg:mr-0 mr-3">
+          <div className="bg-cultivate-bg-elevated rounded-xl p-8 text-center">
             <p className="text-sm text-red-400">Failed to load agents. Please try again.</p>
           </div>
         ) : agents.length === 0 ? (
-          <div className="bg-cultivate-bg-elevated rounded-xl p-8 text-center lg:mr-0 mr-3">
+          <div className="bg-cultivate-bg-elevated rounded-xl p-8 text-center">
             <Bot className="w-10 h-10 text-cultivate-text-tertiary mx-auto mb-3" />
             <p className="text-sm text-cultivate-text-tertiary">
               {searchQuery ? "No agents match your search." : "No agents yet. Create your first agent to get started."}
             </p>
           </div>
         ) : (
-          <div className="space-y-3 lg:mr-0 mr-3">
+          <div className="space-y-3">
         {agents.map((agent) => (
           <div key={agent.id}>
             {/* Mobile: Simplified card — tap to edit */}

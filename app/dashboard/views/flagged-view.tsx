@@ -408,15 +408,15 @@ export default function FlaggedView({
             className="w-full pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light"
           />
         </div>
-        <div className="flex flex-wrap gap-1 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg p-1">
+        <div className="flex gap-2 flex-wrap">
           {(["all", "PENDING", "VERIFIED", "CORRECTED"] as FlagStatus[]).map((status) => (
             <button
               key={status}
               onClick={() => handleStatusChange(status)}
-              className={`px-3 py-1.5 text-xs standalone:text-sm lg:text-xs rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-xs standalone:text-sm lg:text-xs rounded-full transition-colors ${
                 statusFilter === status
-                  ? 'bg-cultivate-border-element text-white'
-                  : 'text-cultivate-text-tertiary hover:text-cultivate-text-primary'
+                  ? 'bg-cultivate-bg-hover text-white'
+                  : 'bg-cultivate-bg-elevated text-cultivate-text-secondary hover:text-white'
               }`}
             >
               {status === "all" ? "All" : status.charAt(0) + status.slice(1).toLowerCase()}

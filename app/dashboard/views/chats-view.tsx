@@ -321,7 +321,7 @@ export default function ChatsView({
           </div>
         </div>
 
-        <div className="relative mb-4 w-[98.5%]">
+        <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary" />
           <input
             type="text"
@@ -344,13 +344,13 @@ export default function ChatsView({
 
       <div className="flex-1 overflow-y-auto min-h-0 pb-6 thin-scrollbar scrollbar-outset">
         {!demoMode && isOnline && apiData.isLoading && (
-          <div className="mr-3">
+          <div>
             <ConversationListSkeleton count={6} />
           </div>
         )}
 
         {(!apiData.isLoading || demoMode || !isOnline) && (
-          <div className="mr-3">
+          <div>
             {paginatedChats.map((chat, index) => (
               <div
                 key={chat.id}
@@ -371,7 +371,7 @@ export default function ChatsView({
                   </div>
                 </div>
                 {index < paginatedChats.length - 1 && (
-                  <div className={`border-b border-cultivate-border-element transition-opacity ${
+                  <div className={`border-b border-cultivate-border-element transition-opacity ${isStandalone ? "border-none" : ""} lg:border-b lg:border-cultivate-border-element ${
                     hoveredIndex === index || hoveredIndex === index + 1 ? "opacity-0" : "opacity-100"
                   }`} />
                 )}
