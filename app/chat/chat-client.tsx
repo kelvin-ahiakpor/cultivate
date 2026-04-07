@@ -1384,14 +1384,14 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
         )}
 
         {activeView === "chat" && (
-          <>
+          <div className="flex min-h-0 flex-1 w-full max-w-5xl mx-auto flex-col overflow-hidden px-4 sm:px-8">
             {/* Chat Messages Area */}
             <div className="flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
               {messages.length === 0 && !isStreaming && !currentConversationId && !messagesLoading ? (
                 /* Welcome screen — centered greeting + sticky-bottom input (mobile parity with ConversationView) */
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
                   <div className="flex-1 flex items-center justify-center px-6">
-                    <div className="max-w-3xl w-full">
+                      <div className="max-w-3xl w-full">
                       <div className="text-center mb-8">
                         <h1 className="text-4xl font-serif text-cultivate-text-primary mb-3 flex items-center justify-center gap-3">
                           <Sprout className="w-10 h-10 text-cultivate-green-light" />
@@ -1433,7 +1433,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                     {isStandalone && (
                       <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
                     )}
-                    <div className={`${isStandalone ? "relative z-10 mx-auto mb-3 w-full max-w-3xl px-4" : "mx-auto mb-2 w-full max-w-3xl px-6"}`}>
+                    <div className={`${isStandalone ? "relative z-10 mx-auto mb-3 w-full max-w-3xl px-0" : "mx-auto mb-2 w-full max-w-3xl px-6"}`}>
                       <div
                         onDragEnter={handleWelcomeComposerDragEnter}
                         onDragOver={handleWelcomeComposerDragOver}
@@ -1708,7 +1708,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
             </div>
 
             {/* Footer Note */}
-                      </>
+          </div>
         )}
       </div>
 
