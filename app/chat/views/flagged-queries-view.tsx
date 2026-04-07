@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ArrowLeft, CheckCircle, ChevronDown, ExternalLink, Flag, GripVertical, Loader2, MessageCircle, PanelLeft, User, X, WifiOff } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, ExternalLink, Flag, GripVertical, Loader2, MessageCircle, PanelLeft, User, X, WifiOff } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { useFarmerFlaggedQueries, type FarmerFlaggedQueryItem } from "@/lib/hooks/use-farmer-flagged-queries";
 import { useOnlineStatus } from "@/lib/hooks/use-online-status";
@@ -46,6 +46,40 @@ function getStatusColor(status: Filter | FarmerFlaggedQueryItem["status"]) {
   }
 }
 
+function parseFarmerReasons(farmerReason: string | null | undefined, farmerUpdates: string | null | undefined) {
+  const reasons: { ordinal: string; timestamp: string; message: string }[] = [];
+
+  if (farmerReason) {
+    const match = farmerReason.match(/^\[(.+?)\]\s*(.*)$/);
+    if (match) {
+      reasons.push({ ordinal: "1st", timestamp: match[1], message: match[2] || "(no reason provided)" });
+    }
+  }
+
+  if (farmerUpdates) {
+    const lines = farmerUpdates.split("\n\n");
+    lines.forEach((line, idx) => {
+      const match = line.match(/^\[(.+?)\]\s*(.*)$/);
+      if (match) {
+        const ordinal = idx === 0 ? "2nd" : idx === 1 ? "3rd" : `${idx + 2}th`;
+        reasons.push({ ordinal, timestamp: match[1], message: match[2] || "(no reason provided)" });
+      }
+    });
+  }
+
+  return reasons;
+}
+
+function formatReasonTimestamp(isoString: string) {
+  try {
+    const date = new Date(isoString);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + ", " +
+      date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+  } catch {
+    return isoString;
+  }
+}
+
 export default function FlaggedQueriesView({
   sidebarOpen = true,
   setSidebarOpen,
@@ -58,6 +92,7 @@ export default function FlaggedQueriesView({
   const [isStandalone, setIsStandalone] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [currentReasonIndex, setCurrentReasonIndex] = useState(0);
   const flagReasonsRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
   const [chatPanelQuery, setChatPanelQuery] = useState<FarmerFlaggedQueryItem | null>(null);
@@ -149,6 +184,7 @@ export default function FlaggedQueriesView({
 
   const handleOpenChatPanel = (query: FarmerFlaggedQueryItem) => {
     setChatPanelQuery(query);
+    setCurrentReasonIndex(0);
     setChatPanelOpen(true);
     setIsClosing(false);
   };
@@ -543,7 +579,7 @@ export default function FlaggedQueriesView({
                               : "bg-cultivate-bg-main text-cultivate-text-primary"
                         }`}>
                           {msg.role === "ASSISTANT" ? (
-                            <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary prose-p:my-1">
+                            <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary prose-p:my-1 prose-hr:my-[1.5rem] prose-hr:border-cultivate-border-element prose-hr:opacity-80">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                             </div>
                           ) : (
@@ -551,7 +587,7 @@ export default function FlaggedQueriesView({
                           )}
                           <div className={`flex items-center gap-2 mt-1.5 ${msg.role === "USER" ? "justify-end" : "justify-start"}`}>
                             <span className="text-[10px] text-cultivate-text-tertiary">{msg.timestamp}</span>
-                            {msg.confidenceScore !== undefined && (
+                            {msg.role === "ASSISTANT" && msg.confidenceScore !== undefined && (
                               <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                                 msg.confidenceScore < 0.7
                                   ? "bg-cultivate-beige/20 text-cultivate-beige"
@@ -562,6 +598,44 @@ export default function FlaggedQueriesView({
                             )}
                             {msg.isFlagged && <Flag className="w-3 h-3 text-cultivate-beige" />}
                           </div>
+
+                          {msg.id === chatPanelQuery.messageId && (chatPanelQuery.farmerReason || chatPanelQuery.farmerUpdates) && (() => {
+                            const reasons = parseFarmerReasons(chatPanelQuery.farmerReason, chatPanelQuery.farmerUpdates);
+                            const currentReason = reasons[currentReasonIndex];
+
+                            if (!currentReason) return null;
+
+                            return (
+                              <div className="mt-3 pl-4 border-l-2 border-cultivate-text-secondary/30">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs font-medium text-cultivate-text-secondary">Why You Flagged This</span>
+                                  {reasons.length > 1 && (
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() => setCurrentReasonIndex((prev) => (prev > 0 ? prev - 1 : reasons.length - 1))}
+                                        className="p-1 hover:bg-cultivate-bg-elevated rounded transition-colors"
+                                      >
+                                        <ChevronLeft className="w-3.5 h-3.5 text-cultivate-text-secondary" />
+                                      </button>
+                                      <span className="text-xs text-cultivate-text-tertiary">{currentReasonIndex + 1}/{reasons.length}</span>
+                                      <button
+                                        onClick={() => setCurrentReasonIndex((prev) => (prev < reasons.length - 1 ? prev + 1 : 0))}
+                                        className="p-1 hover:bg-cultivate-bg-elevated rounded transition-colors"
+                                      >
+                                        <ChevronRight className="w-3.5 h-3.5 text-cultivate-text-secondary" />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="text-xs text-cultivate-text-tertiary mb-1">
+                                  {currentReason.ordinal} • {formatReasonTimestamp(currentReason.timestamp)}
+                                </p>
+                                <p className="text-sm text-cultivate-text-secondary leading-relaxed">
+                                  {currentReason.message}
+                                </p>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
