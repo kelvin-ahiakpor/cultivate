@@ -39,6 +39,7 @@ export default function SettingsView({
   const [isDetecting, setIsDetecting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [supportsNotifications, setSupportsNotifications] = useState(false);
   const nameRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -50,6 +51,10 @@ export default function SettingsView({
     setDisplayName(user.name || "");
     setNameDraft(user.name || "");
   }, [user.name]);
+
+  useEffect(() => {
+    setSupportsNotifications(typeof window !== "undefined" && "Notification" in window);
+  }, []);
 
   useEffect(() => {
     if (!editingName || !nameRef.current) return;
@@ -349,7 +354,7 @@ export default function SettingsView({
             </div>
 
             {/* Notifications */}
-            {"Notification" in window && (
+            {supportsNotifications && (
               <div className="mt-6 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-6">
                 <div className="flex items-start gap-3 mb-4">
                   <div className="p-2 bg-cultivate-bg-hover rounded-lg">

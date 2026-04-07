@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Settings, MapPin, ChevronLeft, Loader2, Check, AlertCircle, PanelLeft, Bell } from "lucide-react";
+import { Settings, MapPin, ChevronLeft, Loader2, Check, AlertCircle, PanelLeft, Bell, WifiOff } from "lucide-react";
 import { GlassCircleButton } from "@/components/cultivate-ui";
 import { InlineEditableText } from "@/components/inline-editable-text";
 import { notify } from "@/lib/toast";
 import { usePushNotifications } from "@/lib/hooks/use-push-notifications";
+import { useOnlineStatus } from "@/lib/hooks/use-online-status";
 
 interface SettingsViewProps {
   user: {
@@ -26,6 +27,7 @@ export default function SettingsView({
   setSidebarOpen,
   onBack,
 }: SettingsViewProps) {
+  const isOnline = useOnlineStatus();
   const [displayName, setDisplayName] = useState(user.name || "");
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(user.name || "");
@@ -35,6 +37,7 @@ export default function SettingsView({
   const [isDetecting, setIsDetecting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [supportsNotifications, setSupportsNotifications] = useState(false);
   const nameRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -46,6 +49,10 @@ export default function SettingsView({
     setDisplayName(user.name || "");
     setNameDraft(user.name || "");
   }, [user.name]);
+
+  useEffect(() => {
+    setSupportsNotifications(typeof window !== "undefined" && "Notification" in window);
+  }, []);
 
   useEffect(() => {
     if (!editingName || !nameRef.current) return;
@@ -184,9 +191,9 @@ export default function SettingsView({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-shrink-0">
-        <div className="lg:hidden flex items-center justify-between pt-16 pb-4 px-4 relative">
-          <div className="absolute left-4">
+      <div className="flex-shrink-0 bg-cultivate-bg-main pt-8 lg:pt-0">
+        <div className="lg:hidden relative flex items-center justify-center mb-6">
+          <div className="absolute left-0">
             {onBack ? (
               <GlassCircleButton onClick={onBack} aria-label="Back">
                 <ChevronLeft className="w-5 h-5 text-white" />
@@ -198,14 +205,21 @@ export default function SettingsView({
             ) : null}
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-serif text-cultivate-text-primary">Settings</h1>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-2xl font-serif text-cultivate-text-primary">Settings</h1>
+              {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+            </div>
+            <p className="text-sm text-cultivate-text-secondary mt-1">Manage your account preferences</p>
           </div>
-          <div className="absolute right-4 w-10" />
+          <div className="absolute right-0 w-10" />
         </div>
 
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-serif text-cultivate-text-primary">Settings</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-serif text-cultivate-text-primary">Settings</h1>
+              {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+            </div>
             <p className="text-sm text-cultivate-text-secondary mt-1">Manage your account preferences</p>
           </div>
         </div>
@@ -340,7 +354,7 @@ export default function SettingsView({
             </div>
 
             {/* Notifications */}
-            {"Notification" in window && (
+            {supportsNotifications && (
               <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-6">
                 <div className="flex items-start gap-3 mb-4">
                   <div className="p-2 bg-cultivate-bg-hover rounded-lg">

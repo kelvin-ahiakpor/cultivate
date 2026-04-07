@@ -94,12 +94,13 @@ function normalize(fq: RawFlaggedQuery): FlaggedQueryItem {
 function applyOptimisticPatch(
   current: FlaggedQueriesResponse | undefined,
   id: string,
-  patch: Partial<RawFlaggedQuery>
-): FlaggedQueriesResponse | undefined {
-  if (!current) return current;
+  patch: Partial<RawFlaggedQuery>,
+  fallback: FlaggedQueriesResponse
+): FlaggedQueriesResponse {
+  const base = current ?? fallback;
   return {
-    ...current,
-    flaggedQueries: current.flaggedQueries.map((q) =>
+    ...base,
+    flaggedQueries: base.flaggedQueries.map((q) =>
       q.id === id ? { ...q, ...patch } : q
     ),
   };
@@ -131,6 +132,11 @@ export function useFlaggedQueries(
   if (status) params.append("status", status);
   params.append("page", page.toString());
   params.append("limit", limit.toString());
+
+  const emptyResponse: FlaggedQueriesResponse = {
+    flaggedQueries: [],
+    pagination: { page, limit, total: 0, totalPages: 1 },
+  };
 
   const { data, error, isLoading, mutate } = useSWR<FlaggedQueriesResponse>(
     disabled ? null : `/api/flagged-queries?${params.toString()}`,
@@ -173,7 +179,7 @@ export function useFlaggedQueries(
               reviewedAt: now,
               agronomistResponse: payload.agronomistResponse ?? null,
               verificationNotes: payload.verificationNotes ?? null,
-            }),
+            }, emptyResponse),
           rollbackOnError: true,
           revalidate: true,
         }
@@ -206,13 +212,13 @@ export function useFlaggedQueries(
               reviewedAt: null,
               agronomistResponse: null,
               verificationNotes: null,
-            }),
+            }, emptyResponse),
           rollbackOnError: true,
           revalidate: true,
         }
       );
     },
-    [mutate]
+    [mutate, emptyResponse]
   );
 
   return {
