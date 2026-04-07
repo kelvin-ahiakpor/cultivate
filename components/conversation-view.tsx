@@ -558,7 +558,7 @@ export default function ConversationView({
           Desktop: breadcrumb [system /] [title ▾] with dropdown | [translate toggle right edge]
           pt-16 on mobile for Dynamic Island safe area — DO NOT reduce to pt-3 alone */}
       {title && (
-        <div className="flex-shrink-0 bg-cultivate-bg-main pt-16 lg:pt-3 pb-3 px-0 lg:pl-4 lg:pr-3">
+        <div className="flex-shrink-0 bg-cultivate-bg-main pt-16 lg:pt-3 pb-3 px-1 lg:pl-4 lg:pr-3">
         {/* Mobile header */}
         <div className="lg:hidden flex items-center justify-between gap-2">
           <button

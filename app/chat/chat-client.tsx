@@ -1437,7 +1437,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                     )}
                     <div className={`${isStandalone
                       ? `relative z-10 mx-auto mb-3 w-full ${isWelcomeComposerExpanded ? "max-w-[56rem] px-2" : "max-w-[54rem] px-3"} transition-all duration-200 ease-out`
-                      : "mx-auto mb-2 w-full max-w-3xl px-6"}`}>
+                      : "mx-auto mb-2 w-full max-w-3xl px-2 lg:px-6"}`}>
                       <div
                         onDragEnter={handleWelcomeComposerDragEnter}
                         onDragOver={handleWelcomeComposerDragOver}
