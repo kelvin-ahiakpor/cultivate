@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Flag, Search, CheckCircle, ChevronDown, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft, Loader2, Copy, WifiOff } from "lucide-react";
+import { Flag, Search, CheckCircle, ChevronDown, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft, Loader2, WifiOff } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { GlassCircleButton, SproutIcon } from "@/components/cultivate-ui";
 import { useFlaggedQueries, type FlaggedQueryItem as FlaggedQuery } from "@/lib/hooks/use-flagged-queries";
@@ -120,7 +120,9 @@ export default function FlaggedView({
 
   // Sidebar width: w-72 = 288px when open, w-14 = 56px when collapsed
   const sidebarWidth = sidebarOpen ? 288 : 56;
-  const maxPanelWidth = typeof window !== "undefined" ? window.innerWidth - sidebarWidth : 1200;
+  const effectivePanelWidth = typeof window !== "undefined"
+    ? Math.min(panelWidth, window.innerWidth - sidebarWidth)
+    : panelWidth;
   
   useEffect(() => {
     const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
@@ -161,12 +163,6 @@ export default function FlaggedView({
       document.body.style.cursor = "";
     };
   }, [isResizing, sidebarWidth]);
-
-  // Reset panel width when sidebar toggles (respect new max)
-  useEffect(() => {
-    const max = typeof window !== "undefined" ? window.innerWidth - sidebarWidth : 1200;
-    if (panelWidth > max) setPanelWidth(max);
-  }, [sidebarWidth, panelWidth]);
 
   // Demo: filter + paginate locally. Real: API already filtered + paginated.
   const sourceQueries: FlaggedQuery[] = demoMode ? demoQueries : isOnline ? apiData.queries : offlineQueries;
@@ -373,7 +369,7 @@ export default function FlaggedView({
   return (
     <div className="flex flex-col h-full overflow-y-hidden overflow-x-clip">
       {/* Part 1: Fixed header + search/filter */}
-      <div className="flex-shrink-0 bg-cultivate-bg-main pt-8 lg:pt-0">
+      <div className="flex-shrink-0 bg-cultivate-bg-main pb-4 pt-8 lg:pt-0">
       {/* Mobile header — glass button absolute left, title centered */}
       <div className="relative flex items-center justify-center mb-6 lg:hidden">
         {!sidebarOpen && setSidebarOpen && (
@@ -401,23 +397,23 @@ export default function FlaggedView({
       </div>
 
       {/* Search + Filter */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="relative flex-1 max-w-[68.5%]">
+      <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cultivate-text-tertiary" />
           <input
             type="text"
             placeholder="Search queries..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light"
+            className="w-full pl-10 pr-4 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm standalone:text-base lg:text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light"
           />
         </div>
-        <div className="flex gap-1 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg p-1">
+        <div className="flex flex-wrap gap-1 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg p-1">
           {(["all", "PENDING", "VERIFIED", "CORRECTED"] as FlagStatus[]).map((status) => (
             <button
               key={status}
               onClick={() => handleStatusChange(status)}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-xs standalone:text-sm lg:text-xs rounded-md transition-colors ${
                 statusFilter === status
                   ? 'bg-cultivate-border-element text-white'
                   : 'text-cultivate-text-tertiary hover:text-cultivate-text-primary'
@@ -433,7 +429,7 @@ export default function FlaggedView({
       {/* Part 2: Scrollable card list */}
       <div className="flex-1 min-h-0 overflow-y-auto thin-scrollbar scrollbar-outset pb-6">
       {/* Flagged Query Cards */}
-      <div className="space-y-3 mr-3">
+      <div className="space-y-3">
         {paginatedQueries.map((query) => (
           <div
             key={query.id}
@@ -910,7 +906,7 @@ export default function FlaggedView({
               className={`fixed top-0 right-0 h-full bg-cultivate-bg-sidebar border-l border-cultivate-border-subtle z-50 flex flex-col shadow-2xl transition-transform duration-300 ${
                 isClosing ? 'translate-x-full' : 'translate-x-0'
               }`}
-              style={{ width: isDesktop ? `${panelWidth}px` : "100vw" }}
+              style={{ width: isDesktop ? `${effectivePanelWidth}px` : "100vw" }}
             >
               {/* Drag handle - centered on left edge */}
               <div
