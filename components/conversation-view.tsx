@@ -980,7 +980,7 @@ export default function ConversationView({
                               <div className="absolute -inset-2 rounded-[1.5rem] border-2 border-cultivate-beige/30 pointer-events-none" />
                             )}
                             {renderMessageAttachments(msg.attachments)}
-                            <div className="prose prose-base prose-invert max-w-none text-cultivate-text-primary leading-relaxed prose-p:my-1 prose-headings:text-cultivate-text-primary prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-cultivate-text-primary prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
+                            <div className="prose prose-base prose-invert max-w-none text-cultivate-text-primary leading-relaxed prose-p:my-1 prose-headings:text-cultivate-text-primary prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-cultivate-text-primary prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1 prose-hr:my-[1.5rem] prose-hr:border-cultivate-border-element prose-hr:opacity-80">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                             </div>
                           </div>
@@ -994,7 +994,7 @@ export default function ConversationView({
                                 </div>
                                 <span className="text-xs font-medium text-cultivate-green-light">Expert Correction</span>
                               </div>
-                              <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary prose-p:my-1">
+                              <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary prose-p:my-1 prose-hr:my-[1.5rem] prose-hr:border-cultivate-border-element prose-hr:opacity-80">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                   {msg.flaggedQuery.agronomistResponse}
                                 </ReactMarkdown>
@@ -1188,7 +1188,7 @@ export default function ConversationView({
                   {isStreaming && (
                     <div>
                       {streamingContent ? (
-                        <div className="prose prose-base prose-invert max-w-none text-cultivate-text-primary leading-relaxed prose-p:my-1 prose-headings:text-cultivate-text-primary prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-cultivate-text-primary prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1">
+                        <div className="prose prose-base prose-invert max-w-none text-cultivate-text-primary leading-relaxed prose-p:my-1 prose-headings:text-cultivate-text-primary prose-headings:font-semibold prose-h2:text-base prose-h3:text-base prose-strong:text-cultivate-text-primary prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1 prose-hr:my-[1.5rem] prose-hr:border-cultivate-border-element prose-hr:opacity-80">
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>{streamingContent}</ReactMarkdown>
                         </div>
                       ) : (
