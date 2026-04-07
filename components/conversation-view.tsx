@@ -143,6 +143,10 @@ interface ConversationViewProps {
   isOnline?: boolean;
   onAddToSystem?: () => void;
   onRemoveFromSystem?: () => void;
+  onFlaggedQueryChange?: (
+    messageId: string,
+    flaggedQuery: NonNullable<ConversationMessage["flaggedQuery"]>
+  ) => void;
 }
 
 export default function ConversationView({
@@ -170,6 +174,7 @@ export default function ConversationView({
   isOnline = true,
   onAddToSystem,
   onRemoveFromSystem,
+  onFlaggedQueryChange,
 }: ConversationViewProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -474,26 +479,26 @@ export default function ConversationView({
         throw new Error(error.error || "Failed to flag message");
       }
 
+      const result = await response.json();
+      const returnedFlaggedQuery = result?.flaggedQuery as ConversationMessage["flaggedQuery"] | undefined;
+
       setFlaggedMessages(prev => new Set(prev).add(flaggingMessageId));
 
       // Update cache for instant UI feedback (AJAX will sync from DB on next refetch)
       setFlagDataCache(prev => {
         const newCache = new Map(prev);
-        const existing = prev.get(flaggingMessageId);
-        const timestamp = new Date().toISOString();
-
-        if (isUpdatingFlag && existing) {
-          // Append update to existing flag
-          const newUpdate = `[${timestamp}] ${flagReason}`;
-          const updatedText = existing.updates ? `${existing.updates}\n\n${newUpdate}` : newUpdate;
-          newCache.set(flaggingMessageId, { reason: existing.reason, updates: updatedText });
-        } else {
-          // New flag - store with timestamp (matches backend format)
-          const timestampedReason = flagReason ? `[${timestamp}] ${flagReason}` : `[${timestamp}] `;
-          newCache.set(flaggingMessageId, { reason: timestampedReason, updates: "" });
+        if (returnedFlaggedQuery) {
+          newCache.set(flaggingMessageId, {
+            reason: returnedFlaggedQuery.farmerReason || "",
+            updates: returnedFlaggedQuery.farmerUpdates || "",
+          });
         }
         return newCache;
       });
+
+      if (returnedFlaggedQuery) {
+        onFlaggedQueryChange?.(flaggingMessageId, returnedFlaggedQuery as NonNullable<ConversationMessage["flaggedQuery"]>);
+      }
 
       notify.success(isUpdatingFlag ? "Flag updated" : "Message flagged for review");
     } catch (err) {

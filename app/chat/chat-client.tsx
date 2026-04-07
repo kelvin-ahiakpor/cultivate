@@ -976,6 +976,23 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
     }
   };
 
+  const handleFlaggedQueryChange = (
+    messageId: string,
+    flaggedQuery: NonNullable<ChatMessage["flaggedQuery"]>
+  ) => {
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === messageId
+          ? {
+              ...msg,
+              isFlagged: true,
+              flaggedQuery,
+            }
+          : msg
+      )
+    );
+  };
+
   return (
     <div className="flex h-screen overflow-x-hidden bg-cultivate-bg-main">
       {/* Mobile sidebar backdrop — always rendered for smooth fade transition */}
@@ -1693,6 +1710,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                   isOnline={isOnline}
                   onAddToSystem={() => openAddToSystemModal(currentConversationId)}
                   onRemoveFromSystem={conversationSystemId ? () => { void removeConversationFromSystem(currentConversationId!); } : undefined}
+                  onFlaggedQueryChange={handleFlaggedQueryChange}
                   inputProps={{
                     value: inputValue,
                     onChange: setInputValue,
