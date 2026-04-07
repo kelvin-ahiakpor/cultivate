@@ -220,7 +220,7 @@ export default function SettingsView({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-shrink-0">
-        <div className="lg:hidden relative flex items-center justify-center pt-8 pb-4 mb-6">
+        <div className="lg:hidden relative flex items-center justify-center pt-8 pb-3 mb-5">
           <div className="absolute left-0">
             {setSidebarOpen && (
               <GlassCircleButton onClick={() => setSidebarOpen(true)} aria-label="Open menu">
@@ -250,9 +250,9 @@ export default function SettingsView({
 
       <div className="relative flex-1 min-h-0">
         <div className="h-full overflow-y-auto thin-scrollbar scrollbar-outset">
-          <div className="w-full pb-8 lg:max-w-2xl lg:mx-auto">
-            <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-6 mb-6">
-              <div className="flex items-start gap-3 mb-4">
+          <div className="w-full pb-6 lg:max-w-2xl lg:mx-auto lg:pb-8">
+            <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-5 mb-5 lg:p-6 lg:mb-6">
+              <div className="flex items-start gap-3 mb-3 lg:mb-4">
                 <div className="p-2 bg-cultivate-bg-hover rounded-lg">
                   <MapPin className="w-5 h-5 text-cultivate-green-light" />
                 </div>
@@ -264,7 +264,7 @@ export default function SettingsView({
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2.5 lg:space-y-3">
                 <button
                   onClick={handleDetectLocation}
                   disabled={isDetecting || isSaving}
@@ -332,8 +332,8 @@ export default function SettingsView({
               </div>
             </div>
 
-            <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-6">
-              <div className="flex items-start gap-3 mb-4">
+            <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-5 lg:p-6">
+              <div className="flex items-start gap-3 mb-3 lg:mb-4">
                 <div className="p-2 bg-cultivate-bg-hover rounded-lg">
                   <Settings className="w-5 h-5 text-cultivate-green-light" />
                 </div>
@@ -343,7 +343,7 @@ export default function SettingsView({
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2.5 lg:space-y-3">
                 <div>
                   <label className="block text-xs text-cultivate-text-tertiary mb-1">Name</label>
                   <InlineEditableText
@@ -372,8 +372,8 @@ export default function SettingsView({
 
             {/* Notifications */}
             {supportsNotifications && (
-              <div className="mt-6 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-6">
-                <div className="flex items-start gap-3 mb-4">
+              <div className="mt-5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-5 lg:mt-6 lg:p-6">
+                <div className="flex items-start gap-3 mb-3 lg:mb-4">
                   <div className="p-2 bg-cultivate-bg-hover rounded-lg">
                     <Bell className="w-4 h-4 text-cultivate-teal" />
                   </div>
