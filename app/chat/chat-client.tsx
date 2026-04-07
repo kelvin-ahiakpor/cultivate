@@ -1436,7 +1436,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                       <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
                     )}
                     <div className={`${isStandalone
-                      ? `relative z-10 mx-auto mb-3 w-full ${isWelcomeComposerExpanded ? "max-w-[56rem] px-2" : "max-w-[54rem] px-3"} transition-all duration-200 ease-out`
+                      ? `relative z-10 mx-auto mb-3 w-full ${isWelcomeComposerExpanded ? "max-w-[56rem] px-0" : "max-w-[54rem] px-3"} transition-all duration-200 ease-out`
                       : "mx-auto mb-2 w-full max-w-3xl px-2 lg:px-6"}`}>
                       <div
                         onDragEnter={handleWelcomeComposerDragEnter}

@@ -203,7 +203,7 @@ export default function ConversationView({
   const messagePadding = isStandalone ? "px-2 sm:px-6 lg:px-8" : "px-4 lg:px-8";
   const standaloneComposerShell = isFarmerLayout
     ? (isComposerExpanded
-        ? "relative z-10 mx-auto mb-3 w-full max-w-[56rem] px-1.5 transition-all duration-200 ease-out"
+        ? "relative z-10 mx-auto mb-3 w-full max-w-[56rem] px-0 transition-all duration-200 ease-out"
         : "relative z-10 mx-auto mb-3 w-full max-w-[54rem] px-2 transition-all duration-200 ease-out")
     : "relative z-10 mx-auto mb-3 w-full max-w-3xl px-3";
   const webComposerShell = "mx-2 mb-1 lg:mx-auto lg:max-w-3xl";
