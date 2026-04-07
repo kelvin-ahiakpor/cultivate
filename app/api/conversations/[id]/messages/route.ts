@@ -159,6 +159,16 @@ export async function GET(
     }));
 
     return apiSuccess({
+      conversation: {
+        id: conversation.id,
+        title: conversation.title,
+        farmerSystem: conversation.farmerSystemId
+          ? await prisma.farmerSystem.findUnique({
+              where: { id: conversation.farmerSystemId },
+              select: { id: true, name: true },
+            })
+          : null,
+      },
       messages: messagesWithFlags,
       hasMore: messages.length === limit,
     });

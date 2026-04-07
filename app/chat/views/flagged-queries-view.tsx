@@ -80,6 +80,17 @@ function formatReasonTimestamp(isoString: string) {
   }
 }
 
+function sanitizeConversationTitle(title: string | null | undefined) {
+  const cleaned = (title || "Conversation").replace(/^#+\s*/, "").trim();
+  return cleaned || "Conversation";
+}
+
+const flaggedQueryMarkdownComponents = {
+  hr: () => (
+    <hr className="my-[1.5rem] border-0 border-t border-cultivate-border-element opacity-80" />
+  ),
+};
+
 export default function FlaggedQueriesView({
   sidebarOpen = true,
   setSidebarOpen,
@@ -355,7 +366,7 @@ export default function FlaggedQueriesView({
                         }`}
                       >
                         <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{query.agentResponse}</ReactMarkdown>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} components={flaggedQueryMarkdownComponents}>{query.agentResponse}</ReactMarkdown>
                         </div>
                       </div>
                     </div>
@@ -430,7 +441,7 @@ export default function FlaggedQueriesView({
                         </div>
                         <div className="bg-cultivate-teal/5 border border-cultivate-teal/20 rounded-lg p-3">
                           <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={flaggedQueryMarkdownComponents}>
                               {query.agronomistResponse}
                             </ReactMarkdown>
                           </div>
@@ -466,7 +477,7 @@ export default function FlaggedQueriesView({
       {chatPanelOpen && chatPanelQuery && (() => {
         const conversation = conversationData
           ? {
-              title: conversationData.conversation?.title || "Conversation",
+              title: sanitizeConversationTitle(conversationData.conversation?.title),
               messages: (conversationData.messages || []).map((message: {
                 id: string;
                 role: "USER" | "ASSISTANT";
@@ -579,8 +590,10 @@ export default function FlaggedQueriesView({
                               : "bg-cultivate-bg-main text-cultivate-text-primary"
                         }`}>
                           {msg.role === "ASSISTANT" ? (
-                            <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary prose-p:my-1 prose-hr:my-[1.5rem] prose-hr:border-cultivate-border-element prose-hr:opacity-80">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                            <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary prose-p:my-1">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]} components={flaggedQueryMarkdownComponents}>
+                                {msg.content}
+                              </ReactMarkdown>
                             </div>
                           ) : (
                             <p className="text-sm whitespace-pre-line leading-relaxed">{msg.content}</p>
@@ -650,7 +663,7 @@ export default function FlaggedQueriesView({
                     </div>
                     <div className="bg-cultivate-teal/5 border border-cultivate-teal/20 rounded-xl px-3.5 py-2.5">
                       <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary prose-p:my-1">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{chatPanelQuery.agronomistResponse}</ReactMarkdown>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={flaggedQueryMarkdownComponents}>{chatPanelQuery.agronomistResponse}</ReactMarkdown>
                       </div>
                     </div>
                   </div>
