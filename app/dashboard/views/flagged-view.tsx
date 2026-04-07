@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Flag, Search, CheckCircle, ChevronDown, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft, Loader2, WifiOff } from "lucide-react";
+import { Flag, Search, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft, Loader2, WifiOff } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { GlassCircleButton, SproutIcon } from "@/components/cultivate-ui";
 import { useFlaggedQueries, type FlaggedQueryItem as FlaggedQuery } from "@/lib/hooks/use-flagged-queries";
@@ -24,6 +24,48 @@ interface ChatMessage {
   isFlagged?: boolean;
 }
 
+function sanitizeConversationTitle(title?: string | null): string {
+  return (title || "Conversation").replace(/^#+\s*/, "");
+}
+
+const agronomistMarkdownComponents = {
+  hr: () => <hr className="my-6 border-cultivate-border-element/70" />,
+};
+
+function parseFarmerReasons(farmerReason: string | null | undefined, farmerUpdates: string | null | undefined) {
+  const reasons: { ordinal: string; timestamp: string; message: string }[] = [];
+
+  if (farmerReason) {
+    const match = farmerReason.match(/^\[(.+?)\]\s*(.*)$/);
+    if (match) {
+      reasons.push({ ordinal: "1st", timestamp: match[1], message: match[2] || "(no reason provided)" });
+    }
+  }
+
+  if (farmerUpdates) {
+    const lines = farmerUpdates.split("\n\n");
+    lines.forEach((line, idx) => {
+      const match = line.match(/^\[(.+?)\]\s*(.*)$/);
+      if (match) {
+        const ordinal = idx === 0 ? "2nd" : idx === 1 ? "3rd" : `${idx + 2}th`;
+        reasons.push({ ordinal, timestamp: match[1], message: match[2] || "(no reason provided)" });
+      }
+    });
+  }
+
+  return reasons;
+}
+
+function formatReasonTimestamp(isoString: string) {
+  try {
+    const date = new Date(isoString);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + ", " +
+      date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+  } catch {
+    return isoString;
+  }
+}
+
 
 // Sample conversations for demo mode — sourced from lib/demo-data.ts
 const sampleConversations = DEMO_FLAGGED_CONVOS;
@@ -31,7 +73,9 @@ const sampleConversations = DEMO_FLAGGED_CONVOS;
 // Mock flagged queries for demo mode — sourced from lib/demo-data.ts
 const initialFlagged: FlaggedQuery[] = (DEMO_FLAGGED as FlaggedQuery[]).map((query) => ({
   ...query,
-  conversationTitle: query.conversationTitle || sampleConversations[query.conversationId]?.title || "Conversation",
+  conversationTitle: sanitizeConversationTitle(
+    query.conversationTitle || sampleConversations[query.conversationId]?.title || "Conversation"
+  ),
 }));
 
 const DEFAULT_PANEL_WIDTH = 576; // max-w-xl equivalent
@@ -105,6 +149,7 @@ export default function FlaggedView({
   // Chat panel state
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
   const [chatPanelQuery, setChatPanelQuery] = useState<FlaggedQuery | null>(null);
+  const [currentReasonIndex, setCurrentReasonIndex] = useState(0);
   const [isClosing, setIsClosing] = useState(false);
   const [panelWidth, setPanelWidth] = useState(DEFAULT_PANEL_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
@@ -338,6 +383,7 @@ export default function FlaggedView({
   // --- Chat panel handlers ---
   const handleOpenChatPanel = (query: FlaggedQuery) => {
     setChatPanelQuery(query);
+    setCurrentReasonIndex(0);
     setChatPanelOpen(true);
     setIsClosing(false);
   };
@@ -455,14 +501,14 @@ export default function FlaggedView({
                   <div className="flex items-center gap-2 mt-1.5 min-w-0 text-xs text-cultivate-text-tertiary">
                     <span className="shrink-0">{query.agentName}</span>
                     <span className="shrink-0 text-cultivate-text-tertiary/60">·</span>
-                    <span className="min-w-0 truncate">{query.conversationTitle || "Conversation"}</span>
+                    <span className="min-w-0 truncate">{sanitizeConversationTitle(query.conversationTitle)}</span>
                     <span className="shrink-0 text-cultivate-text-tertiary/60">·</span>
                     <span className="shrink-0">{query.createdAt}</span>
                   </div>
                 ) : (
                   <div className="mt-1.5 min-w-0 space-y-1">
                     <p className="text-xs text-cultivate-text-secondary truncate">
-                      {query.conversationTitle || "Conversation"}
+                      {sanitizeConversationTitle(query.conversationTitle)}
                     </p>
                     <div className="flex items-center gap-2 text-xs text-cultivate-text-tertiary min-w-0">
                       <span className="truncate">{query.agentName}</span>
@@ -517,7 +563,7 @@ export default function FlaggedView({
                         : "bg-cultivate-bg-main"
                   }`}>
                     <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={agronomistMarkdownComponents}>
                         {query.agentResponse}
                       </ReactMarkdown>
                     </div>
@@ -879,12 +925,14 @@ export default function FlaggedView({
                   role: "USER" | "ASSISTANT";
                   content: string;
                   timestamp: string;
+                  confidenceScore?: number;
                   isFlagged?: boolean;
                 }) => ({
                   id: m.id,
                   role: m.role,
                   content: m.content,
                   timestamp: m.timestamp,
+                  confidenceScore: m.confidenceScore,
                   isFlagged: m.isFlagged,
                 })) || []
               }
@@ -935,7 +983,7 @@ export default function FlaggedView({
                     <ArrowLeft className="w-4 h-4 text-cultivate-text-primary" />
                   </button>
                   <div>
-                    <h2 className="text-sm font-medium text-white">{conversation.title}</h2>
+                    <h2 className="text-sm font-medium text-white">{sanitizeConversationTitle(conversation.title)}</h2>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-xs text-cultivate-text-secondary">{chatPanelQuery.farmerName}</span>
                       <span className="text-xs text-cultivate-text-tertiary">&middot;</span>
@@ -1001,7 +1049,7 @@ export default function FlaggedView({
                         }`}>
                           {msg.role === "ASSISTANT" ? (
                             <div className="prose prose-sm prose-invert max-w-none prose-p:text-cultivate-text-primary prose-p:leading-relaxed prose-headings:text-cultivate-text-primary prose-strong:text-cultivate-text-primary prose-li:text-cultivate-text-primary prose-p:my-1">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              <ReactMarkdown remarkPlugins={[remarkGfm]} components={agronomistMarkdownComponents}>
                                 {msg.content}
                               </ReactMarkdown>
                             </div>
@@ -1010,7 +1058,7 @@ export default function FlaggedView({
                           )}
                           <div className={`flex items-center gap-2 mt-1.5 ${msg.role === "USER" ? "justify-end" : "justify-start"}`}>
                             <span className="text-[10px] text-cultivate-text-tertiary">{msg.timestamp}</span>
-                            {msg.confidenceScore !== undefined && (
+                            {msg.role === "ASSISTANT" && msg.confidenceScore !== undefined && (
                               <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                                 msg.confidenceScore < 0.7
                                   ? "bg-cultivate-beige/20 text-cultivate-beige"
@@ -1023,6 +1071,44 @@ export default function FlaggedView({
                               <Flag className="w-3 h-3 text-cultivate-beige" />
                             )}
                           </div>
+
+                          {msg.id === chatPanelQuery.messageId && (chatPanelQuery.farmerReason || chatPanelQuery.farmerUpdates) && (() => {
+                            const reasons = parseFarmerReasons(chatPanelQuery.farmerReason, chatPanelQuery.farmerUpdates);
+                            const currentReason = reasons[currentReasonIndex];
+
+                            if (!currentReason) return null;
+
+                            return (
+                              <div className="mt-3 pl-4 border-l-2 border-cultivate-text-secondary/30">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs font-medium text-cultivate-text-secondary">Why The Farmer Flagged This</span>
+                                  {reasons.length > 1 && (
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() => setCurrentReasonIndex((prev) => (prev > 0 ? prev - 1 : reasons.length - 1))}
+                                        className="p-1 hover:bg-cultivate-bg-elevated rounded transition-colors"
+                                      >
+                                        <ChevronLeft className="w-3.5 h-3.5 text-cultivate-text-secondary" />
+                                      </button>
+                                      <span className="text-xs text-cultivate-text-tertiary">{currentReasonIndex + 1}/{reasons.length}</span>
+                                      <button
+                                        onClick={() => setCurrentReasonIndex((prev) => (prev < reasons.length - 1 ? prev + 1 : 0))}
+                                        className="p-1 hover:bg-cultivate-bg-elevated rounded transition-colors"
+                                      >
+                                        <ChevronRight className="w-3.5 h-3.5 text-cultivate-text-secondary" />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="text-xs text-cultivate-text-tertiary mb-1">
+                                  {currentReason.ordinal} • {formatReasonTimestamp(currentReason.timestamp)}
+                                </p>
+                                <p className="text-sm text-cultivate-text-secondary leading-relaxed">
+                                  {currentReason.message}
+                                </p>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>

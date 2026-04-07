@@ -12,6 +12,7 @@ const fetcher = (url: string) =>
 // Normalised shape matching what the view expects — same fields as initialFlagged mock
 export interface FlaggedQueryItem {
   id: string;
+  messageId: string;
   farmerName: string;
   farmerMessage: string;  // most recent USER message in the conversation
   agentResponse: string;  // the ASSISTANT message that was flagged
@@ -39,6 +40,7 @@ interface RawFlaggedQuery {
   reviewedAt: string | null;
   createdAt: string;
   message: {
+    id: string;
     content: string;
     confidenceScore: number | null;
     conversation: {
@@ -54,6 +56,10 @@ interface RawFlaggedQuery {
 interface FlaggedQueriesResponse {
   flaggedQueries: RawFlaggedQuery[];
   pagination: { page: number; limit: number; total: number; totalPages: number };
+}
+
+function normalizeConversationTitle(title?: string | null): string {
+  return (title || "Conversation").replace(/^#+\s*/, "");
 }
 
 function formatDate(iso: string): string {
@@ -73,11 +79,12 @@ function formatDate(iso: string): string {
 function normalize(fq: RawFlaggedQuery): FlaggedQueryItem {
   return {
     id: fq.id,
+    messageId: fq.message.id,
     farmerName: fq.message.conversation.farmer.name,
     farmerMessage: fq.message.conversation.messages[0]?.content || "Message not available",
     agentResponse: fq.message.content,
     agentName: fq.agent.name,
-    conversationTitle: fq.message.conversation.title || "Conversation",
+    conversationTitle: normalizeConversationTitle(fq.message.conversation.title),
     confidenceScore: fq.message.confidenceScore ?? 0,
     status: fq.status,
     createdAt: formatDate(fq.createdAt),
