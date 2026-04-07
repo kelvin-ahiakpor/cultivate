@@ -210,7 +210,7 @@ export default function FlaggedQueriesView({
         </div>
 
         {reviewUpdates.length > 0 && (
-          <div className="mt-4 mr-3 rounded-xl border border-cultivate-border-element bg-cultivate-bg-elevated px-4 py-3">
+          <div className="mt-4 mr-1 rounded-xl border border-cultivate-border-element bg-cultivate-bg-elevated px-4 py-3">
             <p className="text-sm text-white">
               {reviewUpdates.length === 1 ? "1 flagged query has a new expert response." : `${reviewUpdates.length} flagged queries have new expert responses.`}
             </p>
@@ -234,7 +234,7 @@ export default function FlaggedQueriesView({
             </p>
           </div>
         ) : (
-          <div className="mr-3 space-y-3">
+          <div className="mr-1 space-y-3">
             {apiData.queries.map((query) => (
               <div
                 key={query.id}
@@ -252,9 +252,11 @@ export default function FlaggedQueriesView({
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getStatusColor(query.status)}`}>
                         {query.status.charAt(0) + query.status.slice(1).toLowerCase()}
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-cultivate-border-element text-cultivate-text-secondary">
-                        {(query.confidenceScore * 100).toFixed(0)}% confidence
-                      </span>
+                      {query.confidenceScore != null && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-cultivate-border-element text-cultivate-text-secondary">
+                          {(query.confidenceScore * 100).toFixed(0)}%
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-cultivate-text-primary line-clamp-2">{query.farmerMessage}</p>
                     <div className="mt-1.5 min-w-0 space-y-1 lg:space-y-0 lg:flex lg:items-center lg:gap-2 lg:text-xs lg:text-cultivate-text-tertiary">
