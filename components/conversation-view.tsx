@@ -207,7 +207,8 @@ export default function ConversationView({
         : "relative z-10 mx-auto mb-3 w-full max-w-[54rem] px-3 transition-all duration-200 ease-out")
     : "relative z-10 mx-auto mb-3 w-full max-w-3xl px-4";
   const webComposerShell = "mx-3.5 mb-1 lg:mx-auto lg:max-w-3xl";
-  const composerCardClass = isFarmerLayout
+  // composerCardClass: farmer-standalone only gets the larger/animated variant
+  const composerCardClass = (isFarmerLayout && isStandalone)
     ? `rounded-[22px] shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)] transition-all duration-200 ease-out ${
         isComposerExpanded ? "p-4" : "p-[0.95rem]"
       }`
@@ -1209,12 +1210,12 @@ export default function ConversationView({
 
             {/* ── Sticky Input ────────────────────────────────────────────
                 Standalone: glass gradient overlay, transparent bg, -mt-10 to overlap messages
-                Desktop/web: solid bg, centered max width */}
+                Desktop/web: solid bg, mx-3.5 side margins (inside max-w-3xl container) */}
             <div className={`${shouldShowComposer ? `sticky bottom-0 ${isStandalone ? "relative z-30 -mt-10 bg-transparent pb-4 pt-0" : "bg-cultivate-bg-main pb-2"}` : "hidden"}`}>
               {isStandalone && (
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
               )}
-              <div className={isStandalone ? standaloneComposerShell : webComposerShell}>
+              <div className={isStandalone ? standaloneComposerShell : "mx-3.5 mb-1"}>
                 <div
                   onDragEnter={handleComposerDragEnter}
                   onDragOver={handleComposerDragOver}
