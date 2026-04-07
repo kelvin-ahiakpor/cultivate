@@ -198,7 +198,7 @@ export default function ConversationView({
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const shouldShowComposer = showComposer && (!messagesLoading || messages.length > 0);
   const isFarmerLayout = layoutMode === "farmer-chat";
-  const isComposerExpanded = isFarmerLayout && (isComposerFocused || Boolean(inputProps?.value?.trim()));
+  const isComposerExpanded = isFarmerLayout && isStandalone && (isComposerFocused || Boolean(inputProps?.value?.trim()));
   const conversationMaxWidth = "max-w-5xl";
   const messagePadding = "px-4 standalone:px-3 sm:px-6 lg:px-8";
   const standaloneComposerShell = isFarmerLayout
@@ -206,11 +206,7 @@ export default function ConversationView({
         ? "relative z-10 mx-auto mb-3 w-full max-w-[56rem] px-2 transition-all duration-200 ease-out"
         : "relative z-10 mx-auto mb-3 w-full max-w-[54rem] px-3 transition-all duration-200 ease-out")
     : "relative z-10 mx-auto mb-3 w-full max-w-3xl px-4";
-  const webComposerShell = isFarmerLayout
-    ? (isComposerExpanded
-        ? "mx-auto mb-1 w-full max-w-[56rem] px-3 transition-all duration-200 ease-out"
-        : "mx-auto mb-1 w-full max-w-[54rem] px-4 transition-all duration-200 ease-out")
-    : "mx-3.5 mb-1 lg:mx-auto lg:max-w-3xl";
+  const webComposerShell = "mx-3.5 mb-1 lg:mx-auto lg:max-w-3xl";
   const composerCardClass = isFarmerLayout
     ? `rounded-[22px] shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)] transition-all duration-200 ease-out ${
         isComposerExpanded ? "p-4" : "p-[0.95rem]"

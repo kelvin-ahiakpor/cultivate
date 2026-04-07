@@ -144,7 +144,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   // Online/offline status — drives IndexedDB fallback + disables input when offline
   const isOnline = useOnlineStatus();
   const [offlineChats, setOfflineChats] = useState<CachedConversation[]>([]);
-  const isWelcomeComposerExpanded = isWelcomeComposerFocused || inputValue.trim().length > 0 || pendingImages.length > 0;
+  const isWelcomeComposerExpanded = isStandalone && (isWelcomeComposerFocused || inputValue.trim().length > 0 || pendingImages.length > 0);
 
   // Sidebar conversation list — disabled in demo mode (zero API requests)
   const apiConversations = useConversations("", 1, 30, demoMode);
@@ -1437,7 +1437,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                     )}
                     <div className={`${isStandalone
                       ? `relative z-10 mx-auto mb-3 w-full ${isWelcomeComposerExpanded ? "max-w-[56rem] px-2" : "max-w-[54rem] px-3"} transition-all duration-200 ease-out`
-                      : `mx-auto mb-2 w-full ${isWelcomeComposerExpanded ? "max-w-[56rem] px-3" : "max-w-[54rem] px-4"} transition-all duration-200 ease-out`}`}>
+                      : "mx-auto mb-2 w-full max-w-3xl px-6"}`}>
                       <div
                         onDragEnter={handleWelcomeComposerDragEnter}
                         onDragOver={handleWelcomeComposerDragOver}
