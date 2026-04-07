@@ -50,6 +50,12 @@ import { notify } from "@/lib/toast";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon, Tooltip, AnimatedDots, Dropdown, GlassCircleButton } from "@/components/cultivate-ui";
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export interface ConversationMessage {
   id: string;
@@ -887,34 +893,38 @@ export default function ConversationView({
 
                     {/* Language Selector (real mode only) */}
                     {inputProps && (
-                      <div className="relative">
-                        <button
-                          onClick={() => inputProps.setShowLanguageMenu(!inputProps.showLanguageMenu)}
-                          className="flex items-center gap-1.5 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
-                          title="Select language"
+                      <DropdownMenu
+                        open={inputProps.showLanguageMenu}
+                        onOpenChange={inputProps.setShowLanguageMenu}
+                      >
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="flex items-center gap-1.5 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
+                            title="Select language"
+                          >
+                            <Globe className="w-4 h-4" />
+                            <span className="hidden lg:inline">{inputProps.languages.find(l => l.code === inputProps.selectedLanguage)?.name || "English"}</span>
+                            <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          side="top"
+                          align="end"
+                          sideOffset={8}
+                          className="min-w-[180px] rounded-xl border-cultivate-border-element bg-cultivate-bg-elevated p-1.5 text-cultivate-text-primary shadow-xl"
                         >
-                          <Globe className="w-4 h-4" />
-                          <span className="hidden lg:inline">{inputProps.languages.find(l => l.code === inputProps.selectedLanguage)?.name || 'English'}</span>
-                          <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
-                        </button>
-                        {inputProps.showLanguageMenu && (
-                          <>
-                            <div className="fixed inset-0 z-40" onClick={() => inputProps.setShowLanguageMenu(false)} />
-                            <div className="absolute bottom-full right-0 mb-2 bg-cultivate-bg-elevated rounded-lg shadow-lg border border-cultivate-border-element py-2 z-50 min-w-[180px]">
-                              {inputProps.languages.map((lang) => (
-                                <button
-                                  key={lang.code}
-                                  onClick={() => { inputProps.onLanguageSelect(lang.code); inputProps.setShowLanguageMenu(false); }}
-                                  className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-cultivate-border-element transition-colors flex items-center gap-2 ${inputProps.selectedLanguage === lang.code ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
-                                >
-                                  <span>{lang.flag}</span>
-                                  <span>{lang.name}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </>
-                        )}
-                      </div>
+                          {inputProps.languages.map((lang) => (
+                            <DropdownMenuItem
+                              key={lang.code}
+                              onClick={() => inputProps.onLanguageSelect(lang.code)}
+                              className={`gap-2.5 rounded-lg px-3 py-2 text-sm standalone:text-base lg:text-sm ${inputProps.selectedLanguage === lang.code ? "text-cultivate-green-light focus:text-cultivate-green-light" : "text-cultivate-text-primary focus:text-white"} focus:bg-cultivate-bg-hover`}
+                            >
+                              <span>{lang.flag}</span>
+                              <span>{lang.name}</span>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
 
                     {/* Offline indicator — replaces send button when disconnected */}
@@ -1440,34 +1450,38 @@ export default function ConversationView({
 
                       {/* Language Selector (real mode only) */}
                       {inputProps && (
-                        <div className="relative">
-                          <button
-                            onClick={() => inputProps.setShowLanguageMenu(!inputProps.showLanguageMenu)}
-                            className="flex items-center gap-1.5 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
-                            title="Select language"
+                        <DropdownMenu
+                          open={inputProps.showLanguageMenu}
+                          onOpenChange={inputProps.setShowLanguageMenu}
+                        >
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className="flex items-center gap-1.5 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
+                              title="Select language"
+                            >
+                              <Globe className="w-4 h-4" />
+                              <span className="hidden lg:inline">{inputProps.languages.find(l => l.code === inputProps.selectedLanguage)?.name || "English"}</span>
+                              <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            side="top"
+                            align="end"
+                            sideOffset={8}
+                            className="min-w-[180px] rounded-xl border-cultivate-border-element bg-cultivate-bg-elevated p-1.5 text-cultivate-text-primary shadow-xl"
                           >
-                            <Globe className="w-4 h-4" />
-                            <span className="hidden lg:inline">{inputProps.languages.find(l => l.code === inputProps.selectedLanguage)?.name || 'English'}</span>
-                            <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
-                          </button>
-                          {inputProps.showLanguageMenu && (
-                            <>
-                              <div className="fixed inset-0 z-40" onClick={() => inputProps.setShowLanguageMenu(false)} />
-                              <div className="absolute bottom-full right-0 mb-2 bg-cultivate-bg-elevated rounded-lg shadow-lg border border-cultivate-border-element py-2 z-50 min-w-[180px]">
-                                {inputProps.languages.map((lang) => (
-                                  <button
-                                    key={lang.code}
-                                    onClick={() => { inputProps.onLanguageSelect(lang.code); inputProps.setShowLanguageMenu(false); }}
-                                    className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-cultivate-border-element transition-colors flex items-center gap-2 ${inputProps.selectedLanguage === lang.code ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
-                                  >
-                                    <span>{lang.flag}</span>
-                                    <span>{lang.name}</span>
-                                  </button>
-                                ))}
-                              </div>
-                            </>
-                          )}
-                        </div>
+                            {inputProps.languages.map((lang) => (
+                              <DropdownMenuItem
+                                key={lang.code}
+                                onClick={() => inputProps.onLanguageSelect(lang.code)}
+                                className={`gap-2.5 rounded-lg px-3 py-2 text-sm standalone:text-base lg:text-sm ${inputProps.selectedLanguage === lang.code ? "text-cultivate-green-light focus:text-cultivate-green-light" : "text-cultivate-text-primary focus:text-white"} focus:bg-cultivate-bg-hover`}
+                              >
+                                <span>{lang.flag}</span>
+                                <span>{lang.name}</span>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
 
                       {/* Send button */}

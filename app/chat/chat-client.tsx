@@ -9,6 +9,12 @@ import { signOut } from "next-auth/react";
 import { mutate as globalMutate } from "swr";
 import { CabbageIcon, PaperPlaneIcon, SproutIcon, GlassCircleButton, Tooltip, Dropdown } from "@/components/cultivate-ui";
 import ConversationView, { type MessageAttachment, type PendingImageAttachment } from "@/components/conversation-view";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ChatsView, { mockChats } from "./views/chats-view";
 import FlaggedQueriesView from "./views/flagged-queries-view";
 import SystemsView from "./views/systems-view";
@@ -1670,34 +1676,35 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                             />
 
                             {/* Language Selector */}
-                            <div className="relative">
-                              <button
-                                onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-                                className="flex items-center gap-1.5 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
-                                title="Select language"
+                            <DropdownMenu open={showLanguageMenu} onOpenChange={setShowLanguageMenu}>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  className="flex items-center gap-1.5 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
+                                  title="Select language"
+                                >
+                                  <Globe className="w-4 h-4" />
+                                  <span className="hidden lg:inline">{LANGUAGES.find(l => l.code === selectedLanguage)?.name || "English"}</span>
+                                  <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                side="top"
+                                align="end"
+                                sideOffset={8}
+                                className="min-w-[180px] rounded-xl border-cultivate-border-element bg-cultivate-bg-elevated p-1.5 text-cultivate-text-primary shadow-xl"
                               >
-                                <Globe className="w-4 h-4" />
-                                <span className="hidden lg:inline">{LANGUAGES.find(l => l.code === selectedLanguage)?.name || 'English'}</span>
-                                <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
-                              </button>
-                              {showLanguageMenu && (
-                                <>
-                                  <div className="fixed inset-0 z-40" onClick={() => setShowLanguageMenu(false)} />
-                                  <div className="absolute bottom-full right-0 mb-2 bg-cultivate-bg-elevated rounded-lg shadow-lg border border-cultivate-border-element py-2 z-50 min-w-[180px]">
-                                    {LANGUAGES.map((lang) => (
-                                      <button
-                                        key={lang.code}
-                                        onClick={() => { setSelectedLanguage(lang.code); setShowLanguageMenu(false); }}
-                                        className={`w-full px-4 py-2 text-left text-sm standalone:text-base lg:text-sm hover:bg-cultivate-border-element transition-colors flex items-center gap-2 ${selectedLanguage === lang.code ? "text-cultivate-green-light" : "text-cultivate-text-primary"}`}
-                                      >
-                                        <span>{lang.flag}</span>
-                                        <span>{lang.name}</span>
-                                      </button>
-                                    ))}
-                                  </div>
-                                </>
-                              )}
-                            </div>
+                                {LANGUAGES.map((lang) => (
+                                  <DropdownMenuItem
+                                    key={lang.code}
+                                    onClick={() => setSelectedLanguage(lang.code)}
+                                    className={`gap-2.5 rounded-lg px-3 py-2 text-sm standalone:text-base lg:text-sm ${selectedLanguage === lang.code ? "text-cultivate-green-light focus:text-cultivate-green-light" : "text-cultivate-text-primary focus:text-white"} focus:bg-cultivate-bg-hover`}
+                                  >
+                                    <span>{lang.flag}</span>
+                                    <span>{lang.name}</span>
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
 
                             <button
                               onClick={() => { handleSend(); setSendIcon(s => s === "cabbage" ? "plane" : s === "plane" ? "sprout" : "cabbage"); }}
