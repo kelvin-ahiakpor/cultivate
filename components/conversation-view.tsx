@@ -47,7 +47,7 @@ import { ChevronLeft, ChevronRight, ChevronDown, Plus, Share, Pencil, Trash2, Un
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { notify } from "@/lib/toast";
-import { CabbageIcon, PaperPlaneIcon, SproutIcon, Tooltip, AnimatedDots, Dropdown } from "@/components/cultivate-ui";
+import { CabbageIcon, PaperPlaneIcon, SproutIcon, Tooltip, AnimatedDots, Dropdown, GlassCircleButton } from "@/components/cultivate-ui";
 import { useSpeechRecognition } from "@/lib/hooks/use-speech-recognition";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
@@ -590,14 +590,11 @@ export default function ConversationView({
           </div>
 
           {showNewChatButton ? (
-            <button
-              onClick={onNewChat}
-              className="w-11 h-11 bg-cultivate-bg-elevated hover:bg-cultivate-border-element rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-            >
-              <Plus className="w-5 h-5 text-cultivate-green-light" />
-            </button>
+            <GlassCircleButton onClick={onNewChat} aria-label="New chat">
+              <Plus className="w-5 h-5 text-white" />
+            </GlassCircleButton>
           ) : (
-            <div className="w-11 h-11 flex-shrink-0" />
+            <div className="w-9 h-9 flex-shrink-0" />
           )}
         </div>
 
