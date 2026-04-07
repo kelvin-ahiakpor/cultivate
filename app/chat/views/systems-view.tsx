@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, PanelLeft, Plus, X, Loader2, WifiOff } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { GlassCircleButton, Dropdown, SystemListSkeleton } from "@/components/cultivate-ui";
@@ -51,6 +51,7 @@ interface SystemsViewProps {
 
 export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBackToChat, demoMode = false }: SystemsViewProps) {
   const isOnline = useOnlineStatus();
+  const [isStandalone, setIsStandalone] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
 
@@ -73,10 +74,93 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
     installationDate: "",
     warrantyUntil: "",
   });
+  const [dateDisplay, setDateDisplay] = useState({
+    purchaseDate: "",
+    installationDate: "",
+    warrantyUntil: "",
+  });
 
-  const resetForm = () => setForm({ name: "", type: "", description: "", purchaseDate: "", installationDate: "", warrantyUntil: "" });
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const checkStandalone = () => {
+      const iosStandalone = Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+      setIsStandalone(mediaQuery.matches || iosStandalone);
+    };
+
+    checkStandalone();
+    mediaQuery.addEventListener("change", checkStandalone);
+    return () => mediaQuery.removeEventListener("change", checkStandalone);
+  }, []);
+
+  const resetForm = () => {
+    setForm({ name: "", type: "", description: "", purchaseDate: "", installationDate: "", warrantyUntil: "" });
+    setDateDisplay({ purchaseDate: "", installationDate: "", warrantyUntil: "" });
+  };
+
+  const formatDateForDisplay = (value: string) => {
+    if (!value) return "";
+    const [year, month, day] = value.split("-");
+    if (!year || !month || !day) return value;
+    return `${day}/${month}/${year}`;
+  };
+
+  const normalizeDateInput = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 8);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+  };
+
+  const parseDisplayDate = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+
+    const match = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) return null;
+
+    const [, day, month, year] = match;
+    const iso = `${year}-${month}-${day}`;
+    const parsed = new Date(`${iso}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) return null;
+    if (
+      parsed.getFullYear() !== Number(year) ||
+      parsed.getMonth() + 1 !== Number(month) ||
+      parsed.getDate() !== Number(day)
+    ) {
+      return null;
+    }
+
+    return iso;
+  };
+
+  const handleStandaloneDateChange = (field: "purchaseDate" | "installationDate" | "warrantyUntil", value: string) => {
+    setDateDisplay((current) => ({ ...current, [field]: normalizeDateInput(value) }));
+  };
+
+  const commitStandaloneDate = (field: "purchaseDate" | "installationDate" | "warrantyUntil") => {
+    const parsed = parseDisplayDate(dateDisplay[field]);
+
+    if (parsed === "") {
+      setForm((current) => ({ ...current, [field]: "" }));
+      setDateDisplay((current) => ({ ...current, [field]: "" }));
+      return;
+    }
+
+    if (!parsed) {
+      setForm((current) => ({ ...current, [field]: "" }));
+      return;
+    }
+
+    setForm((current) => ({ ...current, [field]: parsed }));
+    setDateDisplay((current) => ({ ...current, [field]: formatDateForDisplay(parsed) }));
+  };
 
   const handleAddSystem = async () => {
+    if (isStandalone && !form.purchaseDate && dateDisplay.purchaseDate.trim()) {
+      notify.error("Please enter a valid purchase date in dd/mm/yyyy format");
+      return;
+    }
+
     if (!form.name.trim() || !form.type.trim() || !form.description.trim() || !form.purchaseDate) {
       notify.error("Please fill in all required fields");
       return;
@@ -159,6 +243,41 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
       default: return status;
     }
   };
+
+  const renderDateField = ({
+    field,
+    label,
+    required = false,
+  }: {
+    field: "purchaseDate" | "installationDate" | "warrantyUntil";
+    label: string;
+    required?: boolean;
+  }) => (
+    <div>
+      <label className="block text-xs text-cultivate-text-secondary mb-1">
+        {label} {required && <span className="text-cultivate-text-secondary">*</span>}
+      </label>
+      {isStandalone ? (
+        <input
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="dd/mm/yyyy"
+          value={dateDisplay[field]}
+          onChange={(e) => handleStandaloneDateChange(field, e.target.value)}
+          onBlur={() => commitStandaloneDate(field)}
+          className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm placeholder-cultivate-text-tertiary border border-cultivate-border-element rounded-lg focus:outline-none focus:border-cultivate-green-light"
+        />
+      ) : (
+        <input
+          type="date"
+          value={form[field]}
+          onChange={(e) => setForm((current) => ({ ...current, [field]: e.target.value }))}
+          className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-cultivate-green-light [color-scheme:dark]"
+        />
+      )}
+    </div>
+  );
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -425,51 +544,12 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
               </div>
 
               {/* Purchase Date */}
-              <div>
-                <label className="block text-xs text-cultivate-text-secondary mb-1">Purchase date <span className="text-cultivate-text-secondary">*</span></label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={form.purchaseDate}
-                    onChange={(e) => setForm(f => ({ ...f, purchaseDate: e.target.value }))}
-                    className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-cultivate-green-light [color-scheme:dark]"
-                  />
-                  {!form.purchaseDate && (
-                    <span className="pointer-events-none absolute inset-0 hidden standalone:flex items-center px-2.5 text-sm text-cultivate-text-tertiary">dd/mm/yyyy</span>
-                  )}
-                </div>
-              </div>
+              {renderDateField({ field: "purchaseDate", label: "Purchase date", required: true })}
 
               {/* Optional dates */}
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-cultivate-text-secondary mb-1">Installation date</label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      value={form.installationDate}
-                      onChange={(e) => setForm(f => ({ ...f, installationDate: e.target.value }))}
-                      className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-cultivate-green-light [color-scheme:dark]"
-                    />
-                    {!form.installationDate && (
-                      <span className="pointer-events-none absolute inset-0 hidden standalone:flex items-center px-2.5 text-sm text-cultivate-text-tertiary">dd/mm/yyyy</span>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs text-cultivate-text-secondary mb-1">Warranty until</label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      value={form.warrantyUntil}
-                      onChange={(e) => setForm(f => ({ ...f, warrantyUntil: e.target.value }))}
-                      className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-cultivate-green-light [color-scheme:dark]"
-                    />
-                    {!form.warrantyUntil && (
-                      <span className="pointer-events-none absolute inset-0 hidden standalone:flex items-center px-2.5 text-sm text-cultivate-text-tertiary">dd/mm/yyyy</span>
-                    )}
-                  </div>
-                </div>
+                {renderDateField({ field: "installationDate", label: "Installation date" })}
+                {renderDateField({ field: "warrantyUntil", label: "Warranty until" })}
               </div>
             </div>
 
