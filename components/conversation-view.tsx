@@ -138,6 +138,7 @@ interface ConversationViewProps {
   showNewChatButton?: boolean;
   showMessageActions?: boolean;
   highlightFlaggedMessages?: boolean;
+  layoutMode?: "default" | "farmer-chat";
   /** Passed from useOnlineStatus(). Disables input + shows offline indicator when false. */
   isOnline?: boolean;
   onAddToSystem?: () => void;
@@ -165,6 +166,7 @@ export default function ConversationView({
   showNewChatButton = true,
   showMessageActions = true,
   highlightFlaggedMessages = false,
+  layoutMode = "default",
   isOnline = true,
   onAddToSystem,
   onRemoveFromSystem,
@@ -190,10 +192,30 @@ export default function ConversationView({
   const [voiceState, setVoiceState] = useState<"idle" | "connecting" | "listening" | "error">("idle");
   const connectingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isDraggingImages, setIsDraggingImages] = useState(false);
+  const [isComposerFocused, setIsComposerFocused] = useState(false);
 
   // Attachment menu state
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const shouldShowComposer = showComposer && (!messagesLoading || messages.length > 0);
+  const isFarmerLayout = layoutMode === "farmer-chat";
+  const isComposerExpanded = isFarmerLayout && (isComposerFocused || Boolean(inputProps?.value?.trim()));
+  const conversationMaxWidth = "max-w-[54rem]";
+  const messagePadding = "px-6 standalone:px-3 lg:px-6";
+  const standaloneComposerShell = isFarmerLayout
+    ? (isComposerExpanded
+        ? "relative z-10 mx-auto mb-3 w-full max-w-[56rem] px-2 transition-all duration-200 ease-out"
+        : "relative z-10 mx-auto mb-3 w-full max-w-[54rem] px-3 transition-all duration-200 ease-out")
+    : "relative z-10 mx-auto mb-3 w-full max-w-3xl px-4";
+  const webComposerShell = isFarmerLayout
+    ? (isComposerExpanded
+        ? "mx-auto mb-1 w-full max-w-[56rem] px-3 transition-all duration-200 ease-out"
+        : "mx-auto mb-1 w-full max-w-[54rem] px-4 transition-all duration-200 ease-out")
+    : "mx-3.5 mb-1 lg:mx-auto lg:max-w-3xl";
+  const composerCardClass = isFarmerLayout
+    ? `rounded-[22px] shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)] transition-all duration-200 ease-out ${
+        isComposerExpanded ? "p-4" : "p-[0.95rem]"
+      }`
+    : "rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)] transition-colors";
 
   const triggerImagePicker = () => {
     imageInputRef.current?.click();
@@ -683,13 +705,13 @@ export default function ConversationView({
             {isStandalone && (
               <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
             )}
-          <div className={`${isStandalone ? "relative z-10 mx-auto mb-3 w-full max-w-3xl px-4" : "mx-3.5 mb-1 lg:mx-auto lg:max-w-3xl"}`}>
+          <div className={isStandalone ? standaloneComposerShell : webComposerShell}>
             <div
               onDragEnter={handleComposerDragEnter}
               onDragOver={handleComposerDragOver}
               onDragLeave={handleComposerDragLeave}
               onDrop={handleComposerDrop}
-              className={`rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)] transition-colors ${
+              className={`${composerCardClass} ${
                 isDraggingImages
                   ? "bg-cultivate-bg-hover ring-1 ring-cultivate-green-light/60"
                   : "bg-cultivate-bg-elevated"
@@ -720,6 +742,8 @@ export default function ConversationView({
                   onChange={inputProps && isOnline ? (e) => inputProps.onChange(e.target.value) : undefined}
                   onKeyDown={inputProps && isOnline ? (e) => { if (e.key === "Enter" && !e.shiftKey && inputProps.canSend) { e.preventDefault(); inputProps.onSend(); } } : undefined}
                   readOnly={!inputProps || voiceState !== "idle" || !isOnline}
+                  onFocus={() => setIsComposerFocused(true)}
+                  onBlur={() => setIsComposerFocused(false)}
                   className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-cultivate-text-tertiary bg-transparent text-sm standalone:text-base lg:text-sm"
                 />
                 <div className="flex items-center justify-between mt-2">
@@ -921,10 +945,10 @@ export default function ConversationView({
         // Normal conversation view with scroll container
         <div className="relative flex-1 min-h-0 min-w-0">
           <div className="thin-scrollbar h-full overflow-y-auto overflow-x-hidden">
-            <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col">
+            <div className={`mx-auto flex min-h-full w-full ${conversationMaxWidth} flex-col`}>
               {/* space-y-4: gap between messages.
                   pb-12 standalone: breathing room after "AI can make mistakes" before input */}
-              <div className={`flex-1 px-8 standalone:px-4 lg:px-8 pt-6 ${shouldShowComposer ? (isStandalone ? "pb-12" : "pb-6") : "pb-8"} space-y-4`}>
+              <div className={`flex-1 ${messagePadding} pt-6 ${shouldShowComposer ? (isStandalone ? "pb-12" : "pb-6") : "pb-8"} space-y-4`}>
               {messagesLoading ? (
                 <div className="flex flex-1 items-center justify-center min-h-[60vh]">
                   <Loader2 className="w-5 h-5 text-cultivate-text-secondary animate-spin" />
@@ -1194,13 +1218,13 @@ export default function ConversationView({
               {isStandalone && (
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
               )}
-              <div className={`${isStandalone ? "relative z-10 mx-auto mb-3 w-full max-w-3xl px-4" : "mx-3.5 mb-1"}`}>
+              <div className={isStandalone ? standaloneComposerShell : webComposerShell}>
                 <div
                   onDragEnter={handleComposerDragEnter}
                   onDragOver={handleComposerDragOver}
                   onDragLeave={handleComposerDragLeave}
                   onDrop={handleComposerDrop}
-                  className={`rounded-[20px] p-3.5 shadow-[0_0.25rem_1.25rem_rgba(0,0,0,0.15),0_0_0.0625rem_rgba(0,0,0,0.15)] transition-colors ${
+                  className={`${composerCardClass} ${
                     isDraggingImages
                       ? "bg-cultivate-bg-hover ring-1 ring-cultivate-green-light/60"
                       : "bg-cultivate-bg-elevated"
@@ -1241,6 +1265,8 @@ export default function ConversationView({
                     onChange={inputProps ? (e) => inputProps.onChange(e.target.value) : undefined}
                     onKeyDown={inputProps ? (e) => { if (e.key === "Enter" && !e.shiftKey && inputProps.canSend) { e.preventDefault(); inputProps.onSend(); } } : undefined}
                     readOnly={!inputProps || voiceState !== "idle"}
+                    onFocus={() => setIsComposerFocused(true)}
+                    onBlur={() => setIsComposerFocused(false)}
                     className="w-full px-2 py-1 focus:outline-none resize-none text-white placeholder-cultivate-text-tertiary bg-transparent text-sm standalone:text-base lg:text-sm"
                   />
                   <div className="flex items-center justify-between mt-2">

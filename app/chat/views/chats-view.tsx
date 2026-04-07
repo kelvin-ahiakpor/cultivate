@@ -181,6 +181,7 @@ export default function ChatsView({ onChatSelect, initialChatId, onChatOpened, o
         messages={demoMode ? getMockConversationMessages(openedChat.id) : realMessages}
         messagesLoading={messagesLoading}
         isStandalone={isStandalone}
+        layoutMode="farmer-chat"
         isOnline={isOnline}
         demoAgentLabel={openedChat.agentName}
       />

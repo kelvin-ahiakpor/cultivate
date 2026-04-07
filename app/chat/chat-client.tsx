@@ -122,6 +122,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   const [pendingImages, setPendingImages] = useState<PendingImageAttachment[]>([]);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isDraggingWelcomeImages, setIsDraggingWelcomeImages] = useState(false);
+  const [isWelcomeComposerFocused, setIsWelcomeComposerFocused] = useState(false);
   const [isGlobalImageDragActive, setIsGlobalImageDragActive] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -143,6 +144,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   // Online/offline status — drives IndexedDB fallback + disables input when offline
   const isOnline = useOnlineStatus();
   const [offlineChats, setOfflineChats] = useState<CachedConversation[]>([]);
+  const isWelcomeComposerExpanded = isWelcomeComposerFocused || inputValue.trim().length > 0 || pendingImages.length > 0;
 
   // Sidebar conversation list — disabled in demo mode (zero API requests)
   const apiConversations = useConversations("", 1, 30, demoMode);
@@ -1433,13 +1435,15 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                     {isStandalone && (
                       <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
                     )}
-                    <div className={`${isStandalone ? "relative z-10 mx-auto mb-3 w-full max-w-3xl px-0" : "mx-auto mb-2 w-full max-w-3xl px-6"}`}>
+                    <div className={`${isStandalone
+                      ? `relative z-10 mx-auto mb-3 w-full ${isWelcomeComposerExpanded ? "max-w-[56rem] px-2" : "max-w-[54rem] px-3"} transition-all duration-200 ease-out`
+                      : `mx-auto mb-2 w-full ${isWelcomeComposerExpanded ? "max-w-[56rem] px-3" : "max-w-[54rem] px-4"} transition-all duration-200 ease-out`}`}>
                       <div
                         onDragEnter={handleWelcomeComposerDragEnter}
                         onDragOver={handleWelcomeComposerDragOver}
                         onDragLeave={handleWelcomeComposerDragLeave}
                         onDrop={handleWelcomeComposerDrop}
-                        className={`relative rounded-2xl p-4 shadow-sm transition-colors ${
+                        className={`relative rounded-[22px] shadow-sm transition-all duration-200 ease-out ${isWelcomeComposerExpanded ? "p-[1.05rem]" : "p-4"} ${
                           isDraggingWelcomeImages
                             ? "bg-cultivate-bg-hover ring-1 ring-cultivate-green-light/60"
                             : "bg-cultivate-bg-elevated"
@@ -1485,6 +1489,8 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                           value={inputValue}
                           onChange={e => setInputValue(e.target.value)}
                           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                          onFocus={() => setIsWelcomeComposerFocused(true)}
+                          onBlur={() => setIsWelcomeComposerFocused(false)}
                           className="w-full px-2 py-2 focus:outline-none resize-none text-white placeholder-cultivate-text-primary bg-transparent text-sm standalone:text-base lg:text-sm"
                         />
                         <div className="flex items-center justify-between mt-2">
@@ -1676,6 +1682,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                   isStreaming={isStreaming}
                   streamingContent={streamingContent}
                   isStandalone={isStandalone}
+                  layoutMode="farmer-chat"
                   isOnline={isOnline}
                   onAddToSystem={() => openAddToSystemModal(currentConversationId)}
                   onRemoveFromSystem={conversationSystemId ? () => { void removeConversationFromSystem(currentConversationId!); } : undefined}
