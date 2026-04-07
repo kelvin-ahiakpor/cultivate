@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Flag, Search, CheckCircle, ChevronDown, Send, X, Pencil, ExternalLink, AlertTriangle, MessageCircle, User, ArrowLeft, GripVertical, PanelLeft, Loader2, Copy, WifiOff } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { GlassCircleButton, SproutIcon } from "@/components/cultivate-ui";
-import { useFlaggedQueries, reviewFlaggedQuery, type FlaggedQueryItem as FlaggedQuery } from "@/lib/hooks/use-flagged-queries";
+import { useFlaggedQueries, type FlaggedQueryItem as FlaggedQuery } from "@/lib/hooks/use-flagged-queries";
 import { useOnlineStatus } from "@/lib/hooks/use-online-status";
 import { saveAgroCache, getAgroCache } from "@/lib/offline-storage";
 import { DEMO_FLAGGED_CONVOS, DEMO_FLAGGED } from "@/lib/demo-data";
@@ -56,7 +56,6 @@ export default function FlaggedView({
   const itemsPerPage = 10;
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [responseText, setResponseText] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   // Demo mode: local mutable state. Real mode: driven by SWR + API calls.
   const [demoQueries, setDemoQueries] = useState<FlaggedQuery[]>(initialFlagged);
@@ -232,6 +231,10 @@ export default function FlaggedView({
 
   const handleConfirmVerification = async () => {
     if (!verifyingQueryId) return;
+    setShowVerifyModal(false);
+    setVerifyingQueryId(null);
+    setVerifyNotes("");
+    setResponseText("");
     if (demoMode) {
       setDemoQueries(prev => prev.map(q =>
         q.id === verifyingQueryId
@@ -239,17 +242,12 @@ export default function FlaggedView({
           : q
       ));
     } else {
-      setSubmitting(true);
       try {
-        await reviewFlaggedQuery(verifyingQueryId, { status: "VERIFIED", verificationNotes: verifyNotes || undefined });
-        apiData.mutate();
-      } catch (e) { console.error("Verify failed:", e); }
-      finally { setSubmitting(false); }
+        await apiData.reviewQuery(verifyingQueryId, { status: "VERIFIED", verificationNotes: verifyNotes || undefined });
+      } catch (e) {
+        notify.error(e instanceof Error ? e.message : "Failed to verify");
+      }
     }
-    setShowVerifyModal(false);
-    setVerifyingQueryId(null);
-    setVerifyNotes("");
-    setResponseText("");
   };
 
   const handleEditVerification = (queryId: string) => {
@@ -263,28 +261,22 @@ export default function FlaggedView({
   // --- Correction handlers ---
   const handleSendCorrection = async (queryId: string) => {
     if (!responseText.trim()) return;
+    const text = responseText;
+    setResponseText("");
     if (demoMode) {
       setDemoQueries(prev => prev.map(q =>
         q.id === queryId
-          ? { ...q, status: "CORRECTED" as const, agronomistResponse: responseText, reviewedAt: "Just now" }
+          ? { ...q, status: "CORRECTED" as const, agronomistResponse: text, reviewedAt: "Just now" }
           : q
       ));
-      setResponseText("");
       notify.success("Correction sent");
     } else {
-      setSubmitting(true);
       try {
-        console.log("Sending correction for query:", queryId, "Response:", responseText);
-        const result = await reviewFlaggedQuery(queryId, { status: "CORRECTED", agronomistResponse: responseText });
-        console.log("Correction API response:", result);
-        await apiData.mutate();
-        setResponseText("");
-        notify.success("Correction saved successfully");
+        await apiData.reviewQuery(queryId, { status: "CORRECTED", agronomistResponse: text });
+        notify.success("Correction saved");
       } catch (e) {
-        console.error("Correction failed:", e);
         notify.error(e instanceof Error ? e.message : "Failed to save correction");
-      } finally {
-        setSubmitting(false);
+        setResponseText(text); // restore on failure
       }
     }
   };
@@ -299,24 +291,23 @@ export default function FlaggedView({
 
   const handleSaveEditedCorrection = async () => {
     if (!editingCorrectionId || !editCorrectionText.trim()) return;
-    if (demoMode) {
-      setDemoQueries(prev => prev.map(q =>
-        q.id === editingCorrectionId
-          ? { ...q, agronomistResponse: editCorrectionText, reviewedAt: "Just now" }
-          : q
-      ));
-    } else {
-      // No dedicated edit-correction API — resubmit as CORRECTED with new text
-      setSubmitting(true);
-      try {
-        await reviewFlaggedQuery(editingCorrectionId, { status: "CORRECTED", agronomistResponse: editCorrectionText });
-        apiData.mutate();
-      } catch (e) { console.error("Edit correction failed:", e); }
-      finally { setSubmitting(false); }
-    }
+    const id = editingCorrectionId;
+    const text = editCorrectionText;
     setShowEditCorrectionModal(false);
     setEditingCorrectionId(null);
     setEditCorrectionText("");
+    if (demoMode) {
+      setDemoQueries(prev => prev.map(q =>
+        q.id === id ? { ...q, agronomistResponse: text, reviewedAt: "Just now" } : q
+      ));
+    } else {
+      // No dedicated edit-correction API — resubmit as CORRECTED with new text
+      try {
+        await apiData.reviewQuery(id, { status: "CORRECTED", agronomistResponse: text });
+      } catch (e) {
+        notify.error(e instanceof Error ? e.message : "Failed to save correction");
+      }
+    }
   };
 
   // --- Revoke handlers ---
@@ -328,34 +319,22 @@ export default function FlaggedView({
 
   const handleConfirmRevoke = async () => {
     if (!revokingQueryId) return;
+    const id = revokingQueryId;
+    setShowRevokeModal(false);
+    setRevokingQueryId(null);
     if (demoMode) {
       setDemoQueries(prev => prev.map(q =>
-        q.id === revokingQueryId
+        q.id === id
           ? { ...q, status: "PENDING" as const, verificationNotes: undefined, agronomistResponse: undefined, reviewedAt: undefined }
           : q
       ));
-      setShowRevokeModal(false);
-      setRevokingQueryId(null);
       notify.success("Review revoked");
     } else {
-      setSubmitting(true);
       try {
-        const response = await fetch(`/api/flagged-queries/${revokingQueryId}/revoke`, {
-          method: "PATCH",
-        });
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Failed to revoke review");
-        }
-        await apiData.mutate();
-        setShowRevokeModal(false);
-        setRevokingQueryId(null);
-        notify.success("Review revoked - query back to pending");
+        await apiData.revokeQuery(id);
+        notify.success("Review revoked — query back to pending");
       } catch (e) {
-        console.error("Revoke failed:", e);
         notify.error(e instanceof Error ? e.message : "Failed to revoke review");
-      } finally {
-        setSubmitting(false);
       }
     }
   };
@@ -715,11 +694,11 @@ export default function FlaggedView({
                         </button>
                         <button
                           onClick={() => handleSendCorrection(query.id)}
-                          disabled={submitting || !isOnline}
+                          disabled={!isOnline}
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-cultivate-green-light text-white rounded-lg hover:bg-cultivate-green-dark transition-colors text-xs disabled:opacity-50"
                         >
-                          {submitting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-                          {submitting ? "Saving..." : "Correct"}
+                          <Send className="w-3 h-3" />
+                          Correct
                         </button>
                       </div>
                     </div>
@@ -802,11 +781,10 @@ export default function FlaggedView({
                 </button>
                 <button
                   onClick={handleConfirmVerification}
-                  disabled={submitting}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-cultivate-green-light text-white rounded-lg hover:bg-cultivate-green-dark transition-colors text-sm disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-cultivate-green-light text-white rounded-lg hover:bg-cultivate-green-dark transition-colors text-sm"
                 >
-                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                  {submitting ? "Verifying..." : "Confirm Verification"}
+                  <CheckCircle className="w-4 h-4" />
+                  Confirm Verification
                 </button>
               </div>
             </div>

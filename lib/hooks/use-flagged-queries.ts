@@ -1,6 +1,7 @@
 "use client";
 
-import useSWR from "swr";
+import useSWR, { type KeyedMutator } from "swr";
+import { useCallback } from "react";
 
 const fetcher = (url: string) =>
   fetch(url).then((res) => {
@@ -89,8 +90,29 @@ function normalize(fq: RawFlaggedQuery): FlaggedQueryItem {
   };
 }
 
+// Apply an optimistic patch to the raw cache — avoids re-fetching for instant UI
+function applyOptimisticPatch(
+  current: FlaggedQueriesResponse | undefined,
+  id: string,
+  patch: Partial<RawFlaggedQuery>
+): FlaggedQueriesResponse | undefined {
+  if (!current) return current;
+  return {
+    ...current,
+    flaggedQueries: current.flaggedQueries.map((q) =>
+      q.id === id ? { ...q, ...patch } : q
+    ),
+  };
+}
+
 /**
- * Hook to fetch flagged queries.
+ * Hook to fetch and mutate flagged queries.
+ *
+ * Optimistic update strategy:
+ *   reviewQuery / revokeQuery patch the SWR cache instantly (optimisticData),
+ *   fire the real API call, then revalidate so the cache converges to server truth.
+ *   SWR rolls back automatically if the API call throws (rollbackOnError: true).
+ *
  * @param search - Filter by farmer name or message
  * @param status - "PENDING" | "VERIFIED" | "CORRECTED" | "" (all)
  * @param page - 1-indexed
@@ -116,6 +138,83 @@ export function useFlaggedQueries(
     { revalidateOnFocus: false }
   );
 
+  /**
+   * Optimistically verify or correct a flagged query.
+   * Status badge updates instantly; SWR revalidates once the API resolves.
+   */
+  const reviewQuery = useCallback(
+    async (
+      id: string,
+      payload: {
+        status: "VERIFIED" | "CORRECTED";
+        agronomistResponse?: string;
+        verificationNotes?: string;
+      }
+    ) => {
+      const now = new Date().toISOString();
+      await (mutate as KeyedMutator<FlaggedQueriesResponse>)(
+        async () => {
+          const res = await fetch(`/api/flagged-queries/${id}/review`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || "Review failed");
+          }
+          // Return undefined → SWR revalidates from server after mutation
+          return undefined;
+        },
+        {
+          optimisticData: (current) =>
+            applyOptimisticPatch(current, id, {
+              status: payload.status,
+              reviewedAt: now,
+              agronomistResponse: payload.agronomistResponse ?? null,
+              verificationNotes: payload.verificationNotes ?? null,
+            }),
+          rollbackOnError: true,
+          revalidate: true,
+        }
+      );
+    },
+    [mutate]
+  );
+
+  /**
+   * Optimistically revoke a review back to PENDING.
+   * Status badge updates instantly; SWR revalidates once the API resolves.
+   */
+  const revokeQuery = useCallback(
+    async (id: string) => {
+      await (mutate as KeyedMutator<FlaggedQueriesResponse>)(
+        async () => {
+          const res = await fetch(`/api/flagged-queries/${id}/revoke`, {
+            method: "PATCH",
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || "Revoke failed");
+          }
+          return undefined;
+        },
+        {
+          optimisticData: (current) =>
+            applyOptimisticPatch(current, id, {
+              status: "PENDING",
+              reviewedAt: null,
+              agronomistResponse: null,
+              verificationNotes: null,
+            }),
+          rollbackOnError: true,
+          revalidate: true,
+        }
+      );
+    },
+    [mutate]
+  );
+
   return {
     queries: (data?.flaggedQueries || []).map(normalize),
     total: data?.pagination.total || 0,
@@ -123,30 +222,7 @@ export function useFlaggedQueries(
     isLoading,
     isError: error,
     mutate,
+    reviewQuery,
+    revokeQuery,
   };
-}
-
-/**
- * Verify or correct a flagged query.
- * @param id - FlaggedQuery ID
- * @param payload - { status: "VERIFIED" | "CORRECTED", agronomistResponse?, verificationNotes? }
- */
-export async function reviewFlaggedQuery(
-  id: string,
-  payload: {
-    status: "VERIFIED" | "CORRECTED";
-    agronomistResponse?: string;
-    verificationNotes?: string;
-  }
-) {
-  const res = await fetch(`/api/flagged-queries/${id}/review`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error || "Review failed");
-  }
-  return res.json();
 }

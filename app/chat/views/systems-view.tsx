@@ -363,7 +363,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
       <Dialog open={showAddModal} onOpenChange={(open) => { if (!open) { setShowAddModal(false); resetForm(); } }}>
         <DialogContent
           showCloseButton={false}
-          className="bg-cultivate-bg-elevated border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
+          className="bg-transparent border-0 p-0 rounded-none shadow-none max-w-none w-auto"
         >
           <DialogTitle className="sr-only">Add a System</DialogTitle>
           <div className="bg-cultivate-bg-elevated rounded-lg border border-cultivate-border-element p-5 w-[90vw] max-w-md max-h-[80vh] overflow-y-auto thin-scrollbar">
