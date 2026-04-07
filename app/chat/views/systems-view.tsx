@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, PanelLeft, Plus, X, Loader2, WifiOff } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { GlassCircleButton, Dropdown, SystemListSkeleton } from "@/components/cultivate-ui";
 import { useSystems, type FarmerSystemItem } from "@/lib/hooks/use-systems";
 import { useOnlineStatus } from "@/lib/hooks/use-online-status";
@@ -365,6 +365,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
           showCloseButton={false}
           className="bg-cultivate-bg-elevated border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
         >
+          <DialogTitle className="sr-only">Add a System</DialogTitle>
           <div className="bg-cultivate-bg-elevated rounded-lg border border-cultivate-border-element p-5 w-[90vw] max-w-md max-h-[80vh] overflow-y-auto thin-scrollbar">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-cultivate-text-primary">Add a System</h3>
