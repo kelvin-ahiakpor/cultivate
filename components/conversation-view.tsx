@@ -533,7 +533,7 @@ export default function ConversationView({
   ).length;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full min-w-0 flex-col overflow-x-hidden">
       {/* ── Conversation Header ──────────────────────────────────────────
           Mobile: [glass back] | [title + system pill centered] | [translate toggle] | [+ new chat]
           Desktop: breadcrumb [system /] [title ▾] with dropdown | [translate toggle right edge]
@@ -683,7 +683,7 @@ export default function ConversationView({
             {isStandalone && (
               <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
             )}
-          <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-3.5 mb-1 lg:max-w-3xl lg:mx-auto"}`}>
+          <div className={`${isStandalone ? "relative z-10 mx-auto mb-3 w-full max-w-3xl px-4" : "mx-3.5 mb-1 lg:mx-auto lg:max-w-3xl"}`}>
             <div
               onDragEnter={handleComposerDragEnter}
               onDragOver={handleComposerDragOver}
@@ -919,12 +919,12 @@ export default function ConversationView({
         </>
       ) : (
         // Normal conversation view with scroll container
-        <div className="flex-1 min-h-0 relative">
-          <div className="h-full overflow-y-auto thin-scrollbar">
-            <div className="max-w-3xl standalone:max-w-4xl mx-auto flex flex-col min-h-full">
+        <div className="relative flex-1 min-h-0 min-w-0">
+          <div className="thin-scrollbar h-full overflow-y-auto overflow-x-hidden">
+            <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col">
               {/* space-y-4: gap between messages.
                   pb-12 standalone: breathing room after "AI can make mistakes" before input */}
-              <div className={`flex-1 px-8 standalone:px-2 lg:px-8 pt-6 ${shouldShowComposer ? (isStandalone ? "pb-12" : "pb-6") : "pb-8"} space-y-4`}>
+              <div className={`flex-1 px-8 standalone:px-4 lg:px-8 pt-6 ${shouldShowComposer ? (isStandalone ? "pb-12" : "pb-6") : "pb-8"} space-y-4`}>
               {messagesLoading ? (
                 <div className="flex flex-1 items-center justify-center min-h-[60vh]">
                   <Loader2 className="w-5 h-5 text-cultivate-text-secondary animate-spin" />
@@ -1194,7 +1194,7 @@ export default function ConversationView({
               {isStandalone && (
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
               )}
-              <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-3.5 mb-1"}`}>
+              <div className={`${isStandalone ? "relative z-10 mx-auto mb-3 w-full max-w-3xl px-4" : "mx-3.5 mb-1"}`}>
                 <div
                   onDragEnter={handleComposerDragEnter}
                   onDragOver={handleComposerDragOver}

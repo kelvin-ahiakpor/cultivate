@@ -975,7 +975,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
   };
 
   return (
-    <div className="flex h-screen bg-cultivate-bg-main">
+    <div className="flex h-screen overflow-x-hidden bg-cultivate-bg-main">
       {/* Mobile sidebar backdrop — always rendered for smooth fade transition */}
       <div
         className={`fixed inset-0 z-30 bg-black/50 lg:hidden transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
@@ -1310,7 +1310,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col overflow-hidden relative">
+      <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
         {activeView === "chat" && isGlobalImageDragActive && (
           <div className="absolute inset-0 z-[120] bg-cultivate-bg-main/75 backdrop-blur-sm flex items-center justify-center pointer-events-none">
             <div className="rounded-3xl border border-dashed border-cultivate-green-light/60 bg-cultivate-bg-elevated/95 px-8 py-6 text-center shadow-xl">
@@ -1386,10 +1386,10 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
         {activeView === "chat" && (
           <>
             {/* Chat Messages Area */}
-            <div className="flex-1 overflow-y-auto flex flex-col">
+            <div className="flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
               {messages.length === 0 && !isStreaming && !currentConversationId && !messagesLoading ? (
                 /* Welcome screen — centered greeting + sticky-bottom input (mobile parity with ConversationView) */
-                <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
                   <div className="flex-1 flex items-center justify-center px-6">
                     <div className="max-w-3xl w-full">
                       <div className="text-center mb-8">
@@ -1433,7 +1433,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                     {isStandalone && (
                       <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-cultivate-bg-main/70 via-cultivate-bg-main/40 to-transparent backdrop-blur-[0.5px]" />
                     )}
-                    <div className={`${isStandalone ? "relative z-10 mx-3.5 mb-3" : "mx-auto w-full max-w-3xl px-6 mb-2"}`}>
+                    <div className={`${isStandalone ? "relative z-10 mx-auto mb-3 w-full max-w-3xl px-4" : "mx-auto mb-2 w-full max-w-3xl px-6"}`}>
                       <div
                         onDragEnter={handleWelcomeComposerDragEnter}
                         onDragOver={handleWelcomeComposerDragOver}
