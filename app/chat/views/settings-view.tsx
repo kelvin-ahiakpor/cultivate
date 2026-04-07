@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Settings, MapPin, ChevronLeft, Loader2, Check, AlertCircle, Bell } from "lucide-react";
+import { Settings, MapPin, PanelLeft, Loader2, Check, AlertCircle, Bell, WifiOff } from "lucide-react";
 import { GlassCircleButton } from "@/components/cultivate-ui";
 import { InlineEditableText } from "@/components/inline-editable-text";
 import { notify } from "@/lib/toast";
 import { usePushNotifications } from "@/lib/hooks/use-push-notifications";
+import { useOnlineStatus } from "@/lib/hooks/use-online-status";
 
 interface SettingsViewProps {
   user: {
@@ -28,6 +29,7 @@ export default function SettingsView({
   onBack,
   onLocationUpdate
 }: SettingsViewProps) {
+  const isOnline = useOnlineStatus();
   const [displayName, setDisplayName] = useState(user.name || "");
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(user.name || "");
@@ -190,27 +192,29 @@ export default function SettingsView({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-shrink-0">
-        <div className="lg:hidden flex items-center justify-between pt-16 pb-4 px-4 relative">
+        <div className="lg:hidden relative flex items-center justify-center pt-8 pb-4 px-4 mb-6">
           <div className="absolute left-4">
-            {onBack ? (
-              <GlassCircleButton onClick={onBack} aria-label="Back">
-                <ChevronLeft className="w-5 h-5 text-white" />
-              </GlassCircleButton>
-            ) : !sidebarOpen && setSidebarOpen ? (
+            {setSidebarOpen && (
               <GlassCircleButton onClick={() => setSidebarOpen(true)} aria-label="Open menu">
-                <ChevronLeft className="w-5 h-5 text-white" />
+                <PanelLeft className="w-5 h-5 text-white rotate-180" />
               </GlassCircleButton>
-            ) : null}
+            )}
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-serif text-cultivate-text-primary">Settings</h1>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-2xl font-serif text-cultivate-text-primary">Settings</h1>
+              {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+            </div>
+            <p className="text-sm text-cultivate-text-secondary mt-1">Manage your account preferences</p>
           </div>
-          <div className="absolute right-4 w-10"></div>
         </div>
 
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-serif text-cultivate-text-primary">Settings</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-serif text-cultivate-text-primary">Settings</h1>
+              {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+            </div>
             <p className="text-sm text-cultivate-text-secondary mt-1">Manage your account preferences</p>
           </div>
         </div>
@@ -346,7 +350,7 @@ export default function SettingsView({
 
             {/* Notifications */}
             {"Notification" in window && (
-              <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-6">
+              <div className="mt-6 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-6">
                 <div className="flex items-start gap-3 mb-4">
                   <div className="p-2 bg-cultivate-bg-hover rounded-lg">
                     <Bell className="w-4 h-4 text-cultivate-teal" />

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, ChevronLeft, Plus, X, Loader2 } from "lucide-react";
+import { Layers, Search, Package, Calendar, CheckCircle, Clock, ExternalLink, PanelLeft, Plus, X, Loader2, WifiOff } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { GlassCircleButton, Dropdown, SystemListSkeleton } from "@/components/cultivate-ui";
 import { useSystems, type FarmerSystemItem } from "@/lib/hooks/use-systems";
+import { useOnlineStatus } from "@/lib/hooks/use-online-status";
 import { DEMO_SYSTEMS } from "@/lib/demo-data";
 import { notify } from "@/lib/toast";
 
@@ -49,6 +50,7 @@ interface SystemsViewProps {
 }
 
 export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBackToChat, demoMode = false }: SystemsViewProps) {
+  const isOnline = useOnlineStatus();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
 
@@ -165,18 +167,17 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
         {/* Mobile header — chats-style glass back button + centered title */}
         <div className="relative flex items-center justify-center mb-6 lg:hidden">
           <div className="absolute left-0">
-            {onBackToChat ? (
-              <GlassCircleButton onClick={onBackToChat} aria-label="Back">
-                <ChevronLeft className="w-5 h-5 text-white" />
-              </GlassCircleButton>
-            ) : !sidebarOpen && setSidebarOpen ? (
+            {setSidebarOpen && (
               <GlassCircleButton onClick={() => setSidebarOpen(true)} aria-label="Open menu">
-                <ChevronLeft className="w-5 h-5 text-white" />
+                <PanelLeft className="w-5 h-5 text-white rotate-180" />
               </GlassCircleButton>
-            ) : null}
+            )}
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-serif text-cultivate-text-primary">Systems</h1>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-2xl font-serif text-cultivate-text-primary">Systems</h1>
+              {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+            </div>
             <p className="text-sm text-cultivate-text-secondary mt-1">{allSystems.length} Farmitecture products installed</p>
           </div>
           <div className="absolute right-0">
@@ -189,7 +190,10 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
         {/* Desktop header */}
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-serif text-cultivate-text-primary">Systems</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-serif text-cultivate-text-primary">Systems</h1>
+              {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+            </div>
             <p className="text-sm text-cultivate-text-secondary mt-1">{allSystems.length} Farmitecture products installed</p>
           </div>
           <button
@@ -231,7 +235,7 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-cultivate-text-secondary">Sort by</span>
+            <span className="hidden sm:inline text-sm text-cultivate-text-secondary">Sort by</span>
             <Dropdown
               variant="pill"
               value={sortBy}
@@ -422,33 +426,48 @@ export default function SystemsView({ sidebarOpen = true, setSidebarOpen, onBack
               {/* Purchase Date */}
               <div>
                 <label className="block text-xs text-cultivate-text-secondary mb-1">Purchase date <span className="text-cultivate-text-secondary">*</span></label>
-                <input
-                  type="date"
-                  value={form.purchaseDate}
-                  onChange={(e) => setForm(f => ({ ...f, purchaseDate: e.target.value }))}
-                  className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-cultivate-green-light [color-scheme:dark]"
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={form.purchaseDate}
+                    onChange={(e) => setForm(f => ({ ...f, purchaseDate: e.target.value }))}
+                    className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-cultivate-green-light [color-scheme:dark]"
+                  />
+                  {!form.purchaseDate && (
+                    <span className="pointer-events-none absolute inset-0 hidden standalone:flex items-center px-2.5 text-sm text-cultivate-text-tertiary">dd/mm/yyyy</span>
+                  )}
+                </div>
               </div>
 
               {/* Optional dates */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-cultivate-text-secondary mb-1">Installation date</label>
-                  <input
-                    type="date"
-                    value={form.installationDate}
-                    onChange={(e) => setForm(f => ({ ...f, installationDate: e.target.value }))}
-                    className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-cultivate-green-light [color-scheme:dark]"
-                  />
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={form.installationDate}
+                      onChange={(e) => setForm(f => ({ ...f, installationDate: e.target.value }))}
+                      className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-cultivate-green-light [color-scheme:dark]"
+                    />
+                    {!form.installationDate && (
+                      <span className="pointer-events-none absolute inset-0 hidden standalone:flex items-center px-2.5 text-sm text-cultivate-text-tertiary">dd/mm/yyyy</span>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs text-cultivate-text-secondary mb-1">Warranty until</label>
-                  <input
-                    type="date"
-                    value={form.warrantyUntil}
-                    onChange={(e) => setForm(f => ({ ...f, warrantyUntil: e.target.value }))}
-                    className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-cultivate-green-light [color-scheme:dark]"
-                  />
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={form.warrantyUntil}
+                      onChange={(e) => setForm(f => ({ ...f, warrantyUntil: e.target.value }))}
+                      className="w-full px-2.5 py-2 bg-cultivate-bg-main text-cultivate-text-primary text-sm border border-cultivate-border-element rounded-lg focus:outline-none focus:border-cultivate-green-light [color-scheme:dark]"
+                    />
+                    {!form.warrantyUntil && (
+                      <span className="pointer-events-none absolute inset-0 hidden standalone:flex items-center px-2.5 text-sm text-cultivate-text-tertiary">dd/mm/yyyy</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

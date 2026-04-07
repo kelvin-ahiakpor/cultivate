@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, ArrowLeft, CheckCircle, ChevronDown, ExternalLink, Flag, GripVertical, Loader2, MessageCircle, PanelLeft, User, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle, ChevronDown, ExternalLink, Flag, GripVertical, Loader2, MessageCircle, PanelLeft, User, X, WifiOff } from "lucide-react";
 import GlassCircleButton from "@/components/glass-circle-button";
 import { useFarmerFlaggedQueries, type FarmerFlaggedQueryItem } from "@/lib/hooks/use-farmer-flagged-queries";
+import { useOnlineStatus } from "@/lib/hooks/use-online-status";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import useSWR from "swr";
@@ -52,6 +53,7 @@ export default function FlaggedQueriesView({
   onViewedUpdates,
   demoMode = false,
 }: FlaggedQueriesViewProps) {
+  const isOnline = useOnlineStatus();
   const [filter, setFilter] = useState<Filter>("all");
   const [isStandalone, setIsStandalone] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -173,14 +175,20 @@ export default function FlaggedQueriesView({
             </div>
           )}
           <div className="text-center">
-            <h1 className="text-2xl font-serif text-cultivate-text-primary">Flagged Queries</h1>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-2xl font-serif text-cultivate-text-primary">Flagged Queries</h1>
+              {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+            </div>
             <p className="text-sm text-cultivate-text-secondary mt-1">{flaggedCountLabel}</p>
           </div>
         </div>
 
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-serif text-cultivate-text-primary">Flagged Queries</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-serif text-cultivate-text-primary">Flagged Queries</h1>
+              {!isOnline && <WifiOff className="w-4 h-4 text-cultivate-text-tertiary" />}
+            </div>
             <p className="text-sm text-cultivate-text-secondary mt-1">{flaggedCountLabel}</p>
           </div>
         </div>

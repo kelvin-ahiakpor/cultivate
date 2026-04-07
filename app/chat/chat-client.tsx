@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, type DragEvent as ReactDragEvent } from "react";
 import Link from "next/link";
-import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Download, Share, Pencil, Unlink, Trash2, Globe, AudioLines, Mic, AlertTriangle, Flag, Image, FileText, X } from "lucide-react";
+import { Sprout, Plus, ChevronDown, Leaf, Bug, CloudRain, Calendar, Settings, HelpCircle, LogOut, MessageCircle, Layers, PanelLeft, MoreHorizontal, CircleEllipsis, Download, Share, Pencil, Unlink, Trash2, Globe, AudioLines, Mic, AlertTriangle, Flag, Image, FileText, X, WifiOff } from "lucide-react";
 import PWAInstallModal from "@/components/pwa-install-modal";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { signOut } from "next-auth/react";
@@ -983,8 +983,8 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
         className={`fixed inset-0 z-30 bg-black/50 lg:hidden transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setSidebarOpen(false)}
       />
-      {/* Mobile: button to open sidebar — hidden on Chats/Systems/active chat (those views have their own glass header control) */}
-      {!sidebarOpen && activeView !== "chats" && activeView !== "systems" && !currentConversationId && !isStreaming && messages.length === 0 && (
+      {/* Mobile: button to open sidebar — hidden on Chats/Systems/Flagged/Settings/active chat (those views have their own glass header control) */}
+      {!sidebarOpen && activeView !== "chats" && activeView !== "systems" && activeView !== "flagged" && activeView !== "settings" && !currentConversationId && !isStreaming && messages.length === 0 && (
         <button
           onClick={() => setSidebarOpen(true)}
           className="fixed top-16 left-3 z-50 lg:hidden w-9 h-9 flex items-center justify-center bg-cultivate-bg-elevated hover:bg-cultivate-border-element rounded-lg transition-colors"
@@ -1399,6 +1399,11 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                           <Sprout className="w-10 h-10 text-cultivate-green-light" />
                           Hey there, {user.name?.split(" ")[0]}
                         </h1>
+                        {!isOnline && (
+                          <p className="flex items-center justify-center gap-1.5 text-xs text-cultivate-text-tertiary mb-3">
+                            <WifiOff className="w-3.5 h-3.5" /> You&apos;re offline
+                          </p>
+                        )}
                       </div>
 
                       {/* Action Buttons */}
