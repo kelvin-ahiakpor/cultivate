@@ -1443,7 +1443,9 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                         onDragOver={handleWelcomeComposerDragOver}
                         onDragLeave={handleWelcomeComposerDragLeave}
                         onDrop={handleWelcomeComposerDrop}
-                        className={`relative rounded-[22px] shadow-sm transition-all duration-200 ease-out ${isWelcomeComposerExpanded ? "p-[1.05rem]" : "p-4"} ${
+                        className={`${isStandalone
+                          ? `relative rounded-[22px] shadow-sm transition-all duration-200 ease-out ${isWelcomeComposerExpanded ? "p-[1.05rem]" : "p-4"}`
+                          : "relative rounded-2xl p-4 shadow-sm transition-colors"} ${
                           isDraggingWelcomeImages
                             ? "bg-cultivate-bg-hover ring-1 ring-cultivate-green-light/60"
                             : "bg-cultivate-bg-elevated"

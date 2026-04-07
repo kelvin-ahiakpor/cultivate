@@ -199,8 +199,8 @@ export default function ConversationView({
   const shouldShowComposer = showComposer && (!messagesLoading || messages.length > 0);
   const isFarmerLayout = layoutMode === "farmer-chat";
   const isComposerExpanded = isFarmerLayout && isStandalone && (isComposerFocused || Boolean(inputProps?.value?.trim()));
-  const conversationMaxWidth = "max-w-5xl";
-  const messagePadding = "px-4 standalone:px-3 sm:px-6 lg:px-8";
+  const conversationMaxWidth = isStandalone ? "max-w-5xl" : "max-w-3xl";
+  const messagePadding = isStandalone ? "px-4 standalone:px-3 sm:px-6 lg:px-8" : "px-8 lg:px-8";
   const standaloneComposerShell = isFarmerLayout
     ? (isComposerExpanded
         ? "relative z-10 mx-auto mb-3 w-full max-w-[56rem] px-2 transition-all duration-200 ease-out"

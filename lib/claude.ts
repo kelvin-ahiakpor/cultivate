@@ -225,17 +225,36 @@ export async function chatStream(input: ChatInput): Promise<{
 /**
  * Generate a short title for a conversation based on the farmer's first message.
  * Uses Haiku (cheapest Claude model) — costs ~$0.001 per title.
- * Falls back to "New conversation" if the call fails for any reason.
+ * Falls back to a neutral title if the call fails or returns unusable output.
  */
 export async function generateTitle(userMessage: string): Promise<string> {
+  const fallbackTitle = "Unclear message";
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 30,
+      max_tokens: 40,
       messages: [
         {
           role: "user",
-          content: `Summarize this farmer's question as a short chat title (5 words max, no quotes): "${userMessage}"`,
+          content: `Generate a concise conversation title from this farmer message.
+
+Rules:
+- Output only the title text.
+- Use 2 to 10 words.
+- No explanation.
+- No labels like Title:
+- No quotes.
+- If the message is just a greeting, return a brief title like Greeting, Random greeting, or Farmer greeting.
+- If the message is unclear, meaningless, or too vague to summarize well, return a brief title like Unclear message.
+
+Examples:
+- My maize leaves are turning yellow -> Yellow maize leaves
+- Best time to plant tomatoes in Accra -> Tomato planting time in Accra
+- yo -> Greeting
+- yyo -> Unclear message
+
+Farmer message: ${JSON.stringify(userMessage)}`,
         },
       ],
     });
@@ -246,9 +265,26 @@ export async function generateTitle(userMessage: string): Promise<string> {
       .join("")
       .trim();
 
-    return title || "New conversation";
+    if (!title) return fallbackTitle;
+
+    const normalizedTitle = title.replace(/^Title:\s*/i, "").replace(/^["']|["']$/g, "").trim();
+    const lowerTitle = normalizedTitle.toLowerCase();
+
+    if (
+      !normalizedTitle ||
+      lowerTitle.includes("unable to summarize") ||
+      lowerTitle.includes("cannot create a meaningful summary") ||
+      lowerTitle.includes("doesn't appear to be") ||
+      lowerTitle.includes("does not appear to be") ||
+      lowerTitle.startsWith("i cannot") ||
+      lowerTitle.startsWith("this message")
+    ) {
+      return fallbackTitle;
+    }
+
+    return normalizedTitle;
   } catch {
-    return "New conversation";
+    return fallbackTitle;
   }
 }
 
