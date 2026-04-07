@@ -30,6 +30,7 @@ export async function GET(
                 farmerId: true,
                 agent: {
                   select: {
+                    agronomistId: true,
                     organizationId: true,
                   },
                 },
@@ -44,8 +45,10 @@ export async function GET(
 
     const conversation = attachment.message.conversation;
     const canAccess = user.role === "FARMER"
-      ? conversation.farmerId == user.id
-      : conversation.agent.organizationId == user.organizationId;
+      ? conversation.farmerId === user.id
+      : user.role === "ADMIN"
+        ? conversation.agent.organizationId === user.organizationId
+        : conversation.agent.agronomistId === user.id;
 
     if (!canAccess) return apiError("Forbidden", 403);
 

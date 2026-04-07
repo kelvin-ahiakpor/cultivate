@@ -212,6 +212,7 @@ export default function ChatsView({
         id: string;
         role: "USER" | "ASSISTANT";
         content: string;
+        attachments?: ConversationMessage["attachments"];
         confidenceScore?: number;
         isFlagged?: boolean;
         flaggedQuery?: ConversationMessage["flaggedQuery"];
@@ -219,6 +220,7 @@ export default function ChatsView({
         id: message.id,
         role: message.role,
         content: message.content,
+        attachments: message.attachments,
         confidenceScore: message.confidenceScore,
         isFlagged: message.isFlagged,
         flaggedQuery: message.flaggedQuery,
