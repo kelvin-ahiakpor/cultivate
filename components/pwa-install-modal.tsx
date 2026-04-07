@@ -59,16 +59,18 @@ export default function PWAInstallModal({ open, onClose }: Props) {
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent
         showCloseButton={false}
-        className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-6 w-80 shadow-xl"
+        className="bg-cultivate-bg-sidebar border border-cultivate-border-subtle rounded-xl p-5 w-80 shadow-xl"
       >
         <DialogTitle className="sr-only">Install Cultivate</DialogTitle>
 
         {/* Header */}
-        <div className="mb-5">
-          <div className="w-10 h-10 bg-cultivate-button-primary rounded-full flex items-center justify-center mb-3">
-            <Download className="w-5 h-5 text-white" />
+        <div className="mb-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-cultivate-button-primary rounded-full flex items-center justify-center flex-shrink-0">
+              <Download className="w-5 h-5 text-white" />
+            </div>
+            <h2 className="text-white font-semibold text-base">Install Cultivate</h2>
           </div>
-          <h2 className="text-white font-semibold text-base mb-1">Install Cultivate</h2>
           <p className="text-cultivate-text-secondary text-sm leading-relaxed">
             {isIOS
               ? "Add to your home screen for quick access and offline support."
@@ -79,7 +81,7 @@ export default function PWAInstallModal({ open, onClose }: Props) {
         </div>
 
         {/* Steps */}
-        <div className="space-y-3 mb-5">
+        <div className="space-y-2.5 mb-4">
           {isIOS && (
             <>
               <Step num={1}>
@@ -146,24 +148,16 @@ export default function PWAInstallModal({ open, onClose }: Props) {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-cultivate-text-secondary hover:text-white transition-colors rounded-lg"
-          >
-            {isIOS || (isAndroid && !canNativeInstall) || (isDesktop && !canNativeInstall)
-              ? "Got it"
-              : "Not now"}
-          </button>
-          {canNativeInstall && (
+        {canNativeInstall && (
+          <div className="flex justify-end">
             <button
               onClick={handleInstall}
               className="px-4 py-2 bg-cultivate-button-primary hover:bg-cultivate-button-primary-hover text-white text-sm font-medium rounded-lg transition-colors"
             >
               Install
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
