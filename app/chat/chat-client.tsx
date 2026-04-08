@@ -1551,7 +1551,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                           className="w-full px-2 py-2 focus:outline-none resize-none text-white placeholder-cultivate-text-primary bg-transparent text-sm standalone:text-base lg:text-sm"
                         />
                         <div className="flex items-center justify-between mt-2">
-                          <div className="flex items-center gap-2">
+                          <div className="flex-shrink-0 flex items-center gap-2">
                             <div className="relative">
                               <button
                                 onClick={() => setShowAttachMenu(!showAttachMenu)}
@@ -1621,7 +1621,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
 
                             <div className="flex items-center gap-2">
                               {voiceState !== "idle" && (
-                                <Mic className="w-5 h-5 text-cultivate-text-secondary" />
+                                <Mic className="hidden min-[500px]:block w-5 h-5 text-cultivate-text-secondary" />
                               )}
                               {voiceState === "idle" && (
                                 <button
@@ -1636,33 +1636,36 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                               {voiceState === "connecting" && (
                                 <button
                                   onClick={handleVoiceClick}
-                                  className="px-3 py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
+                                  className="p-2 min-[500px]:px-3 min-[500px]:py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
+                                  title="Cancel"
                                 >
                                   <AnimatedDots type="pulse" />
-                                  <span>Cancel</span>
+                                  <span className="hidden min-[500px]:inline">Cancel</span>
                                 </button>
                               )}
                               {voiceState === "listening" && (
                                 <button
                                   onClick={handleVoiceClick}
-                                  className="px-3 py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
+                                  className="p-2 min-[500px]:px-3 min-[500px]:py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
+                                  title="Stop"
                                 >
                                   <AnimatedDots type="wave" />
-                                  <span>Stop</span>
+                                  <span className="hidden min-[500px]:inline">Stop</span>
                                 </button>
                               )}
                               {voiceState === "error" && (
                                 <button
                                   onClick={handleVoiceClick}
-                                  className="px-3 py-1.5 bg-cultivate-error rounded-lg flex items-center gap-2 text-white text-sm"
+                                  className="p-2 min-[500px]:px-3 min-[500px]:py-1.5 bg-cultivate-error rounded-lg flex items-center gap-2 text-white text-sm"
+                                  title="Error"
                                 >
                                   <AlertTriangle className="w-4 h-4" />
-                                  <span>Error</span>
+                                  <span className="hidden min-[500px]:inline">Error</span>
                                 </button>
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
                             <Dropdown
                               variant="pill"
                               value={selectedAgentId ?? ""}
@@ -1677,18 +1680,18 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                               }}
                               options={agents.map((agent) => ({ value: agent.id, label: agent.name }))}
                               placeholder="Select agent..."
-                              className="min-w-[170px] border-0 px-0 py-0 text-sm standalone:text-base lg:text-sm shadow-none hover:border-transparent focus:border-transparent bg-transparent"
+                              className="min-w-0 max-w-[120px] lg:max-w-[200px] border-0 px-0 py-0 text-sm standalone:text-base lg:text-sm shadow-none hover:border-transparent focus:border-transparent bg-transparent"
                             />
 
                             {/* Language Selector */}
                             <DropdownMenu open={showLanguageMenu} onOpenChange={setShowLanguageMenu}>
                               <DropdownMenuTrigger asChild>
                                 <button
-                                  className="flex items-center gap-1.5 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
+                                  className="flex-shrink-0 flex items-center gap-1.5 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
                                   title="Select language"
                                 >
                                   <Globe className="w-4 h-4" />
-                                  <span className="hidden lg:inline">{LANGUAGES.find(l => l.code === selectedLanguage)?.name || "English"}</span>
+                                  <span className="hidden min-[500px]:inline">{LANGUAGES.find(l => l.code === selectedLanguage)?.name || "English"}</span>
                                   <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
                                 </button>
                               </DropdownMenuTrigger>
@@ -1714,7 +1717,7 @@ export default function ChatPageClient({ user, demoMode = false, initialView = "
                             <button
                               onClick={() => { handleSend(); setSendIcon(s => s === "cabbage" ? "plane" : s === "plane" ? "sprout" : "cabbage"); }}
                               disabled={isStreaming || (inputValue.trim().length === 0 && pendingImages.length === 0)}
-                              className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="flex-shrink-0 p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               {sendIcon === "cabbage" && <CabbageIcon />}
                               {sendIcon === "plane" && <PaperPlaneIcon />}

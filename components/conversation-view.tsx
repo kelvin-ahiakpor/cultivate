@@ -763,7 +763,7 @@ export default function ConversationView({
                 />
                 <div className="flex items-center justify-between mt-2">
                   {/* Left: attachment menu + voice input (only in real mode) */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex-shrink-0 flex items-center gap-2">
                     {/* Attachment menu (images, docs, systems) - only in real mode */}
                     {inputProps && (
                       <div className="relative">
@@ -816,9 +816,9 @@ export default function ConversationView({
                     {/* Voice input button (Claude-style, only in real mode) */}
                     {inputProps && isSpeechSupported && (
                       <div className="flex items-center gap-2">
-                        {/* Mic icon (shows when connecting/listening/error) */}
+                        {/* Mic icon — desktop only when active (redundant next to state button on mobile) */}
                         {voiceState !== "idle" && (
-                          <Mic className="w-5 h-5 text-cultivate-text-secondary" />
+                          <Mic className="hidden min-[500px]:block w-5 h-5 text-cultivate-text-secondary" />
                         )}
 
                         {/* State-based button */}
@@ -833,34 +833,37 @@ export default function ConversationView({
                           </button>
                         )}
 
+                        {/* Mobile: icon-only pill. Desktop: icon + text. */}
                         {voiceState === "connecting" && (
                           <button
                             onClick={handleVoiceClick}
-                            className="px-3 py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
+                            className="p-2 min-[500px]:px-3 min-[500px]:py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
+                            title="Cancel"
                           >
                             <AnimatedDots type="pulse" />
-                            <span>Cancel</span>
+                            <span className="hidden min-[500px]:inline">Cancel</span>
                           </button>
                         )}
 
                         {voiceState === "listening" && (
                           <button
                             onClick={handleVoiceClick}
-                            className="px-3 py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
+                            className="p-2 min-[500px]:px-3 min-[500px]:py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
+                            title="Stop"
                           >
                             <AnimatedDots type="wave" />
-                            <span>Stop</span>
+                            <span className="hidden min-[500px]:inline">Stop</span>
                           </button>
                         )}
 
                         {voiceState === "error" && (
                           <button
                             onClick={handleVoiceClick}
-                            className="px-3 py-1.5 bg-cultivate-error rounded-lg flex items-center gap-2 text-white text-sm"
+                            className="p-2 min-[500px]:px-3 min-[500px]:py-1.5 bg-cultivate-error rounded-lg flex items-center gap-2 text-white text-sm"
                             title={speechError || "Error"}
                           >
                             <AlertTriangle className="w-4 h-4" />
-                            <span>Error</span>
+                            <span className="hidden min-[500px]:inline">Error</span>
                           </button>
                         )}
                       </div>
@@ -868,7 +871,7 @@ export default function ConversationView({
                   </div>
 
                   {/* Right: agent selector + send button */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     {inputProps ? (
                       /* Real mode: agent dropdown */
                       <Dropdown
@@ -882,7 +885,7 @@ export default function ConversationView({
                         }}
                         options={inputProps.agents.map((agent) => ({ value: agent.id, label: agent.name }))}
                         placeholder="Select agent..."
-                        className="min-w-[170px] border-0 px-0 py-0 text-sm standalone:text-base lg:text-sm shadow-none hover:border-transparent focus:border-transparent bg-transparent"
+                        className="min-w-0 max-w-[120px] lg:max-w-[200px] border-0 px-0 py-0 text-sm standalone:text-base lg:text-sm shadow-none hover:border-transparent focus:border-transparent bg-transparent"
                       />
                     ) : (
                       /* Demo mode: static agent label */
@@ -899,11 +902,11 @@ export default function ConversationView({
                       >
                         <DropdownMenuTrigger asChild>
                           <button
-                            className="flex items-center gap-1.5 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
+                            className="flex-shrink-0 flex items-center gap-1.5 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
                             title="Select language"
                           >
                             <Globe className="w-4 h-4" />
-                            <span className="hidden lg:inline">{inputProps.languages.find(l => l.code === inputProps.selectedLanguage)?.name || "English"}</span>
+                            <span className="hidden min-[500px]:inline">{inputProps.languages.find(l => l.code === inputProps.selectedLanguage)?.name || "English"}</span>
                             <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
                           </button>
                         </DropdownMenuTrigger>
@@ -927,22 +930,22 @@ export default function ConversationView({
                       </DropdownMenu>
                     )}
 
-                    {/* Offline indicator — replaces send button when disconnected */}
+                    {/* Offline indicator / send button — always flex-shrink-0 so it's never crowded out */}
                     {!isOnline && inputProps ? (
-                      <div className="flex items-center gap-1.5 text-cultivate-text-tertiary px-1">
+                      <div className="flex-shrink-0 flex items-center gap-1.5 text-cultivate-text-tertiary px-1">
                         <WifiOff className="w-4 h-4" />
-                        <span className="text-xs">Offline</span>
+                        <span className="hidden min-[500px]:inline text-xs">Offline</span>
                       </div>
                     ) : inputProps ? (
                       inputProps.isStreaming ? (
-                        <div className="p-2">
+                        <div className="flex-shrink-0 p-2">
                           <Loader2 className="w-5 h-5 text-cultivate-green-light animate-spin" />
                         </div>
                       ) : (
                         <button
                           onClick={() => { inputProps.onSend(); inputProps.onSendIconCycle(); }}
                           disabled={!inputProps.canSend}
-                          className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors disabled:opacity-40"
+                          className="flex-shrink-0 p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors disabled:opacity-40"
                         >
                           {inputProps.sendIcon === "cabbage" && <CabbageIcon />}
                           {inputProps.sendIcon === "plane" && <PaperPlaneIcon />}
@@ -950,7 +953,7 @@ export default function ConversationView({
                         </button>
                       )
                     ) : (
-                      <button className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors opacity-40 cursor-default">
+                      <button className="flex-shrink-0 p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors opacity-40 cursor-default">
                         <CabbageIcon />
                       </button>
                     )}
@@ -1393,31 +1396,33 @@ export default function ConversationView({
                           {voiceState === "connecting" && (
                             <button
                               onClick={handleVoiceClick}
-                              className="px-3 py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
+                              className="p-2 min-[500px]:px-3 min-[500px]:py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
+                              title="Cancel"
                             >
                               <AnimatedDots type="pulse" />
-                              <span>Cancel</span>
+                              <span className="hidden min-[500px]:inline">Cancel</span>
                             </button>
                           )}
 
                           {voiceState === "listening" && (
                             <button
                               onClick={handleVoiceClick}
-                              className="px-3 py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
+                              className="p-2 min-[500px]:px-3 min-[500px]:py-1.5 bg-cultivate-green-light hover:bg-cultivate-green-dark rounded-lg flex items-center gap-2 transition-colors text-white text-sm"
+                              title="Stop"
                             >
                               <AnimatedDots type="wave" />
-                              <span>Stop</span>
+                              <span className="hidden min-[500px]:inline">Stop</span>
                             </button>
                           )}
 
                           {voiceState === "error" && (
                             <button
                               onClick={handleVoiceClick}
-                              className="px-3 py-1.5 bg-cultivate-error rounded-lg flex items-center gap-2 text-white text-sm"
+                              className="p-2 min-[500px]:px-3 min-[500px]:py-1.5 bg-cultivate-error rounded-lg flex items-center gap-2 text-white text-sm"
                               title={speechError || "Error"}
                             >
                               <AlertTriangle className="w-4 h-4" />
-                              <span>Error</span>
+                              <span className="hidden min-[500px]:inline">Error</span>
                             </button>
                           )}
                         </div>
@@ -1425,7 +1430,7 @@ export default function ConversationView({
                     </div>
 
                     {/* Right: agent selector + send button */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       {inputProps ? (
                         /* Real mode: agent dropdown */
                         <Dropdown
@@ -1439,11 +1444,11 @@ export default function ConversationView({
                           }}
                           options={inputProps.agents.map((agent) => ({ value: agent.id, label: agent.name }))}
                           placeholder="Select agent..."
-                          className="min-w-[170px] border-0 px-0 py-0 text-sm standalone:text-base lg:text-sm shadow-none hover:border-transparent focus:border-transparent bg-transparent"
+                          className="min-w-0 max-w-[120px] lg:max-w-[200px] border-0 px-0 py-0 text-sm standalone:text-base lg:text-sm shadow-none hover:border-transparent focus:border-transparent bg-transparent"
                         />
                       ) : (
                         /* Demo mode: static agent label */
-                        <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-secondary">
+                        <span className="text-sm standalone:text-base lg:text-sm text-cultivate-text-secondary truncate max-w-[120px] lg:max-w-none">
                           {demoAgentLabel || "General Farm Advisor"}
                         </span>
                       )}
@@ -1456,11 +1461,11 @@ export default function ConversationView({
                         >
                           <DropdownMenuTrigger asChild>
                             <button
-                              className="flex items-center gap-1.5 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
+                              className="flex-shrink-0 flex items-center gap-1.5 text-cultivate-text-primary hover:text-white transition-colors text-sm standalone:text-base lg:text-sm"
                               title="Select language"
                             >
                               <Globe className="w-4 h-4" />
-                              <span className="hidden lg:inline">{inputProps.languages.find(l => l.code === inputProps.selectedLanguage)?.name || "English"}</span>
+                              <span className="hidden min-[500px]:inline">{inputProps.languages.find(l => l.code === inputProps.selectedLanguage)?.name || "English"}</span>
                               <ChevronDown className="w-3.5 h-3.5" strokeWidth={1.5} />
                             </button>
                           </DropdownMenuTrigger>
@@ -1487,14 +1492,14 @@ export default function ConversationView({
                       {/* Send button */}
                       {inputProps ? (
                         inputProps.isStreaming ? (
-                          <div className="p-2">
+                          <div className="flex-shrink-0 p-2">
                             <Loader2 className="w-5 h-5 text-cultivate-green-light animate-spin" />
                           </div>
                         ) : (
                           <button
                             onClick={() => { inputProps.onSend(); inputProps.onSendIconCycle(); }}
                             disabled={!inputProps.canSend}
-                            className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors disabled:opacity-40"
+                            className="flex-shrink-0 p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors disabled:opacity-40"
                           >
                             {inputProps.sendIcon === "cabbage" && <CabbageIcon />}
                             {inputProps.sendIcon === "plane" && <PaperPlaneIcon />}
@@ -1502,7 +1507,7 @@ export default function ConversationView({
                           </button>
                         )
                       ) : (
-                        <button className="p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors opacity-40 cursor-default">
+                        <button className="flex-shrink-0 p-2 bg-cultivate-green-light text-white rounded-xl hover:bg-cultivate-green-dark transition-colors opacity-40 cursor-default">
                           <CabbageIcon />
                         </button>
                       )}
