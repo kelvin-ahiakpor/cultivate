@@ -61,7 +61,8 @@ export async function GET(
       },
     });
   } catch (err) {
-    console.error("GET /api/knowledge-bases/[id]/download error:", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("GET /api/knowledge-bases/[id]/download error:", msg);
     return apiError("Failed to download document", 500);
   }
 }

@@ -228,7 +228,7 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
           className="bg-cultivate-bg-sidebar border-0 p-0 rounded-none sm:rounded-2xl shadow-none max-w-none w-auto"
         >
           <DialogTitle className="sr-only">System Prompt</DialogTitle>
-          <div className="w-full max-w-3xl bg-cultivate-bg-sidebar border border-cultivate-border-element rounded-2xl shadow-2xl max-h-[85vh] flex flex-col">
+          <div className="w-[min(90vw,48rem)] bg-cultivate-bg-sidebar border border-cultivate-border-element rounded-2xl shadow-2xl max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-cultivate-border-element">
               <div>
                 <h2 className="text-base font-medium text-white">System Prompt</h2>

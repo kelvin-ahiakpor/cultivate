@@ -176,8 +176,13 @@ export function useFlaggedQueries(
             const err = await res.json();
             throw new Error(err.error || "Review failed");
           }
-          // Return undefined → SWR revalidates from server after mutation
-          return undefined;
+          // Return the patched data so SWR uses it directly — no background refetch
+          return applyOptimisticPatch(data, id, {
+            status: payload.status,
+            reviewedAt: now,
+            agronomistResponse: payload.agronomistResponse ?? null,
+            verificationNotes: payload.verificationNotes ?? null,
+          }, emptyResponse);
         },
         {
           optimisticData: (current) =>
@@ -188,7 +193,7 @@ export function useFlaggedQueries(
               verificationNotes: payload.verificationNotes ?? null,
             }, emptyResponse),
           rollbackOnError: true,
-          revalidate: true,
+          revalidate: false,
         }
       );
     },
@@ -210,7 +215,12 @@ export function useFlaggedQueries(
             const err = await res.json();
             throw new Error(err.error || "Revoke failed");
           }
-          return undefined;
+          return applyOptimisticPatch(data, id, {
+            status: "PENDING",
+            reviewedAt: null,
+            agronomistResponse: null,
+            verificationNotes: null,
+          }, emptyResponse);
         },
         {
           optimisticData: (current) =>
@@ -221,11 +231,11 @@ export function useFlaggedQueries(
               verificationNotes: null,
             }, emptyResponse),
           rollbackOnError: true,
-          revalidate: true,
+          revalidate: false,
         }
       );
     },
-    [mutate, emptyResponse]
+    [mutate]
   );
 
   return {

@@ -94,7 +94,7 @@ export async function uploadFile(
     KNOWLEDGE_BUCKET,
     ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"],
     52428800,
-    true
+    false // private bucket — access via authenticated download route only
   );
   const path = getStoragePath(organizationId, knowledgeBaseId, fileName);
 
