@@ -296,8 +296,8 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                     <p className="text-xs text-cultivate-text-tertiary line-clamp-2">
                       {agent.systemPrompt}
                     </p>
-                    {!canEdit(agent) && agent.agronomist && (
-                      <p className="text-[10px] text-cultivate-text-tertiary mt-1">By {agent.agronomist.name}</p>
+                    {!canEdit(agent) && (agent as Agent).agronomist && (
+                      <p className="text-[10px] text-cultivate-text-tertiary mt-1">By {(agent as Agent).agronomist!.name}</p>
                     )}
                   </div>
                 </div>
@@ -336,8 +336,8 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                       <span className="text-xs text-cultivate-text-secondary">{agent.knowledgeBases || 0} docs</span>
                       <span className="text-xs text-cultivate-text-secondary">Threshold: {agent.confidenceThreshold}</span>
                       <span className="text-xs text-cultivate-text-tertiary">Updated {formatRelativeTime(agent.updatedAt)}</span>
-                      {!canEdit(agent) && agent.agronomist && (
-                        <span className="text-xs text-cultivate-text-tertiary">By {agent.agronomist.name}</span>
+                      {!canEdit(agent) && (agent as Agent).agronomist && (
+                        <span className="text-xs text-cultivate-text-tertiary">By {(agent as Agent).agronomist!.name}</span>
                       )}
                     </div>
                   </div>
