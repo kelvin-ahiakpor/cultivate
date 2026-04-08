@@ -688,6 +688,8 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
               sidebarOpen={sidebarOpen}
               setSidebarOpen={setSidebarOpen}
               demoMode={demoMode}
+              currentUserId={user.id}
+              userRole={user.role}
               onEditAgent={(id) => { setActiveAgentId(id); setActiveNav("agent-edit"); }}
             />
           )}
@@ -695,6 +697,8 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
             <AgentEditView
               agentId={activeAgentId}
               demoMode={demoMode}
+              currentUserId={user.id}
+              userRole={user.role}
               onManageKnowledgeBases={(agentId) => {
                 setActiveKnowledgeAgentId(agentId);
                 setActiveNav("knowledge");

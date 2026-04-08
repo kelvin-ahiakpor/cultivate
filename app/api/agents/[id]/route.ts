@@ -81,6 +81,11 @@ export async function PUT(
       return apiError("Forbidden", 403);
     }
 
+    // Agronomists can only edit agents they created; ADMINs can edit any
+    if (session!.user.role === "AGRONOMIST" && existing.agronomistId !== session!.user.id) {
+      return apiError("Forbidden", 403);
+    }
+
     const body = await request.json();
     const { name, systemPrompt, responseStyle, confidenceThreshold } = body;
 
@@ -138,6 +143,11 @@ export async function DELETE(
     }
 
     if (existing.organizationId !== session!.user.organizationId) {
+      return apiError("Forbidden", 403);
+    }
+
+    // Agronomists can only delete agents they created; ADMINs can delete any
+    if (session!.user.role === "AGRONOMIST" && existing.agronomistId !== session!.user.id) {
       return apiError("Forbidden", 403);
     }
 

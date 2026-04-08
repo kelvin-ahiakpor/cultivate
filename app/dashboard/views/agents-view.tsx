@@ -32,11 +32,15 @@ export default function AgentsView({
   sidebarOpen,
   setSidebarOpen,
   demoMode = false,
+  currentUserId,
+  userRole,
   onEditAgent,
 }: {
   sidebarOpen: boolean;
   setSidebarOpen: (v: boolean) => void;
   demoMode?: boolean;
+  currentUserId?: string;
+  userRole?: string;
   onEditAgent?: (id: string) => void;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -88,7 +92,12 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
   const [createThreshold, setCreateThreshold] = useState(0.7);
 
 
+  // Only the creator or an ADMIN can edit/delete/toggle an agent
+  const canEdit = (agent: Agent) =>
+    userRole === "ADMIN" || agent.agronomistId === currentUserId;
+
   const handleEditAgent = (agent: Agent) => {
+    if (!canEdit(agent)) return;
     onEditAgent?.(agent.id);
   };
 
@@ -267,9 +276,9 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
           <div className="space-y-3">
         {agents.map((agent) => (
           <div key={agent.id}>
-            {/* Mobile: Simplified card — tap to edit */}
+            {/* Mobile: Simplified card — tap to edit (owner) or view (non-owner) */}
             <div
-              onClick={() => onEditAgent?.(agent.id)}
+              onClick={() => canEdit(agent) ? onEditAgent?.(agent.id) : setViewAgentModal(agent)}
               className="lg:hidden bg-cultivate-bg-elevated rounded-xl p-4 border border-cultivate-border-element hover:border-cultivate-green-light/30 transition-colors cursor-pointer"
             >
               <div className="flex items-start justify-between gap-3">
@@ -287,6 +296,9 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                     <p className="text-xs text-cultivate-text-tertiary line-clamp-2">
                       {agent.systemPrompt}
                     </p>
+                    {!canEdit(agent) && agent.agronomist && (
+                      <p className="text-[10px] text-cultivate-text-tertiary mt-1">By {agent.agronomist.name}</p>
+                    )}
                   </div>
                 </div>
                 <button
@@ -299,9 +311,9 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
               </div>
             </div>
 
-            {/* Desktop: Original card with all stats — click to edit */}
+            {/* Desktop: Original card with all stats — click to edit (owner) or view (non-owner) */}
             <div
-              onClick={() => onEditAgent?.(agent.id)}
+              onClick={() => canEdit(agent) ? onEditAgent?.(agent.id) : setViewAgentModal(agent)}
               className="hidden lg:block bg-cultivate-bg-elevated rounded-xl p-5 border border-cultivate-border-element hover:border-cultivate-green-light/30 transition-colors cursor-pointer"
             >
               <div className="flex items-start justify-between">
@@ -324,53 +336,66 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
                       <span className="text-xs text-cultivate-text-secondary">{agent.knowledgeBases || 0} docs</span>
                       <span className="text-xs text-cultivate-text-secondary">Threshold: {agent.confidenceThreshold}</span>
                       <span className="text-xs text-cultivate-text-tertiary">Updated {formatRelativeTime(agent.updatedAt)}</span>
+                      {!canEdit(agent) && agent.agronomist && (
+                        <span className="text-xs text-cultivate-text-tertiary">By {agent.agronomist.name}</span>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <div className="relative" onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        disabled={!isOnline}
-                        className="p-1.5 hover:bg-cultivate-border-element rounded-lg transition-colors disabled:opacity-30"
+                  {canEdit(agent) ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          disabled={!isOnline}
+                          className="p-1.5 hover:bg-cultivate-border-element rounded-lg transition-colors disabled:opacity-30"
+                        >
+                          <MoreHorizontal className="w-4 h-4 text-cultivate-text-primary" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl shadow-xl py-1.5 min-w-[160px]"
                       >
-                        <MoreHorizontal className="w-4 h-4 text-cultivate-text-primary" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl shadow-xl py-1.5 min-w-[160px]"
+                        <DropdownMenuItem
+                          className="px-1.5 py-0 focus:bg-transparent cursor-pointer"
+                          onSelect={() => handleEditAgent(agent)}
+                        >
+                          <div className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover transition-colors">
+                            <Pencil className="w-3.5 h-3.5" />
+                            Edit
+                          </div>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="px-1.5 py-0 focus:bg-transparent cursor-pointer"
+                          onSelect={() => handleToggleActivation(agent)}
+                        >
+                          <div className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover transition-colors">
+                            <Power className="w-3.5 h-3.5" />
+                            {agent.isActive ? "Deactivate" : "Activate"}
+                          </div>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="px-1.5 py-0 focus:bg-transparent cursor-pointer"
+                          onSelect={() => handleDeleteAgent(agent)}
+                        >
+                          <div className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-cultivate-bg-hover hover:text-red-300 transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Delete
+                          </div>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setViewAgentModal(agent); }}
+                      className="p-1.5 hover:bg-cultivate-border-element rounded-lg transition-colors"
+                      aria-label="View agent"
                     >
-                      <DropdownMenuItem
-                        className="px-1.5 py-0 focus:bg-transparent cursor-pointer"
-                        onSelect={() => handleEditAgent(agent)}
-                      >
-                        <div className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover transition-colors">
-                          <Pencil className="w-3.5 h-3.5" />
-                          Edit
-                        </div>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="px-1.5 py-0 focus:bg-transparent cursor-pointer"
-                        onSelect={() => handleToggleActivation(agent)}
-                      >
-                        <div className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-cultivate-text-primary hover:bg-cultivate-bg-hover transition-colors">
-                          <Power className="w-3.5 h-3.5" />
-                          {agent.isActive ? "Deactivate" : "Activate"}
-                        </div>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="px-1.5 py-0 focus:bg-transparent cursor-pointer"
-                        onSelect={() => handleDeleteAgent(agent)}
-                      >
-                        <div className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-cultivate-bg-hover hover:text-red-300 transition-colors">
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Delete
-                        </div>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      <Eye className="w-4 h-4 text-cultivate-text-tertiary" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -467,38 +492,49 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
 
               {/* Footer */}
               <div className="px-4 py-3 border-t border-cultivate-border-subtle space-y-2">
-                <div className="flex gap-2">
+                {canEdit(viewAgentModal) ? (
+                  <>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          handleEditAgent(viewAgentModal);
+                          setViewAgentModal(null);
+                        }}
+                        className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-cultivate-green-light transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleToggleActivation(viewAgentModal);
+                          setViewAgentModal(null);
+                        }}
+                        className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-orange-500 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Power className="w-3.5 h-3.5" />
+                        {viewAgentModal.isActive ? "Deactivate" : "Activate"}
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => {
+                        handleDeleteAgent(viewAgentModal);
+                        setViewAgentModal(null);
+                      }}
+                      className="w-full px-4 py-2 text-sm text-red-400 hover:text-red-300 border border-cultivate-border-element rounded-lg hover:border-red-500 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete
+                    </button>
+                  </>
+                ) : (
                   <button
-                    onClick={() => {
-                      handleEditAgent(viewAgentModal);
-                      setViewAgentModal(null);
-                    }}
-                    className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-cultivate-green-light transition-colors flex items-center justify-center gap-2"
+                    onClick={() => setViewAgentModal(null)}
+                    className="w-full px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-cultivate-text-primary transition-colors"
                   >
-                    <Pencil className="w-3.5 h-3.5" />
-                    Edit
+                    Close
                   </button>
-                  <button
-                    onClick={() => {
-                      handleToggleActivation(viewAgentModal);
-                      setViewAgentModal(null);
-                    }}
-                    className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-orange-500 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Power className="w-3.5 h-3.5" />
-                    {viewAgentModal.isActive ? "Deactivate" : "Activate"}
-                  </button>
-                </div>
-                <button
-                  onClick={() => {
-                    handleDeleteAgent(viewAgentModal);
-                    setViewAgentModal(null);
-                  }}
-                  className="w-full px-4 py-2 text-sm text-red-400 hover:text-red-300 border border-cultivate-border-element rounded-lg hover:border-red-500 transition-colors flex items-center justify-center gap-2"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Delete
-                </button>
+                )}
               </div>
             </div>
           </div>
@@ -578,17 +614,19 @@ const [deactivateModalAgent, setDeactivateModalAgent] = useState<Agent | null>(n
 
             {/* Panel Footer */}
             <div className="px-5 py-3 border-t border-cultivate-border-subtle flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  handleEditAgent(viewAgentModal);
-                  setViewAgentModal(null);
-                }}
-                className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-cultivate-green-light transition-colors flex items-center justify-center gap-2"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                Edit
-              </button>
+              {canEdit(viewAgentModal) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleEditAgent(viewAgentModal);
+                    setViewAgentModal(null);
+                  }}
+                  className="flex-1 px-4 py-2 text-sm text-cultivate-text-primary hover:text-white border border-cultivate-border-element rounded-lg hover:border-cultivate-green-light transition-colors flex items-center justify-center gap-2"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Edit
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setViewAgentModal(null)}

@@ -12,9 +12,11 @@ interface AgentEditViewProps {
   onBack: () => void;
   onManageKnowledgeBases?: (agentId: string) => void;
   demoMode?: boolean;
+  currentUserId?: string;
+  userRole?: string;
 }
 
-export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases, demoMode = false }: AgentEditViewProps) {
+export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases, demoMode = false, currentUserId, userRole }: AgentEditViewProps) {
   // Real mode: fetch via SWR. Demo mode: find in DEMO_AGENTS.
   const { agent: apiAgent, isLoading } = useAgent(demoMode ? null : agentId);
   const agent = demoMode ? DEMO_AGENTS.find(a => a.id === agentId) ?? null : apiAgent ?? null;
@@ -64,6 +66,9 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
 
   const loading = !demoMode && isLoading;
 
+  // Non-owners (non-ADMIN agronomists viewing someone else's agent) get read-only
+  const isReadOnly = !demoMode && !!agent && userRole !== "ADMIN" && agent.agronomistId !== currentUserId;
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
@@ -82,6 +87,9 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
             <h1 className="text-base font-medium text-white truncate">
               {loading ? "Loading…" : (agent?.name ?? "Edit Agent")}
             </h1>
+            {isReadOnly && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cultivate-bg-hover border border-cultivate-border-element text-cultivate-text-tertiary flex-shrink-0">View only</span>
+            )}
           </div>
         </div>
       </div>
@@ -110,8 +118,9 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="e.g. Maize Expert"
-                disabled={submitting}
-                className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light disabled:opacity-40"
+                disabled={submitting || isReadOnly}
+                readOnly={isReadOnly}
+                className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light disabled:opacity-60"
               />
             </div>
 
@@ -119,22 +128,25 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
             <div>
               <div className="flex items-center justify-between gap-3 mb-1.5">
                 <label className="block text-sm text-cultivate-text-secondary">System Prompt</label>
-                <button
-                  type="button"
-                  onClick={() => setShowPromptModal(true)}
-                  className="inline-flex items-center gap-1.5 text-xs text-cultivate-text-secondary hover:text-white transition-colors"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  Edit full prompt
-                </button>
+                {!isReadOnly && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPromptModal(true)}
+                    className="inline-flex items-center gap-1.5 text-xs text-cultivate-text-secondary hover:text-white transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit full prompt
+                  </button>
+                )}
               </div>
               <textarea
                 rows={6}
                 value={prompt}
                 onChange={e => setPrompt(e.target.value)}
                 placeholder="Describe the agent's role, expertise, and how it should respond…"
-                disabled={submitting}
-                className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light resize-none disabled:opacity-40"
+                disabled={submitting || isReadOnly}
+                readOnly={isReadOnly}
+                className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light resize-none disabled:opacity-60"
               />
             </div>
 
@@ -146,8 +158,9 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
                 value={style}
                 onChange={e => setStyle(e.target.value)}
                 placeholder="e.g. Friendly, concise, uses local examples"
-                disabled={submitting}
-                className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light disabled:opacity-40"
+                disabled={submitting || isReadOnly}
+                readOnly={isReadOnly}
+                className="w-full px-3 py-2.5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-green-light disabled:opacity-60"
               />
             </div>
 
@@ -160,8 +173,8 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
                   min="0" max="1" step="0.05"
                   value={threshold}
                   onChange={e => setThreshold(parseFloat(e.target.value))}
-                  disabled={submitting}
-                  className="flex-1 accent-cultivate-button-primary"
+                  disabled={submitting || isReadOnly}
+                  className="flex-1 accent-cultivate-button-primary disabled:opacity-60"
                   style={{ background: `linear-gradient(to right, #5a7048 0%, #5a7048 ${threshold * 100}%, #3B3B3B ${threshold * 100}%, #3B3B3B 100%)` }}
                 />
                 <span className="text-sm text-white w-10 text-right">{threshold.toFixed(2)}</span>
@@ -174,15 +187,17 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
               <label className="block text-sm text-cultivate-text-secondary mb-1.5">Knowledge Bases</label>
               <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-lg p-3">
                 <p className="text-xs text-cultivate-text-tertiary mb-2">{agent.knowledgeBases || 0} knowledge bases assigned</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (agentId) onManageKnowledgeBases?.(agentId);
-                  }}
-                  className="text-xs text-cultivate-green-light hover:text-cultivate-green-pale transition-colors"
-                >
-                  Manage knowledge bases →
-                </button>
+                {!isReadOnly && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (agentId) onManageKnowledgeBases?.(agentId);
+                    }}
+                    className="text-xs text-cultivate-green-light hover:text-cultivate-green-pale transition-colors"
+                  >
+                    Manage knowledge bases →
+                  </button>
+                )}
               </div>
             </div>
 
@@ -202,21 +217,25 @@ export default function AgentEditView({ agentId, onBack, onManageKnowledgeBases,
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-3 pt-2 pb-8">
-              <button
-                onClick={onBack}
-                disabled={submitting}
-                className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors disabled:opacity-40"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={submitting || !name.trim() || !prompt.trim()}
-                className="px-4 py-2 bg-cultivate-button-primary text-white rounded-lg hover:bg-cultivate-button-primary-hover transition-colors text-sm disabled:opacity-40 flex items-center gap-2"
-              >
-                {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                {submitting ? "Saving…" : "Save Changes"}
-              </button>
+              {!isReadOnly && (
+                <button
+                  onClick={onBack}
+                  disabled={submitting}
+                  className="px-4 py-2 text-sm text-cultivate-text-primary hover:text-white transition-colors disabled:opacity-40"
+                >
+                  Cancel
+                </button>
+              )}
+              {!isReadOnly && (
+                <button
+                  onClick={handleSave}
+                  disabled={submitting || !name.trim() || !prompt.trim()}
+                  className="px-4 py-2 bg-cultivate-button-primary text-white rounded-lg hover:bg-cultivate-button-primary-hover transition-colors text-sm disabled:opacity-40 flex items-center gap-2"
+                >
+                  {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  {submitting ? "Saving…" : "Save Changes"}
+                </button>
+              )}
             </div>
           </div>
         )}

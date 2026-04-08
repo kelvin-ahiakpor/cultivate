@@ -27,6 +27,11 @@ export async function PATCH(
       return apiError("Forbidden", 403);
     }
 
+    // Agronomists can only toggle status of agents they created; ADMINs can toggle any
+    if (session!.user.role === "AGRONOMIST" && existing.agronomistId !== session!.user.id) {
+      return apiError("Forbidden", 403);
+    }
+
     const body = await request.json();
     const { isActive } = body;
 

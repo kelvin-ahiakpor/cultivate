@@ -18,6 +18,7 @@ export interface Agent {
   isActive: boolean;
   version: number;
   agronomistId: string;
+  agronomist?: { id: string; name: string; email: string };
   organizationId: string;
   createdAt: string;
   updatedAt: string;
