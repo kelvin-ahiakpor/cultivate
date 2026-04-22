@@ -185,11 +185,20 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
   const [offlineActivities, setOfflineActivities] = useState<ActivityItem[]>([]);
   const [offlineActivitiesCachedAt, setOfflineActivitiesCachedAt] = useState<number | null>(null);
 
+  // Panel (30-day) activity feed
+  const { activities: panelActivities, isLoading: panelActivityLoading } = useActivity(30, 50, demoMode);
+  const [offlinePanelActivities, setOfflinePanelActivities] = useState<ActivityItem[]>([]);
+
   // Write-through: cache activity when online data arrives
   useEffect(() => {
     if (demoMode || !isOnline || activities.length === 0) return;
     saveAgroCache("activity", activities).catch(() => {});
   }, [activities, isOnline, demoMode]);
+
+  useEffect(() => {
+    if (demoMode || !isOnline || panelActivities.length === 0) return;
+    saveAgroCache("activity-30", panelActivities).catch(() => {});
+  }, [panelActivities, isOnline, demoMode]);
 
   // Read cached activity when offline
   useEffect(() => {
@@ -197,9 +206,13 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
     getAgroCache<ActivityItem[]>("activity").then(r => {
       if (r) { setOfflineActivities(r.data); setOfflineActivitiesCachedAt(r.cachedAt); }
     }).catch(() => {});
+    getAgroCache<ActivityItem[]>("activity-30").then(r => {
+      if (r) setOfflinePanelActivities(r.data);
+    }).catch(() => {});
   }, [isOnline, demoMode]);
 
   const displayActivities = isOnline ? activities : offlineActivities;
+  const displayPanelActivities = isOnline ? panelActivities : offlinePanelActivities;
 
   const handleCloseActivityPanel = () => {
     setActivityPanelOpen(false);
@@ -805,16 +818,16 @@ export default function DashboardClient({ user, demoMode = false, initialView = 
                 <ActivityRow key={i} item={item} isStandalone={isStandalone} />
               ))}
 
-              {/* Real mode: same activities array fetched for the overview — no second API call */}
-              {!demoMode && activityLoading && (
+              {/* Real mode: 30-day activity feed */}
+              {!demoMode && panelActivityLoading && (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-5 h-5 text-cultivate-text-tertiary animate-spin" />
                 </div>
               )}
-              {!demoMode && !activityLoading && displayActivities.map((item: ActivityItem, i: number) => (
+              {!demoMode && !panelActivityLoading && displayPanelActivities.map((item: ActivityItem, i: number) => (
                 <ActivityRow key={i} item={item} isStandalone={isStandalone} />
               ))}
-              {!demoMode && !activityLoading && displayActivities.length === 0 && (
+              {!demoMode && !panelActivityLoading && displayPanelActivities.length === 0 && (
                 <div className="py-8 text-center">
                   <p className="text-sm text-cultivate-text-tertiary">
                     {isOnline ? "No activity in the last 30 days." : "No cached activity."}

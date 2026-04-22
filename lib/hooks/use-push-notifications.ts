@@ -48,7 +48,12 @@ export function usePushNotifications(): UsePushNotifications {
       setPermission(perm as PushPermission);
       if (perm !== "granted") return;
 
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Service worker not ready")), 10000)
+        ),
+      ]);
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToArrayBuffer(
