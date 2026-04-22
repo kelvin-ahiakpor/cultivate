@@ -52,7 +52,15 @@ export function usePushNotifications(): UsePushNotifications {
       const reg = await Promise.race([
         navigator.serviceWorker.ready,
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Service worker not ready")), 10000)
+          setTimeout(async () => {
+            const existing = await navigator.serviceWorker.getRegistration().catch(() => undefined);
+            const swState = existing?.active ? "active-no-claim"
+              : existing?.waiting ? "waiting"
+              : existing?.installing ? "installing"
+              : existing ? "redundant"
+              : "none";
+            reject(new Error(`sw:${swState}`));
+          }, 3000)
         ),
       ]);
       const sub = await reg.pushManager.subscribe({
@@ -72,20 +80,13 @@ export function usePushNotifications(): UsePushNotifications {
     } catch (err) {
       console.error("Push subscribe failed:", err);
       const e = err as { name?: string; message?: string };
-      if (e?.message === "Service worker not ready") {
-        const isPWA = window.matchMedia("(display-mode: standalone)").matches ||
-          Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-        if (isPWA) {
-          notify.error("Couldn't reach the notification service. Try closing and reopening the app.");
-        } else {
-          notify.error("Notifications unavailable. Add this app to your Home Screen first.");
-        }
-      } else if (e?.name === "NotSupportedError") {
-        notify.error("Push notifications aren't supported on this device or browser.");
+      if (e?.message?.startsWith("sw:")) {
+        const swState = e.message.slice(3);
+        notify.error(`Notification service unavailable (sw: ${swState}). Try closing and reopening the app.`);
       } else if (e?.name === "NotAllowedError") {
         notify.error("Notification permission was denied. Enable it in your device settings.");
       } else if (e?.name === "AbortError") {
-        notify.error("Couldn't set up notifications. Check that the app is installed as a PWA and try again.");
+        notify.error("Couldn't connect to the push service. Check your connection and try again.");
       } else {
         notify.error("Failed to enable notifications. Please try again.");
       }

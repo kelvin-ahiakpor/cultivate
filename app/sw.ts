@@ -1,23 +1,26 @@
 // @ts-nocheck
 import { defaultCache } from "@serwist/next/worker";
-import { Serwist, NetworkFirst, ExpirationPlugin } from "serwist";
+import { Serwist, StaleWhileRevalidate, ExpirationPlugin } from "serwist";
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
-  navigationPreload: true,
+  // navigationPreload disabled: StaleWhileRevalidate serves from cache immediately,
+  // so preloading a network request in parallel is wasteful and can trigger iOS's
+  // "no internet" error before the SW serves the cached response.
+  navigationPreload: false,
   runtimeCaching: [
-    // Cache HTML navigation responses so the app loads offline after first visit.
-    // defaultCache's HTML strategy only matches on response Content-Type (not set on
-    // navigation requests), so it never fires — this explicit matcher fixes that.
+    // StaleWhileRevalidate for navigation: serves cached HTML immediately (no network
+    // attempt), then updates the cache in background when online. This prevents iOS
+    // from showing "Safari can't open the page" on offline relaunch — NetworkFirst
+    // would try the network first and let iOS intercept the failure.
     {
       matcher: ({ request }) => request.mode === "navigate",
-      handler: new NetworkFirst({
+      handler: new StaleWhileRevalidate({
         cacheName: "pages",
-        networkTimeoutSeconds: 3,
         plugins: [
-          new ExpirationPlugin({ maxEntries: 32, maxAgeSeconds: 72 * 60 * 60 }),
+          new ExpirationPlugin({ maxEntries: 32, maxAgeSeconds: 30 * 24 * 60 * 60 }),
         ],
       }),
     },
