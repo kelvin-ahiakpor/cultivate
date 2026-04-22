@@ -73,7 +73,13 @@ export function usePushNotifications(): UsePushNotifications {
       console.error("Push subscribe failed:", err);
       const e = err as { name?: string; message?: string };
       if (e?.message === "Service worker not ready") {
-        notify.error("Notifications unavailable. Try adding this app to your Home Screen first.");
+        const isPWA = window.matchMedia("(display-mode: standalone)").matches ||
+          Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+        if (isPWA) {
+          notify.error("Couldn't reach the notification service. Try closing and reopening the app.");
+        } else {
+          notify.error("Notifications unavailable. Add this app to your Home Screen first.");
+        }
       } else if (e?.name === "NotSupportedError") {
         notify.error("Push notifications aren't supported on this device or browser.");
       } else if (e?.name === "NotAllowedError") {

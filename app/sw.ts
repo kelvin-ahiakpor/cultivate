@@ -17,7 +17,7 @@ const serwist = new Serwist({
         cacheName: "pages",
         networkTimeoutSeconds: 3,
         plugins: [
-          new ExpirationPlugin({ maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 }),
+          new ExpirationPlugin({ maxEntries: 32, maxAgeSeconds: 72 * 60 * 60 }),
         ],
       }),
     },
