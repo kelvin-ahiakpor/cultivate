@@ -34,16 +34,19 @@ export default function SettingsView({
   const [isSavingName, setIsSavingName] = useState(false);
   const [location, setLocation] = useState(user.location || "");
   const [gpsCoordinates, setGpsCoordinates] = useState(user.gpsCoordinates || "");
+  const [editingLocationField, setEditingLocationField] = useState(false);
+  const [editingGpsField, setEditingGpsField] = useState(false);
   const [isDetecting, setIsDetecting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
   const [supportsNotifications, setSupportsNotifications] = useState(false);
   const nameRef = useRef<HTMLDivElement | null>(null);
+  const locationRef = useRef<HTMLDivElement | null>(null);
+  const gpsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const changed = location !== (user.location || "") || gpsCoordinates !== (user.gpsCoordinates || "");
-    setHasChanges(changed);
-  }, [location, gpsCoordinates, user.location, user.gpsCoordinates]);
+    setLocation(user.location || "");
+    setGpsCoordinates(user.gpsCoordinates || "");
+  }, [user.location, user.gpsCoordinates]);
 
   useEffect(() => {
     setDisplayName(user.name || "");
@@ -55,16 +58,16 @@ export default function SettingsView({
   }, []);
 
   useEffect(() => {
-    if (!editingName || !nameRef.current) return;
-    const el = nameRef.current;
-    el.focus();
+    const target = editingName ? nameRef.current : editingLocationField ? locationRef.current : editingGpsField ? gpsRef.current : null;
+    if (!target) return;
+    target.focus();
     const selection = window.getSelection();
     const range = document.createRange();
-    range.selectNodeContents(el);
+    range.selectNodeContents(target);
     range.collapse(false);
     selection?.removeAllRanges();
     selection?.addRange(range);
-  }, [editingName]);
+  }, [editingName, editingLocationField, editingGpsField]);
 
   const handleSaveName = async () => {
     const trimmedName = nameDraft.trim();
@@ -106,6 +109,38 @@ export default function SettingsView({
     }
   };
 
+  const persistLocation = async (nextLocation: string, nextGpsCoordinates: string) => {
+    if (!nextLocation.trim() && !nextGpsCoordinates.trim()) {
+      notify.error("Please enter a location or detect your current location");
+      return false;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await fetch("/api/user/location", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          location: nextLocation.trim() || null,
+          gpsCoordinates: nextGpsCoordinates.trim() || null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save location");
+      }
+
+      notify.success("Location updated");
+      return true;
+    } catch (error) {
+      console.error("Save location error:", error);
+      notify.error("Failed to save location");
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleDetectLocation = () => {
     if (!navigator.geolocation) {
       notify.error("Geolocation is not supported by your browser");
@@ -118,7 +153,7 @@ export default function SettingsView({
         const lat = position.coords.latitude.toFixed(4);
         const lon = position.coords.longitude.toFixed(4);
         const coords = `${lat},${lon}`;
-        setGpsCoordinates(coords);
+        let nextLocation = `Location: ${coords}`;
 
         try {
           const response = await fetch(
@@ -127,14 +162,15 @@ export default function SettingsView({
           const data = await response.json();
           const cityName = data.city || data.locality || data.principalSubdivision || "Unknown location";
           const country = data.countryName || "";
-          setLocation(`${cityName}${country ? `, ${country}` : ""}`);
+          nextLocation = `${cityName}${country ? `, ${country}` : ""}`;
         } catch (error) {
           console.error("Reverse geocoding failed:", error);
-          setLocation(`Location: ${coords}`);
         }
 
+        setGpsCoordinates(coords);
+        setLocation(nextLocation);
         setIsDetecting(false);
-        notify.success("Location detected");
+        await persistLocation(nextLocation, coords);
       },
       (error) => {
         setIsDetecting(false);
@@ -156,35 +192,24 @@ export default function SettingsView({
     );
   };
 
-  const handleSave = async () => {
-    if (!location.trim() && !gpsCoordinates.trim()) {
-      notify.error("Please enter a location or detect your current location");
+  const handleSaveLocationField = async () => {
+    const nextLocation = location.trim();
+    if (nextLocation === (user.location || "").trim()) {
+      setEditingLocationField(false);
       return;
     }
+    const success = await persistLocation(nextLocation, gpsCoordinates);
+    if (success) setEditingLocationField(false);
+  };
 
-    setIsSaving(true);
-    try {
-      const response = await fetch("/api/user/location", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          location: location.trim() || null,
-          gpsCoordinates: gpsCoordinates.trim() || null,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save location");
-      }
-
-      notify.success("Location updated");
-      setHasChanges(false);
-    } catch (error) {
-      console.error("Save location error:", error);
-      notify.error("Failed to save location");
-    } finally {
-      setIsSaving(false);
+  const handleSaveGpsField = async () => {
+    const nextGpsCoordinates = gpsCoordinates.trim();
+    if (nextGpsCoordinates === (user.gpsCoordinates || "").trim()) {
+      setEditingGpsField(false);
+      return;
     }
+    const success = await persistLocation(location, nextGpsCoordinates);
+    if (success) setEditingGpsField(false);
   };
 
   const { permission, isSubscribed, isLoading: pushLoading, subscribe, unsubscribe } = usePushNotifications();
@@ -226,10 +251,10 @@ export default function SettingsView({
       </div>
 
       <div className="relative flex-1 min-h-0">
-        <div className="h-full overflow-y-auto thin-scrollbar scrollbar-outset px-4 lg:px-0">
-          <div className="max-w-2xl mx-auto pb-8">
-            <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-6 mb-6">
-              <div className="flex items-start gap-3 mb-4">
+        <div className="h-full overflow-y-auto thin-scrollbar scrollbar-outset">
+          <div className="w-full pb-6 lg:max-w-2xl lg:mx-auto lg:pb-8">
+            <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-5 mb-5 lg:p-6 lg:mb-6">
+              <div className="flex items-start gap-3 mb-3 lg:mb-4">
                 <div className="p-2 bg-cultivate-bg-hover rounded-lg">
                   <MapPin className="w-5 h-5 text-cultivate-green-light" />
                 </div>
@@ -241,16 +266,16 @@ export default function SettingsView({
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-2.5 lg:space-y-3">
                 <button
                   onClick={handleDetectLocation}
-                  disabled={isDetecting}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-cultivate-bg-elevated text-cultivate-text-primary text-sm rounded-lg hover:bg-cultivate-bg-hover transition-colors disabled:opacity-40"
+                  disabled={isDetecting || isSaving}
+                  className="flex items-center gap-2 text-sm text-cultivate-text-secondary hover:text-white transition-colors disabled:opacity-40"
                 >
-                  {isDetecting ? (
+                  {isDetecting || isSaving ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Detecting location...</span>
+                      <span>{isDetecting ? "Detecting location..." : "Saving..."}</span>
                     </>
                   ) : (
                     <>
@@ -261,62 +286,56 @@ export default function SettingsView({
                 </button>
 
                 <div>
-                  <label className="block text-sm text-cultivate-text-secondary mb-2">
-                    City/Region <span className="text-cultivate-text-tertiary">(e.g., Accra, Ghana or Volta Region)</span>
-                  </label>
-                  <input
-                    type="text"
+                  <label className="block text-xs text-cultivate-text-tertiary mb-1">City/Region</label>
+                  <InlineEditableText
                     value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Enter your location"
-                    className="w-full px-3 py-2.5 bg-cultivate-bg-main border border-cultivate-border-element rounded-lg text-sm lg:text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-button-primary"
+                    editing={editingLocationField}
+                    isSaving={isSaving}
+                    onStartEdit={() => setEditingLocationField(true)}
+                    onChange={setLocation}
+                    onConfirm={handleSaveLocationField}
+                    onCancel={() => {
+                      setLocation(user.location || "");
+                      setEditingLocationField(false);
+                    }}
+                    buttonAriaLabel="Edit location"
+                    inputRef={locationRef}
+                    displayClassName="text-sm text-cultivate-text-primary"
+                    editorClassName="min-w-0 bg-transparent p-0 m-0 text-sm text-cultivate-text-primary outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm text-cultivate-text-secondary mb-2">
-                    GPS Coordinates <span className="text-cultivate-text-tertiary">(optional, format: lat,lon)</span>
-                  </label>
-                  <input
-                    type="text"
+                  <label className="block text-xs text-cultivate-text-tertiary mb-1">GPS Coordinates</label>
+                  <InlineEditableText
                     value={gpsCoordinates}
-                    onChange={(e) => setGpsCoordinates(e.target.value)}
-                    placeholder="5.6037,-0.1870"
-                    className="w-full px-3 py-2.5 bg-cultivate-bg-main border border-cultivate-border-element rounded-lg text-sm lg:text-sm text-white placeholder-cultivate-text-tertiary focus:outline-none focus:border-cultivate-button-primary"
+                    editing={editingGpsField}
+                    isSaving={isSaving}
+                    onStartEdit={() => setEditingGpsField(true)}
+                    onChange={setGpsCoordinates}
+                    onConfirm={handleSaveGpsField}
+                    onCancel={() => {
+                      setGpsCoordinates(user.gpsCoordinates || "");
+                      setEditingGpsField(false);
+                    }}
+                    buttonAriaLabel="Edit GPS coordinates"
+                    inputRef={gpsRef}
+                    displayClassName="text-sm text-cultivate-text-primary"
+                    editorClassName="min-w-0 bg-transparent p-0 m-0 text-sm text-cultivate-text-primary outline-none"
                   />
                 </div>
 
                 <div className="flex items-start gap-2 p-3 bg-cultivate-bg-hover rounded-lg">
                   <AlertCircle className="w-4 h-4 text-cultivate-teal mt-0.5 flex-shrink-0" />
                   <p className="text-xs text-cultivate-text-secondary">
-                    This is stored on your user profile and can be reused by location-aware features across the app.
+                    Your location helps provide region-specific recommendations and weather-aware advice.
                   </p>
                 </div>
-
-                {hasChanges && (
-                  <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-cultivate-button-primary text-white text-sm rounded-lg hover:bg-cultivate-button-primary-hover transition-colors disabled:opacity-40"
-                  >
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Saving...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-4 h-4" />
-                        <span>Save location</span>
-                      </>
-                    )}
-                  </button>
-                )}
               </div>
             </div>
 
-            <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-6">
-              <div className="flex items-start gap-3 mb-4">
+            <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-5 lg:p-6">
+              <div className="flex items-start gap-3 mb-3 lg:mb-4">
                 <div className="p-2 bg-cultivate-bg-hover rounded-lg">
                   <Settings className="w-5 h-5 text-cultivate-green-light" />
                 </div>
@@ -326,7 +345,7 @@ export default function SettingsView({
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2.5 lg:space-y-3">
                 <div>
                   <label className="block text-xs text-cultivate-text-tertiary mb-1">Name</label>
                   <InlineEditableText
@@ -353,10 +372,9 @@ export default function SettingsView({
               </div>
             </div>
 
-            {/* Notifications */}
             {supportsNotifications && (
-              <div className="bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-6">
-                <div className="flex items-start gap-3 mb-4">
+              <div className="mt-5 bg-cultivate-bg-elevated border border-cultivate-border-element rounded-xl p-5 lg:mt-6 lg:p-6">
+                <div className="flex items-start gap-3 mb-3 lg:mb-4">
                   <div className="p-2 bg-cultivate-bg-hover rounded-lg">
                     <Bell className="w-4 h-4 text-cultivate-teal" />
                   </div>

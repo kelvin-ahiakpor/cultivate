@@ -1,13 +1,28 @@
 // @ts-nocheck
 import { defaultCache } from "@serwist/next/worker";
-import { Serwist } from "serwist";
+import { Serwist, NetworkFirst, ExpirationPlugin } from "serwist";
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  runtimeCaching: [
+    // Cache HTML navigation responses so the app loads offline after first visit.
+    // defaultCache's HTML strategy only matches on response Content-Type (not set on
+    // navigation requests), so it never fires — this explicit matcher fixes that.
+    {
+      matcher: ({ request }) => request.mode === "navigate",
+      handler: new NetworkFirst({
+        cacheName: "pages",
+        networkTimeoutSeconds: 3,
+        plugins: [
+          new ExpirationPlugin({ maxEntries: 32, maxAgeSeconds: 24 * 60 * 60 }),
+        ],
+      }),
+    },
+    ...defaultCache,
+  ],
   fallbacks: {
     entries: [
       {

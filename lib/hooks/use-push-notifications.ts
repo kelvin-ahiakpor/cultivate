@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { notify } from "@/lib/toast";
 
 export type PushPermission = "default" | "granted" | "denied";
 
@@ -70,6 +71,18 @@ export function usePushNotifications(): UsePushNotifications {
       setIsSubscribed(true);
     } catch (err) {
       console.error("Push subscribe failed:", err);
+      const e = err as { name?: string; message?: string };
+      if (e?.message === "Service worker not ready") {
+        notify.error("Notifications unavailable. Try adding this app to your Home Screen first.");
+      } else if (e?.name === "NotSupportedError") {
+        notify.error("Push notifications aren't supported on this device or browser.");
+      } else if (e?.name === "NotAllowedError") {
+        notify.error("Notification permission was denied. Enable it in your device settings.");
+      } else if (e?.name === "AbortError") {
+        notify.error("Couldn't set up notifications. Check that the app is installed as a PWA and try again.");
+      } else {
+        notify.error("Failed to enable notifications. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -93,6 +106,7 @@ export function usePushNotifications(): UsePushNotifications {
       setIsSubscribed(false);
     } catch (err) {
       console.error("Push unsubscribe failed:", err);
+      notify.error("Failed to turn off notifications. Please try again.");
     } finally {
       setIsLoading(false);
     }
